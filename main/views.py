@@ -7,8 +7,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from scrapyd_api import ScrapydAPI
-from main.utils import URLUtil
-from main.models import ScrapyItem
+#from main.utils import URLUtil
+#from main.models import ScrapyItem
 
 # connect scrapyd service
 scrapyd = ScrapydAPI('http://localhost:6800')

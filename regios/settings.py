@@ -9,19 +9,7 @@ https://docs.djangoproject.com/en/2.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
-
-import os
-import sys
-
-# DJANGO INTEGRATION
-
-sys.path.append(os.path.dirname(os.path.abspath('.')))
-# Do not forget the change iCrawler part based on your project name
-os.environ['DJANGO_SETTINGS_MODULE'] = 'regios.settings'
-
-# This is required only if Django Version > 1.8
-import django
-django.setup()
+import os, sys
 
 # DJANGO INTEGRATION
 
@@ -51,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
+    'home',
 ]
 
 MIDDLEWARE = [
@@ -113,6 +102,52 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+#    'filters': {
+#        'debug_false': {
+#            '()': 'django.utils.log.RequireDebugFalse',
+#        },
+#        'debug_true': {
+#            '()': 'django.utils.log.RequireDebugTrue',
+#        },
+#    },
+    'formatters': {
+        'verbose': {
+#            'format': '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+            'format': '%(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+ #           'filters': ['debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+ #           'stream': sys.stdout,
+        },
+ #       'null': {
+ #           'class': 'logging.NullHandler'
+ #           #'formatter': 'verbose'
+ #       },
+    },
+ #   'loggers': {
+ #       'django': {
+ #           'handlers': ['null'],
+ ##           'level': 'DEBUG'
+ ##           'propagate': True,
+ #       },
+ #       'py.warnings': {
+ #           'handlers': ['console'],
+ #       }
+ #   },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG'
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
