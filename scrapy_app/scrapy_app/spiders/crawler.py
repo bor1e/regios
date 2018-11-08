@@ -4,6 +4,12 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from urllib.parse import urlparse
 
+'''
+if the pages you want to crawl change on a regular basis you could create 
+a spider that crawls the sitemap, divides the links up into n chunks,
+then starts n other spiders to actually crawl the site.
+# https://stackoverflow.com/questions/23047080/sharing-visited-urls-between-multiple-spiders-in-scrapy
+'''
 
 
 class CrawlerSpider(CrawlSpider):

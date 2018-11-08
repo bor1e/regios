@@ -8,5 +8,5 @@ urlpatterns = [
     #url(r'^api/crawl/', views.crawl, name='crawl'),
     #! TODO: check for ^ , $  and r in beginning of string
     path('api/crawl/', views.crawl, name='crawl'),
-    path('thanks', views.index, name='thanks'),
+    path('domain/', views.domain, name='domain'),
 ]

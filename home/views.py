@@ -1,9 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from urllib.parse import urlparse
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from uuid import uuid4
+from home.models import DomainScrapyItem
+import json
+import urllib
+
 
 from scrapyd_api import ScrapydAPI
 
@@ -28,6 +32,13 @@ def index(request):
 	logger.info("index page loading")
 	return render(request, 'home/index.html', {})
 
+def domain(request):
+	crawler = request.session['crawler_details']
+	logger.info(type(crawler))
+	return render(request, 'home/status.html', crawler)
+	#! TODO evtl innerhalb des crawl machen
+	#return JsonResponse(crawler)
+
 def crawl(request):
 
 	if request.method == 'POST':
@@ -36,7 +47,8 @@ def crawl(request):
 		logger.info("received URL: %s", url)
 
 		if not is_valid_url(url):
-			logger.info("URL: %s not validated", url)
+			#! TODO THINK 
+			logger.warning("URL: %s not validated", url)
 			return HttpResponseRedirect('/')
 
 		domain = urlparse(url).netloc # parse the url and extract the domain
@@ -56,8 +68,9 @@ def crawl(request):
 		# We are goint to use that to check task's status.
 		task = scrapyd.schedule('default', 'crawler', 
 			settings=settings, url=url, domain=domain)
+		request.session['crawler_details'] = {'domain': domain, 'task_id': task, 'unique_id': unique_id, 'status': 'started' }
+		return redirect('domain')
 
-		return JsonResponse({'domain': domain, 'task_id': task, 'unique_id': unique_id, 'status': 'started' })
 
 	elif request.method == 'GET':
 		# We were passed these from past request above. Remember ?
@@ -76,14 +89,29 @@ def crawl(request):
 		# If it is not finished we can return active status
 		# Possible results are -> pending, running, finished
 		status = scrapyd.job_status('default', task_id)
+		crawler = request.session['crawler_details']
+		crawler['status'] = status
 		if status == 'finished':
 			try:
+				logger.debug('received status finished')
 				# this is the unique_id that we created even before crawling started.
-				item = ScrapyItem.objects.get(unique_id=unique_id) 
-				return JsonResponse({'data': item.to_dict['data']})
+				item = DomainScrapyItem.objects.get(unique_id=unique_id)
+				name = item.name
+				local_urls = item.local_urls[1:-1].replace('\'','').replace(' ','').split(',')
+				external_domains = item.external_domains[1:-1].replace('\'','').replace(' ','').split(',')
+				stats = {
+					'name': name,
+					'local_urls': len(local_urls),
+					'external_domains': len(external_domains),
+					'status': status,
+					'domain': crawler['domain'],
+				}
+				#!return JsonResponse({'data': item.to_dict['data']})
+				return render(request, 'home/status.html', stats)
 			except Exception as e:
 				return JsonResponse({'error': str(e)})
 		else:
-			return JsonResponse({'status': status})
+			return render(request, 'home/status.html', crawler)
 
 	return HttpResponseRedirect('/ERROR/')
+

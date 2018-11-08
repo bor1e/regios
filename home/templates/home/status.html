@@ -1,0 +1,34 @@
+{% extends "./layout.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th><abbr title="Domain">Domain</abbr></th>
+      <th><abbr title="name">name</abbr></th>
+      <th><abbr title="Status">Status</abbr></th>
+      <th><abbr title="Local_Urls">Local Urls Searched</abbr></th>
+      <th><abbr title="External_Domains">External Domains Found</abbr></th>
+      <th>Options</th>
+    </tr>
+  </thead>
+   <tbody>
+    <tr>
+      <th>1</th>
+      <td>{{domain}}</td>
+      <td>{{name}}</td>
+      <td>{{status}}</td>
+      <td>{{local_urls}}</td>
+      <td>{{external_domains}}</td>
+      <td>
+        <form method="GET" action="../api/crawl/">
+              {% csrf_token %}
+              <input type='hidden' name="task_id" value="{{ task_id }}" />
+              <input type='hidden' name="unique_id" value="{{ unique_id }}" />
+
+              <button class="button is-primary" type="submit">Refresh</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}
