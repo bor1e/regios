@@ -42,12 +42,12 @@ class CrawlerSpider(CrawlSpider):
         item = {}
         item['local_urls'] = response.url
         external_urls = LinkExtractor(allow=(), deny=self.allowed_domains, unique=True).extract_links(response)
-        item['external_domains'] = set()
+        item['external_urls'] = set()
 
         for link in external_urls:
             #! THINK TODO check, maybe you need the exact urls not only domains
-            domain = urlparse(link.url).netloc
-            item['external_domains'].add(domain)
+           # domain = urlparse(link.url).netloc
+            item['external_urls'].add(link.url)
       
         #i['domain_id'] = response.xpath('//input[@id="sid"]/@value').extract()
         #i['name'] = response.xpath('//div[@id="name"]').extract()
@@ -59,4 +59,5 @@ class CrawlerSpider(CrawlSpider):
         #! THINK TODO XPATH
         self.logger.info(response.xpath("//*[contains(text(), 'e. V.')]"))
         item['name'] = 'Medical Valley EMN e. V.'
+        item['source_url'] = response.url
         return item
