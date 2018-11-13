@@ -1,34 +1,129 @@
 {% extends "./layout.html" %}
 {% block content %}
+<section class="section">
+<div class="container">
 <table class="table">
   <thead>
     <tr>
-      <th>#</th>
       <th><abbr title="Domain">Domain</abbr></th>
-      <th><abbr title="name">name</abbr></th>
+      <th><abbr title="Name">Name (from Impressum)</abbr></th>
       <th><abbr title="Status">Status</abbr></th>
-      <th><abbr title="Local_Urls">Local Urls Searched</abbr></th>
-      <th><abbr title="External_Domains">External Domains Found</abbr></th>
-      <th>Options</th>
+      <th><abbr title="Generation">Generation</abbr></th>
+      <th><abbr title="Locals">Local Urls Crawled</abbr></th>
+      <th><abbr title="Externals">External Urls Found</abbr></th>
+      <th><abbr title="last_Updated">Last Updated At</abbr></th>
+      <!-- TODO time it took to search-->
+      <th><abbr title="Options">Options</abbr></th>
     </tr>
   </thead>
-   <tbody>
+  <tbody>
     <tr>
-      <th>1</th>
-      <td>{{domain}}</td>
-      <td>{{name}}</td>
-      <td>{{status}}</td>
-      <td>{{local_urls}}</td>
-      <td>{{external_domains}}</td>
+      <td id="domain">{{domain.domain}}</td>
+      <td >{{domain.info.name}}</td>
+      <td id="status">{{domain.status}}</td>
+      <td id="generation">{{domain.generation}}</td>
+      <td>{{ domain.locals.count }}</td>
+      <td>{{domain.externals.count}}</td>
+      <td>{{domain.updated_at}}</td>
       <td>
-        <form method="GET" action="../api/crawl/">
-              {% csrf_token %}
-              <input type='hidden' name="task_id" value="{{ task_id }}" />
-              <input type='hidden' name="unique_id" value="{{ unique_id }}" />
-
-              <button class="button is-primary" type="submit">Refresh</button>
+        {% csrf_token %}
+        <button id="refresh" class="button is-primary" type="submit">Refresh</button>
       </td>
     </tr>
   </tbody>
 </table>
+
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title">
+      Domains to crawl:
+<span id="to_crawl">{{ to_crawl }}</span>
+      </h1>
+<h2 class="subtitle">  Start Crawling now: <a href="{%url 'crawling' domain=domain.domain %}" class="button is-success" id="start_crawling" type="submit">Start</a>
+</h2>
+    </div>
+  </div>
+</section>
+<table class="table is-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th><abbr title="External Domain">Domain</abbr></th>
+      <th><abbr title="Options">Options</abbr></th>
+      <th><abbr title="Information">Information</abbr></th>
+    </tr>
+  </thead>
+   <tbody>
+    {% for external in externals %}
+      <tr>
+        <th>{{ forloop.counter }}</th>
+        <td id="ex_dmn_{{ forloop.counter }}">{{ external.external_domain }}</td>
+        <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">Add to Filter</a></td>
+        <td id="ex_info_{{ forloop.counter }}"><a href="{{ external.url }}">{{ external.url }}</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+</section>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+  console.log(data);
+$(function(){
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie('csrftoken');
+  function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+       }
+    });
+    var domain = $("#domain").text()
+  
+    $("#refresh").click(function(){
+      //alert($("#domain").val())
+        $.post("/api/crawl/", {domain: domain, function: 'update'},function(data) {
+          //var interval = 500;  // 1000 = 1 second, 3000 = 3 seconds
+          (function doUpdate() {
+            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
+                if (new_data.status)
+                  $("#status").html('<div class="control is-loading"> <input class="input" type="text" value="'+ new_data.status + '" readonly></div>');
+                else 
+                  $("#status").html(new_data.data.status);
+            })
+            .done(function(){
+              var status = $("#status").text()
+              if (status!='finished') {
+                console.log('not finished... ');
+                setTimeout(doUpdate, 1500);
+              }
+            });
+          })();
+        });
+        return false;
+    });
+  });
+</script>
 {% endblock %}

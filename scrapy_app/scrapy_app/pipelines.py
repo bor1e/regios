@@ -1,5 +1,7 @@
 from home.models import Domains, Info, Externals, Locals
 import json
+from urllib.parse import urlparse
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -39,18 +41,20 @@ r = 	requests.get("http://example.com/foo/bar")
 		# And here we are saving our crawled data with django models.
 		#logger.error(self.domain)
 		domain = Domains.objects.get(unique_id=self.unique_id)
-		objs_e = (Externals(domain=domain, url=i) for i in self.external_urls)
+		#objs_e = (Externals(domain=domain, url=i, external_domain=urlparse(i).netloc) for i in self.external_urls)
+		objs_e = (Externals(domain=domain, url=i) for i in self.external_urls)		
 		Externals.objects.bulk_create(objs_e)
 		objs_l = (Locals(domain=domain, url= i) for i in self.local_urls)
 		Locals.objects.bulk_create(objs_l)
 		if self.counter>1:
 			logger.error('MULTIPLE names in IMPRESSUM of %s found ' % str(domain))
-		info = Info.objects.create(
-			name=self.name.pop(), 
-			source_url=self.source_url.pop(),
-			other=self.counter,
-			domain=domain,
-		)
+		elif self.counter>0:
+			info = Info.objects.create(
+				name=self.name.pop(), 
+				source_url=self.source_url.pop(),
+				other=self.counter,
+				domain=domain,
+			)
 
 	def process_item(self, item, spider):
 		if 'local_urls' in item:

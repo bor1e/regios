@@ -9,7 +9,7 @@
       <h2 class="subtitle">
         Webseite untersuchen
       </h2>
-      <form  method="POST" action="api/crawl/">
+      <form  method="POST" action="{% url 'api' %}">
 		{% csrf_token %}
 		<div class="field is-grouped is-grouped-centered">
   		  <div class="control">
@@ -20,6 +20,7 @@
   		  <div class="control">
         <!-- name value is the key in the QueryDict which is passed to django: 'request.POST.get('url')-->
 		    <input class="input" name="url" type="url" value="https://medical-valley-emn.de" required>
+		     <input type="hidden" name="function" value="crawl">
 		    <p class="help">eine URL eingeben</p>
 		  </div>
 		  <div class="control">

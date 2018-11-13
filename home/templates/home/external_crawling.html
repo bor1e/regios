@@ -1,0 +1,110 @@
+{% extends "./layout.html" %}
+{% block content %}
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title">
+      Domains to crawl:
+<span id="to_crawl">{{ to_crawl }}</span>
+      </h1>
+<h2 class="subtitle"> Crawling now...
+</h2>
+    </div>
+  </div>
+</section>
+<table class="table is-striped">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th><abbr title="External Domain">Domain</abbr></th>
+      <th><abbr title="Status">Status</abbr></th>
+    </tr>
+  </thead>
+   <tbody>
+    {% for external in externals %}
+      <tr>
+        <th>{{ forloop.counter }}</th>
+        <td id="ex_dmn_{{ forloop.counter }}">{{ external.external_domain }}</td>
+        <td id="ex_info_{{ forloop.counter }}"><a href="{{ external.url }}">{{ external.url }}</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+</section>
+
+{% endblock %}
+{% csrf_token %}
+{% block javascript %}
+<script>
+$(function(){
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie('csrftoken');
+  function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+       }
+    });
+    var domain = $("#domain").text()
+    var generation = $("#generation").text()
+    var counter = $("#to_crawl").text()
+    $("#update").click(function(){
+      //alert($("#domain").val())
+        $.post("/api/crawl/", {domain: domain, function: 'update'},function(data) {
+          console.log(data); // check out how data is structured
+          });
+        return false;
+    });
+    function startCrawling(id) {
+      //$("#table-name td").each(function () {
+        var ex_dmn = $("#ex_dmn_"+id).text();
+        var ex_url = $("#ex_url_"+id).text();
+        $.post("/api/crawl/", {domain: ex_dmn, url: ex_url, generation: generation, function: 'ajax'}, function(data){
+          if (data['exists']) {
+            console.log(data); // check out how data is structured
+            $("#ex_dmn_"+id).closest("tr").remove();
+          }
+          if (data['status']) {
+            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(mydata){
+              alert(mydata.status);
+              //$("#ex_url_"+id).html(res['status'])
+            });
+            $("#ex_url_"+id).html(data['status'])
+          }
+          })
+
+        .fail(function(xhr){
+          console.log(xhr); // check out how data is structured
+        });
+        return false; 
+      }
+    $("#start_crawling").click(function(){
+         for (var i = 1; i <= counter; i++){
+          if (i>23) break;
+          startCrawling(i);
+        }
+    });
+
+  });
+  //});
+</script>
+{% endblock %}
