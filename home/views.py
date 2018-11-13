@@ -8,7 +8,8 @@ from home.models import Domains, BlackList
 import json
 import urllib
 from django.views.decorators.csrf import csrf_exempt
-
+import time
+import random
 from scrapyd_api import ScrapydAPI
 # connect scrapyd service
 scrapyd = ScrapydAPI('http://localhost:6800')
@@ -129,6 +130,12 @@ def crawl(request):
 	
 
 	elif request.method == 'GET':
+		# counter for testing ... 
+		if request.GET.get('counter'):
+			time.sleep(random.randint(0,5))
+			counter = int(request.GET.get('counter'))
+			counter += 1
+			return JsonResponse({'counter': counter})
 		# We were passed these from past request above. Remember ?
 		# They were trying to survive in client side.
 		# Now they are here again, thankfully. <3

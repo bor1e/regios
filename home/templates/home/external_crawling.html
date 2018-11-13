@@ -45,8 +45,28 @@
      url = $(this).find("input").val();
      var self = this
      $.post("/api/crawl/", {domain: domain, url: url, level: level, function: 'debug'}, function(data) {
-        console.log(data); // check out how data is structured
+        //console.log(data); // check out how data is structured
         $(self).find('#key_info').html(data.data);
+        var interval = 1500;
+        var counter = 0;
+          (function doUpdate() {
+//            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
+           $.get("/api/crawl/", {counter: counter}, function(new_data){
+                console.log(new_data);
+                counter = new_data.counter;
+            })
+            .done(function(){
+              $(self).find('#key_info').html(counter)
+              if (counter<5) {
+                console.log('not finished... ');
+                setTimeout(doUpdate, interval);
+              }
+              else {
+                console.log('Finished');
+
+              }
+            });
+          })();
       });
     });
     /*
