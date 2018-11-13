@@ -21,7 +21,7 @@
       <td id="domain">{{domain.domain}}</td>
       <td >{{domain.info.name}}</td>
       <td id="status">{{domain.status}}</td>
-      <td id="generation">{{domain.generation}}</td>
+      <td id="level">{{domain.level}}</td>
       <td>{{ domain.locals.count }}</td>
       <td>{{domain.externals.count}}</td>
       <td>{{domain.updated_at}}</td>
@@ -69,36 +69,8 @@
 </section>
 
 {% endblock %}
-
 {% block javascript %}
 <script>
-$(function(){
-  function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-  }
-  var csrftoken = getCookie('csrftoken');
-  function csrfSafeMethod(method) {
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-  }
-  $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", csrftoken);
-        }
-       }
-    });
     var domain = $("#domain").text()
   
     $("#refresh").click(function(){
@@ -125,6 +97,5 @@ $(function(){
         });
         return false;
     });
-  });
 </script>
 {% endblock %}

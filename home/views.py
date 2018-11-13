@@ -7,7 +7,7 @@ from uuid import uuid4
 from home.models import Domains, BlackList
 import json
 import urllib
-#from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt
 
 from scrapyd_api import ScrapydAPI
 # connect scrapyd service
@@ -63,10 +63,13 @@ def external_crawling(request, domain):
 	latest_domain = Domains.objects.filter(domain=domain).latest()
 	externals = [external for external in latest_domain.externals.all() if external.external_domain not in BlackList.objects.all().values_list('ignore', flat=True)]
 	domains_to_crawl = dict(zip([x.external_domain for x in externals],[x.url for x in externals]))
+	logger.warning("Domains to crawl: %d", len(domains_to_crawl))
+
 	return render(request, 'home/external_crawling.html', {
-		'externals': domains_to_crawl, 'to_crawl':len(domains_to_crawl)
+		'externals': domains_to_crawl, 'to_crawl':len(domains_to_crawl), 'level': (latest_domain.level+1)
 		})
 
+@csrf_exempt
 def crawl(request):
 	if request.method == 'POST':
 		domain = ''
@@ -104,6 +107,9 @@ def crawl(request):
 			url = request.POST.get('url')
 			level = request.POST.get('level')
 		
+		elif function == 'debug':
+			return JsonResponse({'data': 'ok'})
+
 		unique_id = str(uuid4()) # create a unique ID. 
 		logger.debug('domain created with domain: %s ; url: %s', domain, url)
 		obj = Domains.objects.create(domain=domain, unique_id=unique_id, url=url, level=level)

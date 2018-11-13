@@ -7,7 +7,7 @@
       Domains to crawl:
 <span id="to_crawl">{{ to_crawl }}</span>
       </h1>
-<h2 class="subtitle"> Crawling now...
+<h2 class="subtitle">Crawling Level #<span id="level">{{ level }}</span> now...
 </h2>
     </div>
   </div>
@@ -21,11 +21,13 @@
     </tr>
   </thead>
    <tbody>
-    {% for external in externals %}
+    {% for key, value in externals.items %}
       <tr>
         <th>{{ forloop.counter }}</th>
-        <td id="ex_dmn_{{ forloop.counter }}">{{ external.external_domain }}</td>
-        <td id="ex_info_{{ forloop.counter }}"><a href="{{ external.url }}">{{ external.url }}</a></td>
+        <td id="key_domain">{{ key }}</td>
+        <td id="key_info">-
+          <input type="hidden" id="url_{{ forloop.counter }}" value="{{value}}">
+        </td>
       </tr>
     {% endfor %}
   </tbody>
@@ -34,42 +36,23 @@
 </section>
 
 {% endblock %}
-{% csrf_token %}
 {% block javascript %}
 <script>
-$(function(){
-  function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-  }
-  var csrftoken = getCookie('csrftoken');
-  function csrfSafeMethod(method) {
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-  }
-  $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", csrftoken);
-        }
-       }
-    });
-    var domain = $("#domain").text()
-    var generation = $("#generation").text()
     var counter = $("#to_crawl").text()
+    var level = $("#level").text()
+    $("tbody tr").each(function () {
+     domain = $(this).find("#key_domain").text();
+     url = $(this).find("input").val();
+     var self = this
+     $.post("/api/crawl/", {domain: domain, url: url, level: level, function: 'debug'}, function(data) {
+        console.log(data); // check out how data is structured
+        $(self).find('#key_info').html(data.data);
+      });
+    });
+    /*
     $("#update").click(function(){
       //alert($("#domain").val())
-        $.post("/api/crawl/", {domain: domain, function: 'update'},function(data) {
+        $.post("/api/crawl/", {domain: domain, function: 'debug'},function(data) {
           console.log(data); // check out how data is structured
           });
         return false;
@@ -78,7 +61,7 @@ $(function(){
       //$("#table-name td").each(function () {
         var ex_dmn = $("#ex_dmn_"+id).text();
         var ex_url = $("#ex_url_"+id).text();
-        $.post("/api/crawl/", {domain: ex_dmn, url: ex_url, generation: generation, function: 'ajax'}, function(data){
+        $.post("/api/crawl/", {domain: ex_dmn, url: ex_url, level: level, function: 'ajax'}, function(data){
           if (data['exists']) {
             console.log(data); // check out how data is structured
             $("#ex_dmn_"+id).closest("tr").remove();
@@ -103,8 +86,6 @@ $(function(){
           startCrawling(i);
         }
     });
-
-  });
-  //});
+    */
 </script>
 {% endblock %}
