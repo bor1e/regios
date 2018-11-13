@@ -72,7 +72,6 @@
 
 {% block javascript %}
 <script>
-  console.log(data);
 $(function(){
   function getCookie(name) {
     var cookieValue = null;
@@ -104,8 +103,8 @@ $(function(){
   
     $("#refresh").click(function(){
       //alert($("#domain").val())
-        $.post("/api/crawl/", {domain: domain, function: 'update'},function(data) {
-          //var interval = 500;  // 1000 = 1 second, 3000 = 3 seconds
+        $.post("/api/crawl/", {domain: domain, function: 'refresh'},function(data) {
+          var interval = 1500;
           (function doUpdate() {
             $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
                 if (new_data.status)
@@ -117,8 +116,10 @@ $(function(){
               var status = $("#status").text()
               if (status!='finished') {
                 console.log('not finished... ');
-                setTimeout(doUpdate, 1500);
+                setTimeout(doUpdate, interval);
               }
+              else 
+                location.reload(true);
             });
           })();
         });

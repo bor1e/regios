@@ -9,22 +9,19 @@
       <h2 class="subtitle">
         Webseite untersuchen
       </h2>
-      <form  method="POST" action="{% url 'api' %}">
-		{% csrf_token %}
 		<div class="field is-grouped is-grouped-centered">
   		  <div class="control">
 			<div class="field-label is-normal">
 		  	  <label class="label">URL</label>
 		  	</div>
 		  </div>
-  		  <div class="control">
+  		  <div class="control is-half">
         <!-- name value is the key in the QueryDict which is passed to django: 'request.POST.get('url')-->
 		    <input class="input" name="url" type="url" value="https://medical-valley-emn.de" required>
-		     <input type="hidden" name="function" value="crawl">
 		    <p class="help">eine URL eingeben</p>
 		  </div>
-		  <div class="control">
-		      <button class="button is-primary" type="submit">Abschicken</button>
+		  <div id="continue" class="control">
+		      <button id="start" class="button is-primary" type="submit">Abschicken</button>
 		  </div>
 		</div>
 	</form>
@@ -32,3 +29,72 @@
     </div>
   </section>
   {% endblock %}
+
+{% csrf_token %}
+{% block javascript %}
+<script>
+	$(function(){
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie('csrftoken');
+  function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+       }
+    });
+    var url = $(".input").val()
+  
+    $("#start").click(function(){
+      //alert($("#domain").val())
+        $.post("/api/crawl/", {url: url, function: 'start'},function(data) {
+	        if (!data.status) {
+	        	$("#continue").html("<a class='button is-primary' href='/domain="+data.domain+"'>Display Results from DB</a>");
+	        }
+	        else {
+	          var interval = 1500;
+	          (function getStatus() {
+	            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
+		                if (new_data.status) {
+		                  $("#start").addClass("is-loading");
+		                }
+		                else {
+		                	//finished porcess
+		                	console.log(new_data.data);
+		                  $("#start").remove();//Class("is-loading").html("<a href='/domain="+new_data.data.domain+"'>Display Results</a>");
+		                  $("#continue").html("<a class='button is-primary' href='/domain="+new_data.data.domain+"'>Display Results</a>");
+
+		              	}
+	            })
+	            .done(function(){
+	            //console.log($("button:contains(Display)"))
+	              if ($('#continue').text()!='Display Results') {
+	                console.log('not finished... ');
+	                setTimeout(getStatus, interval);
+	              }
+	            });
+	          })();
+         	}
+        });
+        return false;
+    });
+  });
+	</script>
+{% endblock %}

@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from uuid import uuid4
-from home.models import Domains, Ignore
+from home.models import Domains, BlackList
 import json
 import urllib
 #from django.views.decorators.csrf import csrf_exempt
@@ -37,10 +37,13 @@ def domain(request, domain):
 	logger.debug("loading domain: %s from DB" % domain)
 	# display Information from DB
 	# TODO THINK ask for update? if update rewrite completely?
+	if not Domains.objects.filter(domain=domain).exists():
+		return redirect('index')
 	latest_domain = Domains.objects.filter(domain=domain).latest()
-	#filtered = [external for external in latest_domain.externals.all() if external.external_domain in Ignore.objects.all().values_list('ignore', flat=True)]
+
+	#filtered = [external for external in latest_domain.externals.all() if external.external_domain in BlackList.objects.all().values_list('ignore', flat=True)]
 	#logger.debug("Filtered elements has %s elements" % len(filtered))
-	externals = [external for external in latest_domain.externals.all() if external.external_domain not in Ignore.objects.all().values_list('ignore', flat=True)]
+	externals = [external for external in latest_domain.externals.all() if external.external_domain not in BlackList.objects.all().values_list('ignore', flat=True)]
 	logger.debug("Externals list has %s elements" % len(externals))
 	to_crawl = set([x.external_domain for x in externals])
 	logger.debug("Externals list has %s elements" % len(externals))
@@ -48,53 +51,29 @@ def domain(request, domain):
 
 # TODO think, maybe solving it internally
 def filter(request, src_domain, external_domain):
-	if not Ignore.objects.filter(ignore=external_domain).exists():
+	if not BlackList.objects.filter(ignore=external_domain).exists():
 		logger.debug("%s added to ignore list." % external_domain)
-		Ignore.objects.create(src=src_domain, ignore=external_domain)
+		BlackList.objects.create(src=src_domain, ignore=external_domain)
 
-	logger.debug("Ignore list has %s elements" % Ignore.objects.count())
+	logger.debug("BlackList has %s elements" % BlackList.objects.count())
 
 	return redirect('domain', domain=src_domain)
 
 def external_crawling(request, domain):
 	latest_domain = Domains.objects.filter(domain=domain).latest()
-	externals = [external for external in latest_domain.externals.all() if external.external_domain not in Ignore.objects.all().values_list('ignore', flat=True)]
+	externals = [external for external in latest_domain.externals.all() if external.external_domain not in BlackList.objects.all().values_list('ignore', flat=True)]
 	domains_to_crawl = dict(zip([x.external_domain for x in externals],[x.url for x in externals]))
 	return render(request, 'home/external_crawling.html', {
 		'externals': domains_to_crawl, 'to_crawl':len(domains_to_crawl)
 		})
 
-	'''
-	started_domains = set()
-	crawling = dict()
-	counter = 0
-	for external in externals:
-		#debug
-		counter += 1
-		if counter >2:
-			break
-		# debug end
-		if external.external_domain in started_domains:
-			continue
-		started_domains.add(external.external_domain)
-		crawling['domain'] = external.external_domain
-		crawling['url'] = external.url
-		crawling['generation'] = latest_domain.generation + 1
-		json_response = crawl(request, crawling)
-		if json_response is None:
-			continue
-	'''
-
-
-
-
 def crawl(request):
 	if request.method == 'POST':
 		domain = ''
 		url = ''
-		generation = 0
+		level = 0
 		function = request.POST.get('function')
-		if function == 'crawl':
+		if function == 'start':
 			logger.debug('checking domain ...')
 			url = request.POST.get('url')
 			logger.info("received URL: %s", url)
@@ -110,9 +89,9 @@ def crawl(request):
 			if Domains.objects.filter(domain=domain).exists():
 				logger.debug("Domain %s exists .... redirecting " % domain)
 				# equivalent to: return HttpResponseRedirect(reverse('post_details', args=(post_id, )))
-				return redirect('domain', domain=domain)
+				return JsonResponse({'domain': domain})
 		
-		elif function == 'update':
+		elif function == 'refresh':
 			logger.debug('refreshing information ...')
 			domain = request.POST.get('domain')
 			url = Domains.objects.filter(domain=domain).latest().url
@@ -123,11 +102,11 @@ def crawl(request):
 			if Domains.objects.filter(domain=domain).exists():
 				return JsonResponse({'exists': domain})
 			url = request.POST.get('url')
-			generation = request.POST.get('generation')
+			level = request.POST.get('level')
 		
 		unique_id = str(uuid4()) # create a unique ID. 
 		logger.debug('domain created with domain: %s ; url: %s', domain, url)
-		obj = Domains.objects.create(domain=domain, unique_id=unique_id, url=url, generation=generation)
+		obj = Domains.objects.create(domain=domain, unique_id=unique_id, url=url, level=level)
 		
 		# about the website, or if he wants to use it again
 
@@ -191,39 +170,3 @@ def crawl(request):
 	#! TODO error handling 
 	return HttpResponseRedirect('/ERROR/')
 
-def _check_domain(request):
-	url = request.POST.get('url')
-	logger.info("received URL: %s", url)
-
-	if not is_valid_url(url):
-		#! TODO error handling 
-		logger.warning("URL: %s not validated", url)
-		return HttpResponseRedirect('/')
-
-	domain = urlparse(url).netloc # parse the url and extract the domain
-	#logger.info("received domain: %s", domain)
-			
-	if Domains.objects.filter(domain=domain).exists() and request.POST.get('function') == 'crawl':
-		logger.debug("Domain %s exists .... redirecting " % domain)
-		# equivalent to: return HttpResponseRedirect(reverse('post_details', args=(post_id, )))
-		return redirect('domain', domain=domain)
-	#! TODO ask the user if he wants to refresh the data
-	# about the website, or if he wants to use it again
-	unique_id = str(uuid4()) # create a unique ID. 
-	Domains.objects.create(domain=domain, unique_id=unique_id, url=url)
-	return _start_scrapyd(domain)
-
-def _start_scrapyd(domain):
-	# This is the custom settings for scrapy spider.
-	domain = Domains.objects.filter(domain=domain).latest()
-	settings = {
-		'unique_id': domain.unique_id,
-		'USER_AGENT': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-	}
-	# Here we schedule a new crawling task from scrapyd. 
-	# task needed for chekcing the status of scrapyd job
-	task = scrapyd.schedule('default', 'crawler', 
-		settings=settings, url=domain.url, domain=domain.domain)
-	logger.debug('HERE task params: %s', task)
-	return JsonResponse( {'domain': domain.domain, 'task_id': task, 'unique_id': domain.unique_id, 'status': 'started' })
-	#request.session['crawler_details'] = {'domain': domain, 'task_id': task, 'unique_id': unique_id, 'status': 'started' }

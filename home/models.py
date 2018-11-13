@@ -26,7 +26,7 @@ class Domains(models.Model):
 	#)
 	#status = models.IntegerField(choices=STATUS_CHOICES, default=STARTED)
 	status = models.CharField(default='started', max_length=10)
-	generation = models.SmallIntegerField(default=0) # parent, child, grandchild ...
+	level = models.SmallIntegerField(default=0) # parent, child, grandchild ...
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -36,12 +36,8 @@ class Domains(models.Model):
 		logger.info("DomainScrapyItem being dumped")
 		data = {
 			'domain': json.loads(self.domain),
-			'local_urls': json.loads(self.local_urls),
-			'external_domains': json.loads(self.external_domains),
 			'name': json.loads(self.name),
-			'date': self.date
 		}
-		print('\n\n ERROR 2\n\n')
 		return data
 
 
@@ -106,7 +102,7 @@ class Locals(models.Model):
 	class Meta:
 		unique_together = (('url','domain'),)
 
-class Ignore(models.Model):
+class BlackList(models.Model):
 	ignore = models.TextField(max_length=200, unique=True)
 	src = models.TextField(max_length=200)
 
