@@ -9,6 +9,7 @@ import json
 import urllib
 from django.views.decorators.csrf import csrf_exempt
 import time
+from datetime import datetime, timedelta
 import random
 from scrapyd_api import ScrapydAPI
 # connect scrapyd service
@@ -65,9 +66,10 @@ def external_crawling(request, domain):
 	externals = [external for external in latest_domain.externals.all() if external.external_domain not in BlackList.objects.all().values_list('ignore', flat=True)]
 	domains_to_crawl = dict(zip([x.external_domain for x in externals],[x.url for x in externals]))
 	logger.warning("Domains to crawl: %d", len(domains_to_crawl))
-
+	# TODO
+	test_domains = {k: domains_to_crawl[k] for k in list(domains_to_crawl)[:10]}
 	return render(request, 'home/external_crawling.html', {
-		'externals': domains_to_crawl, 'to_crawl':len(domains_to_crawl), 'level': (latest_domain.level+1)
+		'externals': test_domains, 'to_crawl':len(test_domains), 'level': (latest_domain.level+1)
 		})
 
 @csrf_exempt
@@ -109,12 +111,14 @@ def crawl(request):
 			level = request.POST.get('level')
 		
 		elif function == 'debug':
-			return JsonResponse({'data': 'ok'})
+			task = scrapyd.schedule('default', 'quotes')
+			logger.debug('Spider Quotes started')	
+			return JsonResponse({'status': 'started', 'task_id': task, 'unique_id': 'test'})
 
 		unique_id = str(uuid4()) # create a unique ID. 
-		logger.debug('domain created with domain: %s ; url: %s', domain, url)
 		obj = Domains.objects.create(domain=domain, unique_id=unique_id, url=url, level=level)
-		
+		logger.debug('domain created with domain: %s ; url: %s, level: %s', domain, url, level)
+
 		# about the website, or if he wants to use it again
 
 		settings = {
@@ -132,10 +136,21 @@ def crawl(request):
 	elif request.method == 'GET':
 		# counter for testing ... 
 		if request.GET.get('counter'):
-			time.sleep(random.randint(0,5))
+			time.sleep(random.randint(0,2))
 			counter = int(request.GET.get('counter'))
 			counter += 1
-			return JsonResponse({'counter': counter})
+			task_id = request.GET.get('task_id')
+			status = scrapyd.job_status('default', task_id)
+			duration = 'unknown'
+			if status == 'finished':
+				jobs = scrapyd.list_jobs('default')
+				for i in jobs['finished']:
+					if i['id'] == task_id:
+						start = datetime.strptime(i['start_time'], '%Y-%m-%d %H:%M:%S.%f')
+						end = datetime.strptime(i['end_time'], '%Y-%m-%d %H:%M:%S.%f')
+						duration = end-start
+						duration = str(timedelta(seconds=duration.seconds))
+			return JsonResponse({'counter': counter, 'duration':duration, 'status': status})
 		# We were passed these from past request above. Remember ?
 		# They were trying to survive in client side.
 		# Now they are here again, thankfully. <3
@@ -154,12 +169,18 @@ def crawl(request):
 		# Possible results are -> pending, running, finished
 		crawling = Domains.objects.get(unique_id=unique_id)
 		status = scrapyd.job_status('default', task_id)
-		logger.debug(scrapyd.list_jobs('default'))
 		crawling.status = status
 		crawling.save()
 		if status == 'finished':
 			try:
 				logger.debug('received status finished')
+				jobs = scrapyd.list_jobs('default')
+				for i in jobs['finished']:
+					if i['id'] == task_id:
+						start = datetime.strptime(i['start_time'], '%Y-%m-%d %H:%M:%S.%f')
+						end = datetime.strptime(i['end_time'], '%Y-%m-%d %H:%M:%S.%f')
+						duration = end-start
+						duration = str(timedelta(seconds=duration.seconds))
 				# this is the unique_id that we created even before crawling started.
 				#name = item.name
 				#local_urls = item.local_urls[1:-1].replace('\'','').replace(' ','').split(',')
@@ -170,6 +191,7 @@ def crawl(request):
 					'external_domains': crawling.externals.count(),
 					'status': crawling.status,
 					'domain': crawling.domain,
+					'duration': duration,
 				}
 				return JsonResponse({'data': stats})
 				#return render(request, 'home/status.html', stats)

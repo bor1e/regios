@@ -17,6 +17,7 @@
     <tr>
       <th>#</th>
       <th><abbr title="External Domain">Domain</abbr></th>
+      <th><abbr title="Duration">Duration</abbr></th>
       <th><abbr title="Status">Status</abbr></th>
     </tr>
   </thead>
@@ -25,6 +26,7 @@
       <tr>
         <th>{{ forloop.counter }}</th>
         <td id="key_domain">{{ key }}</td>
+        <td id="test">syso</td>
         <td id="key_info">-
           <input type="hidden" id="url_{{ forloop.counter }}" value="{{value}}">
         </td>
@@ -46,24 +48,36 @@
      var self = this
      $.post("/api/crawl/", {domain: domain, url: url, level: level, function: 'debug'}, function(data) {
         //console.log(data); // check out how data is structured
-        $(self).find('#key_info').html(data.data);
+        if (data.exists) {
+          $(self).find('#key_info').html('exists');
+          return;
+        }
+        $(self).find('#key_info').html(data.status);
         var interval = 1500;
-        var counter = 0;
+        var task_id = data.task_id;
+        var unique_id = data.unique_id;
+        var count = 0;
+        var status = 'started';
+        var duration = '';
           (function doUpdate() {
 //            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
-           $.get("/api/crawl/", {counter: counter}, function(new_data){
-                console.log(new_data);
-                counter = new_data.counter;
+           $.get("/api/crawl/", {counter: count, task_id: task_id, unique_id: unique_id}, function(new_data){
+                if (new_data.data) 
+                  new_data = new_data.data;
+                status=new_data.status;
+                duration = new_data.duration;
+                count = new_data.counter;
             })
             .done(function(){
-              $(self).find('#key_info').html(counter)
-              if (counter<5) {
-                console.log('not finished... ');
+              $(self).find('#test').html(duration);
+              $(self).find('#key_info').html(status);
+
+              if (status!='finished') {
+                //console.log('not finished... ');
                 setTimeout(doUpdate, interval);
               }
               else {
-                console.log('Finished');
-
+                $("#to_crawl").html(--counter);
               }
             });
           })();

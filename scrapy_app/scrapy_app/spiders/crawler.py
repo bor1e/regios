@@ -39,6 +39,7 @@ class CrawlerSpider(CrawlSpider):
 
     def parse_item(self, response):
         # Don't forget to return an object.
+        #  self.state['items_count']
         item = {}
         item['local_urls'] = response.url
         external_urls = LinkExtractor(allow=(), deny=self.allowed_domains, unique=True).extract_links(response)
