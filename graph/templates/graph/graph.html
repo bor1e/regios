@@ -1,0 +1,104 @@
+<html>
+<head>
+      {% load static %}
+
+<style type="text/css">
+  #container {
+    max-width: 800px;
+    height: 800px;
+    margin: auto;
+  }
+</style>
+</head>
+<body>
+<div id="container"></div>
+<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+<script src="{% static "/js/sigma.min.js" %}"></script>
+<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+
+<script>
+  
+var g = {
+        nodes: [],
+        edges: []
+    }; 
+
+function addNodes(nodes) {
+    var i, len=nodes.length;
+    console.log('adding nodes');
+    for (i = 0; i < len; i++) {
+         g.nodes.push({
+            id: nodes[i].id,
+            label: nodes[i].label,
+            x: Math.random(),
+            y: Math.random(),
+            size: nodes[i].size*1.5, 
+            color: '#666'
+          });
+            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+    }
+        console.log(g.nodes.length);
+
+}
+
+
+$.get('api/', {}, function(data){
+    console.log(data.data);
+    console.log('received nodes: ' + data.data.nodes.length);
+    addNodes(data.data.nodes);
+}).done( function(){
+    console.log('refreshed sigma');
+     refresh();
+});
+function refresh(){
+var s = new sigma({
+graph: g,
+container: 'container',
+renderer: {
+    container: document.getElementById('container'),
+    type: 'canvas'
+},
+settings: {
+    minNodeSize: 0.5,
+    maxNodeSize: 30,
+    borderSize : 1,
+    sideMargin: 1,
+    minEdgeSize: 0.5,
+    maxEdgeSize: 3,
+    defaultNodeColor: '#ec5148'
+
+}  });     s.startForceAtlas2();
+}
+//    
+
+
+/*
+  sigma.parsers.json('{% static "/js/data.json" %}', s,
+    function() {
+        var i,
+                nodes = s.graph.nodes(),
+                len = nodes.length;
+
+        for (i = 0; i < len; i++) {
+            nodes[i].x = Math.random();
+            nodes[i].y = Math.random();
+            nodes[i].size = s.graph.degree(nodes[i].id);
+            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+        }
+        var edges = s.graph.edges(),
+                len = edges.length;  
+        for (i = 0; i < len; i++) {
+          edges[i].size = Math.random()*2.5;
+        }
+        s.refresh();
+
+        s.startForceAtlas2();
+    } );
+*/
+
+
+
+</script>
+</body>
+</html>
