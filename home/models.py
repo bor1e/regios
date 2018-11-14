@@ -27,6 +27,7 @@ class Domains(models.Model):
 	#status = models.IntegerField(choices=STATUS_CHOICES, default=STARTED)
 	status = models.CharField(default='started', max_length=10)
 	level = models.SmallIntegerField(default=0) # parent, child, grandchild ...
+	duration = models.DurationField(null=True);
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

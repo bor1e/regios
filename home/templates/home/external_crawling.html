@@ -4,8 +4,18 @@
   <div class="hero-body">
     <div class="container">
       <h1 class="title">
-      Domains to crawl:
-<span id="to_crawl">{{ to_crawl }}</span>
+        <p class="content">
+          Domains to crawl:
+          <span id="to_crawl">{{ to_crawl }}</span> 
+        </p>
+        <p class="content">
+          Local Urls crawled: 
+          <span id="total_locals">0</span>
+        </p>
+        <p class="content">
+          External Domains Found: 
+          <span id="total_externals">0</span>
+        </p>
       </h1>
 <h2 class="subtitle">Crawling Level #<span id="level">{{ level }}</span> now...
 </h2>
@@ -16,9 +26,14 @@
   <thead>
     <tr>
       <th>#</th>
-      <th><abbr title="External Domain">Domain</abbr></th>
-      <th><abbr title="Duration">Duration</abbr></th>
+      <th><abbr title="External Domain">External Domains</abbr></th>
+      <th><abbr title="Duration">Duration</abbr></th>      
       <th><abbr title="Status">Status</abbr></th>
+      <th><abbr title="Name">Name</abbr></th>
+      <th><abbr title="Locals">Sites Scraped</abbr></th>
+      <th><abbr title="Externals">Externals Found</abbr></th>
+      <th><abbr title="Logs">Logfile</abbr></th>
+      <th><abbr title="Details">Details</abbr></th>
     </tr>
   </thead>
    <tbody>
@@ -26,10 +41,15 @@
       <tr>
         <th>{{ forloop.counter }}</th>
         <td id="key_domain">{{ key }}</td>
-        <td id="test">syso</td>
-        <td id="key_info">-
-          <input type="hidden" id="url_{{ forloop.counter }}" value="{{value}}">
+        <td id="duration">-</td>
+        <td id="status">-
+          <input type="hidden" value="{{value}}">
         </td>
+        <td id="name">-</td>
+        <td id="locals">-</td>
+        <td id="externals">-</td>          
+        <td id="logs">-</td>
+        <td id="details">-</td>
       </tr>
     {% endfor %}
   </tbody>
@@ -42,42 +62,62 @@
 <script>
     var counter = $("#to_crawl").text()
     var level = $("#level").text()
+    var total_locals = 0;
+    var total_externals = 0;
     $("tbody tr").each(function () {
      domain = $(this).find("#key_domain").text();
      url = $(this).find("input").val();
-     var self = this
-     $.post("/api/crawl/", {domain: domain, url: url, level: level, function: 'debug'}, function(data) {
-        //console.log(data); // check out how data is structured
+      var self = this
+
+     function fillRow(stats) {
+      $(self).find('#duration').html(stats.duration);
+      $(self).find('#name').html(stats.name);
+      $(self).find('#locals').html(stats.locals);
+      $(self).find('#externals').html(stats.externals);
+      $(self).find('#logs').html('<a href="'+stats.logs+'" target="_blank">Logs</a>');
+      $(self).find('#details').html('<a href="'+stats.details+'" target="_blank">Details/Filter</a>');
+      total_locals += stats.locals;
+      total_externals += stats.externals;
+      $("#to_crawl").html(--counter);
+      $("#total_locals").html(total_locals);
+      $("#total_externals").html(total_externals);
+    }
+         $.post("/api/crawl/", {domain: domain, url: url, level: level, function: 'ajax'}, function(data) {
         if (data.exists) {
-          $(self).find('#key_info').html('exists');
+          var stats = data.data;
+          //console.log(stats);
+          $(self).find('#status').html('exists');
+          fillRow(stats);
           return;
         }
-        $(self).find('#key_info').html(data.status);
+        $(self).find('#status').html(data.status);
         var interval = 1500;
         var task_id = data.task_id;
         var unique_id = data.unique_id;
         var count = 0;
         var status = 'started';
         var duration = '';
+        var found_external = 0;
+        var local_scraped = 0;
+        var local_stats = '';
           (function doUpdate() {
-//            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
-           $.get("/api/crawl/", {counter: count, task_id: task_id, unique_id: unique_id}, function(new_data){
-                if (new_data.data) 
-                  new_data = new_data.data;
-                status=new_data.status;
-                duration = new_data.duration;
-                count = new_data.counter;
+            $.get("/api/crawl/", {task_id:task_id, unique_id: unique_id}, function(stats){
+         //  $.get("/api/crawl/", {counter: count, task_id: task_id, unique_id: unique_id}, function(new_data){
+                if (stats.data) {
+                  //console.log(new_data);
+                  local_stats = stats.data;
+                  //console.log(new_data);
+                }
+                status=local_stats.status;
             })
             .done(function(){
-              $(self).find('#test').html(duration);
-              $(self).find('#key_info').html(status);
-
               if (status!='finished') {
-                //console.log('not finished... ');
-                setTimeout(doUpdate, interval);
+                  $(self).find('#status').html('<div class="control is-loading"> <input class="input" type="text" value="'+ status + '" readonly></div>');
+                 setTimeout(doUpdate, interval);
               }
               else {
-                $("#to_crawl").html(--counter);
+                $(self).find('#status').html(status);
+               fillRow(local_stats);
               }
             });
           })();

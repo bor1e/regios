@@ -7,6 +7,7 @@ from uuid import uuid4
 from home.models import Domains, BlackList
 import json
 import urllib
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import time
 from datetime import datetime, timedelta
@@ -67,7 +68,9 @@ def external_crawling(request, domain):
 	domains_to_crawl = dict(zip([x.external_domain for x in externals],[x.url for x in externals]))
 	logger.warning("Domains to crawl: %d", len(domains_to_crawl))
 	# TODO
-	test_domains = {k: domains_to_crawl[k] for k in list(domains_to_crawl)[:10]}
+	tries = 50
+	run = min(len(domains_to_crawl), tries)
+	test_domains = {k: domains_to_crawl[k] for k in list(domains_to_crawl)[:run]}
 	return render(request, 'home/external_crawling.html', {
 		'externals': test_domains, 'to_crawl':len(test_domains), 'level': (latest_domain.level+1)
 		})
@@ -106,7 +109,23 @@ def crawl(request):
 		elif function == 'ajax':
 			domain = request.POST.get('domain')
 			if Domains.objects.filter(domain=domain).exists():
-				return JsonResponse({'exists': domain})
+				crawling = Domains.objects.filter(domain=domain).latest()
+				info_name = '---'
+				if hasattr(crawling, 'info'):
+					info_name = crawling.info.name
+				duration = crawling.duration.total_seconds()
+				stats = {
+					'name': info_name,
+					'locals': crawling.locals.count(),
+					'externals': crawling.externals.count(),
+					'status': crawling.status,
+					'domain': crawling.domain,
+					'duration': '{0}:{1:5.3f}'.format(int(duration/60), float(duration%60)),
+					'logs': '-',
+					'details': reverse('domain', kwargs={'domain':crawling.domain}),
+				}
+				return JsonResponse({'data': stats, 'exists': True})
+				#return JsonResponse({'exists': domain})
 			url = request.POST.get('url')
 			level = request.POST.get('level')
 		
@@ -158,7 +177,7 @@ def crawl(request):
 		# And if crawling is completed, we respond back with a crawled data.
 		task_id = request.GET.get('task_id', None)
 		unique_id = request.GET.get('unique_id', None)
-		logger.debug('received status check for task %s', )
+		logger.debug('received status check for task %s', task_id)
 
 		if not task_id or not unique_id:
 			return JsonResponse({'error': 'Missing args'})
@@ -177,21 +196,31 @@ def crawl(request):
 				jobs = scrapyd.list_jobs('default')
 				for i in jobs['finished']:
 					if i['id'] == task_id:
+						logger.debug('found job %s', i['id'])
 						start = datetime.strptime(i['start_time'], '%Y-%m-%d %H:%M:%S.%f')
 						end = datetime.strptime(i['end_time'], '%Y-%m-%d %H:%M:%S.%f')
 						duration = end-start
+						crawling.duration = duration
+						crawling.save()
 						duration = str(timedelta(seconds=duration.seconds))
 				# this is the unique_id that we created even before crawling started.
 				#name = item.name
 				#local_urls = item.local_urls[1:-1].replace('\'','').replace(' ','').split(',')
 				#external_domains = item.external_domains[1:-1].replace('\'','').replace(' ','').split(',')
+				log_placeholder = 'http://localhost:6800/logs/default/crawler/{}.log'
+				info_name = '---'
+				if hasattr(crawling, 'info'):
+					info_name = crawling.info.name
+				duration = crawling.duration.total_seconds()
 				stats = {
-					'name': crawling.info.name,
-					'local_urls': crawling.locals.count(),
-					'external_domains': crawling.externals.count(),
+					'name': info_name,
+					'locals': crawling.locals.count(),
+					'externals': crawling.externals.count(),
 					'status': crawling.status,
 					'domain': crawling.domain,
-					'duration': duration,
+					'duration': '{0}:{1:5.3f}'.format(int(duration/60), float(duration%60)),
+					'logs': log_placeholder.format(task_id),
+					'details': reverse('domain',  kwargs={'domain':crawling.domain}),
 				}
 				return JsonResponse({'data': stats})
 				#return render(request, 'home/status.html', stats)
