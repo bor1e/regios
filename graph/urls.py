@@ -5,4 +5,5 @@ urlpatterns = [
 	# 127.0.0.1:8000/
     path('', views.index, name='graph'),
     path('api/', views.api, name='api'),
+    path('test/', views.test, name='test'),
 ]

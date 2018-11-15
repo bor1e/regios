@@ -4,8 +4,8 @@
 
 <style type="text/css">
   #container {
-    max-width: 800px;
-    height: 800px;
+    max-width: 100%;
+    height: 100%;
     margin: auto;
   }
 </style>
@@ -24,7 +24,7 @@ var g = {
         edges: []
     }; 
 
-function addNodes(nodes) {
+function addElems(nodes, edges) {
     var i, len=nodes.length;
     console.log('adding nodes');
     for (i = 0; i < len; i++) {
@@ -34,19 +34,29 @@ function addNodes(nodes) {
             x: Math.random(),
             y: Math.random(),
             size: nodes[i].size*1.5, 
-            color: '#666'
+            color: '#ec5148'
           });
+     }
+    var i, len=edges.length;
+    console.log('adding nodes');
+    for (i = 0; i < len; i++) {
+         g.edges.push({
+            id: edges[i].id,
+           // label: edges[i].label,
+            source: edges[i].source,
+            target: edges[i].target,
+            size: edges[i].size, 
+            color: (edges[i].size> 3)? ((edges[i].size> 6)? 'blue' :'red' ) : '#666' 
+         });
             //  nodes[i].color = nodes[i].center ? '#333' : '#666';
     }
-        console.log(g.nodes.length);
-
 }
 
 
 $.get('api/', {}, function(data){
     console.log(data.data);
     console.log('received nodes: ' + data.data.nodes.length);
-    addNodes(data.data.nodes);
+    addElems(data.data.nodes, data.data.edges);
 }).done( function(){
     console.log('refreshed sigma');
      refresh();
@@ -60,7 +70,7 @@ renderer: {
     type: 'canvas'
 },
 settings: {
-    minNodeSize: 0.5,
+    minNodeSize: 0.2,
     maxNodeSize: 30,
     borderSize : 1,
     sideMargin: 1,
@@ -68,7 +78,8 @@ settings: {
     maxEdgeSize: 3,
     defaultNodeColor: '#ec5148'
 
-}  });     s.startForceAtlas2();
+}  });    
+ s.startForceAtlas2();
 }
 //    
 

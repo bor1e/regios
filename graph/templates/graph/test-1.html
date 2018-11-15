@@ -1,0 +1,36 @@
+<html>
+<head>
+      {% load static %}
+
+<style type="text/css">
+  #container {
+    max-width: 800px;
+    height: 800px;
+    margin: auto;
+  }
+</style>
+	<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+  <div id="graph-container"></div>
+</div>
+
+</head>
+<body>
+<div id="container"></div>
+<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+<script src="{% static "/js/sigma.min.js" %}"></script>
+<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+<script src="{% static "/js/sigma.renderers.parallelEdges.min.js" %}"></script>
+<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+<script src="{% static "/js/test-graph.js" %}"></script>
+
+</body>
+</html>
