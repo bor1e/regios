@@ -16,7 +16,7 @@
 		  	</div>
 		  </div>
   		  <div class="control">
-		    <input class="input" name="url" type="url" value="https://medical-valley-emn.de" required>
+		    <input class="input" name="url" type="url" required>
 		    <p class="help">eine URL eingeben</p>
 		  </div>
 		  <div id="continue" class="control">
@@ -31,10 +31,9 @@
 {% csrf_token %}
 
 {% block javascript %}
-<script>
-    var url = $(".input").val()
-  
+<script>  
     $("#start").click(function(){
+    	var url = $(".input").val()
       //alert($("#domain").val())
         $.post("/api/crawl/", {url: url, function: 'start'},function(data) {
 	        if (!data.status) {

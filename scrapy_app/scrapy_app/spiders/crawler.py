@@ -23,10 +23,10 @@ class CrawlerSpider(CrawlSpider):
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
 
-
         CrawlerSpider.rules = [
             Rule(LinkExtractor(allow=('/(?i)impressum')), callback='parse_impressum'),
             Rule(LinkExtractor(unique=True), callback='parse_item'),
+            # Callback for partner 
             #test_ Rule(LinkExtractor(unique=True), follow=True, callback='parse_item'),
         ]
         super(CrawlerSpider, self).__init__(*args, **kwargs)
