@@ -19,7 +19,7 @@ def check(request):
 			return redirect('display')
 
 		d = Domains.objects.create(domain=domain, url=url)
-		logger.debug('Domains object: %s created' % d.__dict__)
+		#logger.debug('Domains object: %s created' % d.__dict__)
 
 		return render(request, 'display.html', {'domain': d})
 

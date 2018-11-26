@@ -47,7 +47,7 @@
     }
 
     //simple spider checking only Impressum, Title, Keywords
-    $.post("/api/post/", {spider: JSON.stringify(start_spider)}, 
+    $.post("/api/post/", start_spider, 
       function(data) {
         alert(data['task_id']);
       /*
