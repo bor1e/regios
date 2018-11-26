@@ -1,0 +1,79 @@
+{% extends "./layout.html" %}
+{% block content %}
+<section class="section">
+<div class="container">
+  <h1 class=title">Simple check running for Domain: {{domain}}</h1>
+  <input type="hidden" id="url" value="{{domain.url}}">
+<table class="table">
+  <thead>
+    <tr>
+      <th><abbr title="Domain">Domain</abbr></th>
+      <th><abbr title="Name">Name (from Impressum)</abbr></th>
+      <th><abbr title="Name">Title (from domain)</abbr></th>
+      <th><abbr title="Status">Status</abbr></th>
+      <th><abbr title="Level">Level</abbr></th>
+      <th><abbr title="Locals">Local Urls Crawled</abbr></th>
+<!--      <th><abbr title="Externals">External Urls Found</abbr></th> -->
+<!--      <th><abbr title="last_Updated">Last Updated At</abbr></th> -->
+<!--     <th><abbr title="Duration of last search">Duration</abbr></th> -->
+      <th><abbr title="Options">Options</abbr></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td id="domain">{{domain.domain}}</td>
+      <td >{ { domain.info.name } }</td>
+      <td id="status">{ {domain .status} }</td>
+      <td id="level">{ {d omain.level}}</td>
+      <td>{ { d omain.locals.count }}</td>
+      <td>{ { d omain.externals.count}}</td>
+      <!--td>{ { d omain.updated_at}}</td>
+      <td>
+        {% csrf_token %}
+        <button id="refresh" class="button is-primary" type="submit">Refresh</button>
+      </td-->
+    </tr>
+  </tbody>
+</table>
+
+{% endblock %}
+{% block javascript %}
+<script>
+  $(document).ready(function(){
+    var start_spider = {
+      domain:  $("#domain").text(),
+      url: $("#url").val(),
+      name: 'spiter_itk'
+    }
+
+    //simple spider checking only Impressum, Title, Keywords
+    $.post("/api/post/", {spider: JSON.stringify(start_spider)}, 
+      function(data) {
+        alert(data['task_id']);
+      /*
+      var interval = 1500;
+      (function doUpdate() {
+        $.get("/api/get/", {task_id: data['task_id']}, function(new_data){
+          if (new_data.status)
+            $("#status").html('<div class="control is-loading">'+ 
+              '<input class="input" type="text" value="'+ new_data.status + 
+              '" readonly></div>');
+          else 
+            $("#status").html(new_data.data.status);
+        })
+        .done(function(){
+          var status = $("#status").text()
+          if (status!='finished') {
+            console.log('not finished... ');
+            setTimeout(doUpdate, interval);
+          }
+          else 
+            location.reload(true);
+        });
+      })();
+      */
+    });
+    //return false;     
+  });
+</script>
+{% endblock %}

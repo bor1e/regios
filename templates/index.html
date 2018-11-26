@@ -1,0 +1,75 @@
+{% extends "./layout.html" %}
+{% block content %}
+<section class="hero is-success is-medium">
+	<div class="hero-body">
+    <div class="container has-text-centered">
+		<h1 class="title">
+			Regios
+		</h1>
+		<h2 class="subtitle">
+			Webseite untersuchen
+		</h2>
+		<form method="POST" action="{% url 'check' %}">
+			{% csrf_token %}
+
+			<div class="field is-grouped is-grouped-centered">
+				<div class="control">
+					<div class="field-label is-normal">
+						<label class="label">URL</label>
+					</div>
+				</div>
+	  			<div class="control">
+					<input class="input" name="url" type="url" required>
+					<p class="help">eine URL eingeben</p>
+			  	</div>
+				<div id="continue" class="control">
+			      <button id="start" class="button is-primary" type="submit">Start</button>
+			  </div>
+			</div>
+		</form>
+    </div>
+    </div>
+  </section>
+  {% endblock %}
+
+{% block javascript %}
+<script>  
+	alert({{data}});
+	/*
+    $("#start").click(function(){
+    	var url = $(".input").val()
+      //alert($("#domain").val())
+        $.post("/api/crawl/", {url: url, function: 'start'}, function(data) {
+	        if (!data.status) {
+	        	$("#continue").html("<a class='button is-primary' href='/domain="+data.domain+"'>Display Results from DB</a>");
+	        }
+	        else {
+	          var interval = 1500;
+	          (function getStatus() {
+	            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
+		                if (new_data.status) {
+		                  $("#start").addClass("is-loading");
+		                }
+		                else {
+		                	//finished porcess
+		                	console.log(new_data.data);
+		                  $("#start").remove();//Class("is-loading").html("<a href='/domain="+new_data.data.domain+"'>Display Results</a>");
+		                  $("#continue").html("<a class='button is-primary' href='/domain="+new_data.data.domain+"'>Display Results</a>");
+
+		              	}
+	            })
+	            .done(function(){
+	            //console.log($("button:contains(Display)"))
+	              if ($('#continue').text()!='Display Results') {
+	                console.log('not finished... ');
+	                setTimeout(getStatus, interval);
+	              }
+	            });
+	          })();
+         	}
+        });
+        return false;
+    });
+    */
+	</script>
+{% endblock %}
