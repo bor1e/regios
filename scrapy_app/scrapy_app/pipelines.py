@@ -55,7 +55,7 @@ class ScrapyAppPipeline(object):
 			logger.debug('snd is present ------------ ')
 			pass
 		else: 
-			logger.error(' no SECCCCCCOND')
+			logger.debug(' no SECCCCCCOND')
 
 		# And here we are saving our crawled data with django models.
 		#logger.error(self.domain)

@@ -13,7 +13,6 @@ then starts n other spiders to actually crawl the site.
 
 class BotSpider(CrawlSpider):
     name = 'botspider'
-    
 
     def __init__(self, *args, **kwargs):
         # We are going to pass these args from our django view.
@@ -59,9 +58,49 @@ class BotSpider(CrawlSpider):
         return item
 
     def parse_impressum(self, response):
-        item = {}
+        item = dict()
         #! THINK TODO XPATH
-        self.logger.info(response.xpath("//*[contains(text(), 'e. V.')]"))
+        keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',
+            'OHG', 'KG', 'AG', 'gesellschaft']
+
+        # response.xpath("//*[contains(text(), '" + key  + "')]/text()").re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh| ag|kg|gbr|ohg)')
+        for key in keywords:
+            self.logger.error(key)
+            tmp = 100
+            # we GUESS that typically names include max 5 
+            #! TODO: no guesses!
+            sub = 5
+            selector = response.xpath("//*[contains(text(), '" + key  + "')]/text()")
+            if not selector:
+                continue
+            for sel in selector:
+                strings = sel.extract().split()
+                
+                if key == 'e. V.':
+                    if 'e.' in strings and 'V.' in strings and len(strings)<tmp:
+                       
+                        # get shortest paragrapgh including the keyword
+                        tmp = len(strings)
+                        index = strings.index('V.')
+                        if len(strings)-1==index:
+                            self.logger.error('##################### %s' % strings)
+                        # dont go backwards, i.e. negativ; 
+                        sub = min(sub, len(strings)-1) 
+                        item[key] = strings[index-sub:index+1]
+                        self.logger.error('<<<<<<<<<< %s' % item[key])
+                        continue
+                if key in strings and len(strings)<tmp:          
+                    # get shortest paragrapgh including the keyword
+                    tmp = len(strings)
+                    index = strings.index(key)
+                    if len(strings)-1==index:
+                        self.logger.error('##################### %s' % strings)
+                    # dont go backwards, i.e. negativ; 
+                    sub = min(sub, len(strings)-1) 
+                    item[key] = strings[index-sub:index+1]
+                    self.logger.warning('<<<<<<<<<< %s' % item[key])
+
+        self.logger.error(item)
         #  item['name'] = 'Medical Valley EMN e. V.'
         # item['source_url'] = response.url
         return item
