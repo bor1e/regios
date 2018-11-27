@@ -3,7 +3,7 @@ import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from urllib.parse import urlparse
-
+#from scrapy_app import pipelines
 '''
 if the pages you want to crawl change on a regular basis you could create 
 a spider that crawls the sitemap, divides the links up into n chunks,
@@ -11,9 +11,10 @@ then starts n other spiders to actually crawl the site.
 # https://stackoverflow.com/questions/23047080/sharing-visited-urls-between-multiple-spiders-in-scrapy
 '''
 
-class InformationSpider(CrawlSpider):
-    name = 'spider_itk'
+class BotSpider(CrawlSpider):
+    name = 'botspider'
     
+
     def __init__(self, *args, **kwargs):
         # We are going to pass these args from our django view.
         # To make everything dynamic, we need to override them inside __init__ method
@@ -21,14 +22,17 @@ class InformationSpider(CrawlSpider):
         self.domain = kwargs.get('domain')
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
-       self.logger.error('HEEEEEELP')
-        CrawlerSpider.rules = [
+        self.pipelines = set([
+            'itk',
+        ])
+       
+        BotSpider.rules = [
             Rule(LinkExtractor(allow=('/(?i)impressum')), callback='parse_impressum'),
             #Rule(LinkExtractor(unique=True), callback='parse_item'),
             # Callback for partner 
             #test_ Rule(LinkExtractor(unique=True), follow=True, callback='parse_item'),
         ]
-        super(CrawlerSpider, self).__init__(*args, **kwargs)
+        super(BotSpider, self).__init__(*args, **kwargs)
 
         '''
         rules = (
@@ -58,6 +62,6 @@ class InformationSpider(CrawlSpider):
         item = {}
         #! THINK TODO XPATH
         self.logger.info(response.xpath("//*[contains(text(), 'e. V.')]"))
-        item['name'] = 'Medical Valley EMN e. V.'
-        item['source_url'] = response.url
+        #  item['name'] = 'Medical Valley EMN e. V.'
+        # item['source_url'] = response.url
         return item

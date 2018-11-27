@@ -1,4 +1,4 @@
-from home.models import Domains, Info, Externals, Locals
+from start.models import Domains, Info, Externals, Locals
 import json
 from urllib.parse import urlparse
 
@@ -6,14 +6,34 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class BotPipeline(object):
+	def __init__(self, domain, *args, **kwargs):
+		self.domain = domain
+
+	@classmethod
+	def from_crawler(cls, crawler):
+		return cls(
+			domain = crawler.spider.domain,
+			#unique_id=crawler.settings.get('unique_id'), # this will be passed from django view
+		)
+
+	def close_spider(self, spider):
+		if 'itk' in getattr(spider, 'pipelines', []):
+			logger.debug('ITK ------------: %s' % getattr(spider, 'pipelines'))
+		else:
+			logger.debug('no ITK ----------')
+		pass
+
+	def process_item(self, item, spider):
+		if 'itk' not in getattr(spider, 'pipelines', []):
+			logger.debug('>>>>>>>>>>>>>>>')
+		else:
+			logger.debug('<<<<<<<<<')
+		pass
+
 class ScrapyAppPipeline(object):
-	def __init__(self, unique_id, *args, **kwargs):
-		#! TODO schedule every two seconds a call to a website with current information
-		'''
-		import requests
-r = 	requests.get("http://example.com/foo/bar")
-		'''
-		self.unique_id = unique_id
+	def __init__(self, *args, **kwargs):
+		#self.unique_id = unique_id
 		#! TODO domain is not being parsed, get it from the spider
 		#self.domain = domain
 		self.local_urls = set()
@@ -21,26 +41,25 @@ r = 	requests.get("http://example.com/foo/bar")
 		self.name = set()
 		self.source_url = set()
 		self.counter = 0
-		'''
-		self.items = {
-			'domain': self.domain,
-			'local_urls': self.local_urls,
-			'external_domains': self.external_domains,
-			'name': self.name,
-		}
-		'''
-
+	'''
 	@classmethod
 	def from_crawler(cls, crawler):
 		return cls(
 			#domain = json.dumps(crawler.spider.domain),
-			unique_id=crawler.settings.get('unique_id'), # this will be passed from django view
+			#unique_id=crawler.settings.get('unique_id'), # this will be passed from django view
 		)
+	'''
 
 	def close_spider(self, spider):
+		if 'second' in getattr(spider, 'pipelines', []):
+			logger.debug('snd is present ------------ ')
+			pass
+		else: 
+			logger.error(' no SECCCCCCOND')
+
 		# And here we are saving our crawled data with django models.
 		#logger.error(self.domain)
-		domain = Domains.objects.get(unique_id=self.unique_id)
+		'''domain = Domains.objects.get(unique_id=self.unique_id)
 		#objs_e = (Externals(domain=domain, url=i, external_domain=urlparse(i).netloc) for i in self.external_urls)
 		objs_e = (Externals(domain=domain, url=i) for i in self.external_urls)		
 		Externals.objects.bulk_create(objs_e)
@@ -54,9 +73,12 @@ r = 	requests.get("http://example.com/foo/bar")
 				source_url=self.source_url.pop(),
 				other=self.counter,
 				domain=domain,
-			)
-
+			)'''
+		pass
+   
+	#@check_spider_pipeline
 	def process_item(self, item, spider):
+		'''
 		if 'local_urls' in item:
 			self.local_urls.add(item['local_urls'])
 			for url in item['external_urls']:
@@ -66,3 +88,5 @@ r = 	requests.get("http://example.com/foo/bar")
 			self.source_url.add(item['source_url'])
 			self.counter += 1
 		return item
+		'''
+		pass

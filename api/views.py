@@ -27,7 +27,7 @@ def post(request):
 	task_id = scrapyd.schedule('default', spider['name'], 
 			url=spider['url'], domain=spider['domain'])
 
-	return JsonResponse( {'domain': spider.domain, 
+	return JsonResponse( {'domain': spider['domain'], 
 		'task_id': task_id, 
 		'status': 'started'
 		})

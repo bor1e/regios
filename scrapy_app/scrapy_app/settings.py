@@ -68,7 +68,8 @@ ROBOTSTXT_OBEY = True
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy_app.middlewares.ScrapyAppDownloaderMiddleware': 543,
-  #  'scrapy_app.downloadermiddlewares.redirect.RedirectMiddleware': 600,
+ #   'scrapy_app.downloadermiddlewares.redirect.RedirectMiddleware': 600,
+
 }
 
 # Enable or disable extensions
@@ -80,8 +81,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   	'scrapy_app.pipelines.ScrapyAppPipeline': 300,
-    #'scrapy_app.InfoAppPipeline': 400,
+    'scrapy_app.pipelines.ScrapyAppPipeline': 300,
+    'scrapy_app.pipelines.BotPipeline': 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
