@@ -9,6 +9,11 @@ logger = logging.getLogger(__name__)
 class BotPipeline(object):
 	def __init__(self, domain, *args, **kwargs):
 		self.domain = domain
+		self.name = 'dummy'
+		self.plz = '00000'
+		self.impressum_url = '-----'
+		self.title = set()
+		self.other = set()
 
 	@classmethod
 	def from_crawler(cls, crawler):
@@ -18,18 +23,38 @@ class BotPipeline(object):
 		)
 
 	def close_spider(self, spider):
-		if 'itk' in getattr(spider, 'pipelines', []):
-			logger.debug('ITK ------------: %s' % getattr(spider, 'pipelines'))
+		attr = getattr(spider, 'pipelines', [])
+		if 'impressum' in attr or 'title' in attr:
+			d = Domains.objects.filter(domain=self.domain).first()
+			Info.objects.create(
+				name=self.name, 
+				impressum_url=self.impressum_url,
+				plz=self.plz,
+				title=self.title.pop(),
+				other=self.other,
+				domain=d,
+			)
 		else:
 			logger.debug('no ITK ----------')
-		pass
+
 
 	def process_item(self, item, spider):
-		if 'itk' not in getattr(spider, 'pipelines', []):
-			logger.debug('>>>>>>>>>>>>>>>')
-		else:
-			logger.debug('<<<<<<<<<')
-		pass
+		logger.debug('\n\n\nitem:\n%s\n\n\n' % item)
+		#if 'impressum' in getattr(spider, 'pipelines', []):
+		if 'name' in item:
+			self.name = item['name']
+		if 'plz' in item:
+			self.plz = item['plz']
+		if 'impressum_url' in item:
+			self.impressum_url = item['impressum_url']
+	#elif 'title' in getattr(spider, 'pipelines', []):
+		if 'title' in item:
+			self.title.add(item['title'])
+		if 'other' in item:
+			self.other.add(item['other'])
+		#else:
+		#	logger.debug('oooooooooooo')
+		return item
 
 class ScrapyAppPipeline(object):
 	def __init__(self, *args, **kwargs):

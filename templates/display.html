@@ -49,17 +49,20 @@
     //simple spider checking only Impressum, Title, Keywords
     $.post("/api/post/", start_spider, 
       function(data) {
-        alert(data['task_id']);
-      /*
+        //alert(data['task_id']);
+      
       var interval = 1500;
       (function doUpdate() {
-        $.get("/api/get/", {task_id: data['task_id']}, function(new_data){
+        $.get("/api/get/", {task_id: data['task_id'], domain: start_spider.domain},
+         function(new_data){
           if (new_data.status)
             $("#status").html('<div class="control is-loading">'+ 
               '<input class="input" type="text" value="'+ new_data.status + 
               '" readonly></div>');
-          else 
+          else {
+            console.log(new_data);
             $("#status").html(new_data.data.status);
+          }
         })
         .done(function(){
           var status = $("#status").text()
@@ -71,7 +74,6 @@
             location.reload(true);
         });
       })();
-      */
     });
     //return false;     
   });

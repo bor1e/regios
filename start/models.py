@@ -40,8 +40,9 @@ class Domains(models.Model):
 
 class Info(models.Model):
 	name = models.CharField(max_length=100)
-	title = models.CharField(max_length=100)
-	source_url = models.URLField()
+	title = models.CharField(max_length=100, null=True)
+	plz = models.SmallIntegerField(null=True)
+	impressum_url = models.URLField()
 	# kind = models.CharField(null=True) // e.v. GmbH etc.
 	# all other information
 	other = models.TextField(null=True)

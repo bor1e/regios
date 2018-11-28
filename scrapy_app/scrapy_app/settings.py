@@ -82,7 +82,7 @@ DOWNLOADER_MIDDLEWARES = {
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'scrapy_app.pipelines.ScrapyAppPipeline': 300,
-    'scrapy_app.pipelines.BotPipeline': 400,
+    'scrapy_app.pipelines.BotPipeline': 200,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
