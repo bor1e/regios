@@ -17,8 +17,7 @@ def check(request):
 		url = request.POST.get('url')
 		domain = urlparse(url).netloc
 		if Domains.objects.filter(domain=domain).exists():
-			request.session['domain'] = domain
-			return redirect('display')
+			return redirect('display', domain=domain)
 
 		d = Domains.objects.create(domain=domain, url=url)
 		#logger.debug('Domains object: %s created' % d.__dict__)
@@ -30,12 +29,15 @@ def check(request):
 	# TODO set error for session
 	return redirect('start')
 
-def display(request):
+def display(request, domain):
+
 	""" The domain was already once scraped, and we can display the information
 	we have. A JSON for the DataTable is returned. """
-	logger.debug(request.session['domain'])
-	domain = urlparse(request.POST.get('url')).netloc
-	d = Domains.objects.filter(domain=domain).first()
-	#data = serializers.serialize("json", d)
+	logger.debug(domain)
+	d = Domains.objects.filter(domain=domain)
+	fields_to_display = ['domain','duration','name',
+		'plz', 'title', 'status', 'other']
+	data = serializers.serialize("json", d)
 
-	return HttpResponse('Hello: %s' % d)
+
+	return HttpResponse('Hello: %s' % data)

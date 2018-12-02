@@ -21,17 +21,6 @@ class Domains(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
-    # This is for basic and custom serialisation to return it to client as a JSON.
-	@property
-	def to_dict(self):
-		logger.info("Domains being dumped")
-		data = {
-			'domain': json.loads(self.domain),
-			'name': json.loads(self.name),
-		}
-		return data
-
-
 	def __str__(self):
 		return self.domain
 
@@ -52,6 +41,19 @@ class Info(models.Model):
 		on_delete=models.CASCADE, 
 		related_name='info'
 	)
+
+	 # This is for basic and custom serialisation to return it to client as a JSON.
+	@property
+	def to_dict(self):
+		logger.info("Domains being dumped")
+		data = {
+			#'domain': json.loads(self.domain),
+			'name': json.loads(self.name),
+			'title': json.loads(self.title),
+			'plz': json.loads(self.plz),
+			'other': json.loads(self.other),
+		}
+		return data
 
 	def __str__(self):
 		return self.name
