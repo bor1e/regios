@@ -16,10 +16,10 @@ def index(request):
 	# get the current domains (ds) being unique
 	ds = Domains.objects.all()
 	# pass domains to JSON for DataTables to filter
-	data = serializers.serialize("json", ds)
+	# data = serializers.serialize("json", ds)
 	#!TODO 
 	if ds.count()>0:
 		logger.debug('data received for Display')
 	# check if DB empty will happen on frontend
 	# display to user
-	return render(request, 'index.html', {'data': data})
+	return render(request, 'index.html', {'domains': ds})

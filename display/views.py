@@ -34,8 +34,9 @@ def check(request):
 
 def refresh(request, domain):
 	if not Domains.objects.filter(domain=domain).exists():
-		request.session['domain'] = domain
-		return redirect('start')
+		response = redirect('start')
+		response.set_cookie('domain',  domain)
+		return response
 	d = Domains.objects.filter(domain=domain).first()
 	response = redirect('check')
 	response.set_cookie('url',  d.url)

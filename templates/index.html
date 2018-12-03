@@ -1,5 +1,5 @@
 {% extends "./layout.html" %}
-{% block content %}
+{% block head %}
 <section class="hero is-success is-medium">
 	<div class="hero-body">
     <div class="container has-text-centered">
@@ -29,12 +29,43 @@
 		</form>
     </div>
     </div>
-  </section>
-  {% endblock %}
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<table id="domains" class="display">
+    <thead>
+        <tr>
+            <th>Domains in DB</th>
+            <th>Name</th>
+            <th>Level</th>
+            <th>Duration</th>
+            <th>External</th>
+            <th>Options</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in domains %}
+        <tr>
+            <td>{{d.domain}}</td>
+            <td>{{d.level}}</td>
+            <td>{{d.info.name}}</td>
+            <td>{{d.duration}}</td>
+            <td>{{d.externals.count}}</td>
+            <td>Details/Graph</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
 
 {% block javascript %}
-<script>  
-	alert({{data}});
+<script> 
+	$(document).ready(function(){
+	    $('#domains').DataTable();
+	});
 	/*
     $("#start").click(function(){
     	var url = $(".input").val()
