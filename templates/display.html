@@ -1,49 +1,101 @@
 {% extends "./layout.html" %}
-{% block content %}
-<section class="section">
-<div class="container">
-  <h1 class=title">Simple check running for Domain: {{domain}}</h1>
-  <input type="hidden" id="url" value="{{domain.url}}">
-<table class="table">
+{% block head %}
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title">Information on: {{domain.domain}}</h1>
+      <h2 class="subtitle">Status: <span id="status">{{domain.status}}</span>
+      </h2>
+      <input type="hidden" id="url" value="{{domain.url}}">
+  <!--h1 class=title">Simple check running for Domain: {{domain}}</h1-->
+  <table class="table">
   <thead>
     <tr>
       <th><abbr title="Domain">Domain</abbr></th>
-      <th><abbr title="Name">Name (from Impressum)</abbr></th>
-      <th><abbr title="Name">Title (from domain)</abbr></th>
-      <th><abbr title="Status">Status</abbr></th>
-      <th><abbr title="Level">Level</abbr></th>
-      <th><abbr title="Locals">Local Urls Crawled</abbr></th>
+      <th><abbr title="Name from Impressum">Name</abbr></th>
+      <th><abbr title="Title from home/index directory">Title</abbr></th>
+      <th><abbr title="Zip Code">ZIP</abbr></th>
+      <th><abbr title="Duration">Duration</abbr></th>
+      <th><abbr title="Last Update">Updated At</abbr></th>
+
 <!--      <th><abbr title="Externals">External Urls Found</abbr></th> -->
 <!--      <th><abbr title="last_Updated">Last Updated At</abbr></th> -->
 <!--     <th><abbr title="Duration of last search">Duration</abbr></th> -->
+      <th><abbr title="Local Urls Crawled">Locals</abbr></th>
+      <th><abbr title="External Urls Found">Externals</abbr></th>
       <th><abbr title="Options">Options</abbr></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td id="domain">{{domain.domain}}</td>
-      <td >{ { domain.info.name } }</td>
-      <td id="status">{ {domain .status} }</td>
-      <td id="level">{ {d omain.level}}</td>
-      <td>{ { d omain.locals.count }}</td>
-      <td>{ { d omain.externals.count}}</td>
+      <td>{{domain.name}}</td>
+      <td>{{domain.title}}</td>
+      <td>{{domain.zip}}</td>
+      <td>{{domain.duration}}</td>
+      <td>{{domain.last_update}}</td>
+      <!--td>{{domain.externals.count}}</td-->
       <!--td>{ { d omain.updated_at}}</td>
       <td>
         {% csrf_token %}
         <button id="refresh" class="button is-primary" type="submit">Refresh</button>
       </td-->
+      <td>{{domain.locals.count}}</td>
+      <td>{{domain.externals.count}}</td>
+      <td><a  class="button is-primary" href="{% url 'refresh' domain.domain%}">Refresh</a> start search for externals</td>
     </tr>
   </tbody>
 </table>
-
+</div>
+</div>
+</section>
 {% endblock %}
+{% block content%}
+<div class="container">
+<table id="externals" class="display">
+    <thead>
+        <tr>
+            <th>External Domains</th>
+            <th>External Urls</th>
+            <th>Options</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for external in domain.externals.all %}
+        <tr>
+            <td>{{external.external_domain}}</td>
+            <td>{{external.url|truncatechars_html:100}}</td>
+            <td>filter options</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<table id="locals" class="display">
+    <thead>
+        <tr>
+            <th>Locals Urls</th>
+            <th>Options</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for local in domain.locals.all %}
+        <tr>
+            <td>{{local.url|truncatechars_html:120}}</td>
+            <td>filter options</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
+
 {% block javascript %}
 <script>
-  $(document).ready(function(){
+  function startScraping(spider) {
     var start_spider = {
       domain:  $("#domain").text(),
       url: $("#url").val(),
-      name: 'botspider'
+      name: spider
     }
 
     //simple spider checking only Impressum, Title, Keywords
@@ -75,7 +127,19 @@
         });
       })();
     });
+  }
+  $(document).ready(function(){
+    $('#externals').DataTable();
+    $('#locals').DataTable();
+    var isFinished = $("#status").text() == 'finished';
+    if (isFinished)
+      return ;
     //return false;     
+    return startScraping('botspider');
   });
+  $("#refresh").click(function(){
+    return startScraping('botspider');
+  });
+
 </script>
 {% endblock %}

@@ -10,10 +10,12 @@ class BotPipeline(object):
 	def __init__(self, domain, *args, **kwargs):
 		self.domain = domain
 		self.name = 'dummy'
-		self.plz = '00000'
+		self.zip = '00000'
 		self.impressum_url = '-----'
 		self.title = set()
 		self.other = set()
+		self.locals_url = set()
+		self.external_urls = set()
 
 	@classmethod
 	def from_crawler(cls, crawler):
@@ -23,28 +25,41 @@ class BotPipeline(object):
 		)
 
 	def close_spider(self, spider):
-		attr = getattr(spider, 'pipelines', [])
-		if 'impressum' in attr or 'title' in attr:
-			d = Domains.objects.filter(domain=self.domain).first()
-			Info.objects.create(
-				name=self.name, 
-				impressum_url=self.impressum_url,
-				plz=self.plz,
-				title=self.title.pop(),
-				other=self.other,
-				domain=d,
-			)
+		#attr = getattr(spider, 'pipelines', [])
+		#if 'impressum' in attr and 'title' in attr:
+		#if self.impressum_url != '-----' and self.title:
+		d = Domains.objects.filter(domain=self.domain).first()
+		objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
+		Locals.objects.bulk_create(objs_l)
+		objs_e = ''
+		'''
+		if self.p_external_urls:
+			objs_e = (Externals(domain=d, url=i) for i in self.p_external_urls)
+			self.other.add('partner')
 		else:
-			logger.debug('no ITK ----------')
+			objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
+		'''
+		objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
+		Externals.objects.bulk_create(objs_e)
+
+
+		Info.objects.create(
+			name=self.name, 
+			impressum_url=self.impressum_url,
+			zip=self.zip,
+			title=self.title.pop(),
+			other=self.other,
+			domain=d,
+		)
 
 
 	def process_item(self, item, spider):
-		logger.debug('\n\n\nitem:\n%s\n\n\n' % item)
+		#logger.debug('\n\n\nitem:\n%s\n\n\n' % item)
 		#if 'impressum' in getattr(spider, 'pipelines', []):
 		if 'name' in item:
 			self.name = item['name']
-		if 'plz' in item:
-			self.plz = item['plz']
+		if 'zip' in item:
+			self.zip = item['zip']
 		if 'impressum_url' in item:
 			self.impressum_url = item['impressum_url']
 	#elif 'title' in getattr(spider, 'pipelines', []):
@@ -52,8 +67,16 @@ class BotPipeline(object):
 			self.title.add(item['title'])
 		if 'other' in item:
 			self.other.add(item['other'])
-		#else:
-		#	logger.debug('oooooooooooo')
+		if 'locals_url' in item:
+			self.locals_url.add(item['locals_url'])
+		'''
+		if 'p_external_urls' in item:
+			for url in item['p_external_urls']:
+				self.p_external_urls.add(url)
+		'''
+		if 'external_urls' in item:
+			for url in item['external_urls']:
+				self.external_urls.add(url)
 		return item
 
 class ScrapyAppPipeline(object):
@@ -76,11 +99,7 @@ class ScrapyAppPipeline(object):
 	'''
 
 	def close_spider(self, spider):
-		if 'second' in getattr(spider, 'pipelines', []):
-			logger.debug('snd is present ------------ ')
-			pass
-		else: 
-			logger.debug(' no SECCCCCCOND')
+		pass
 
 		# And here we are saving our crawled data with django models.
 		#logger.error(self.domain)
@@ -99,7 +118,7 @@ class ScrapyAppPipeline(object):
 				other=self.counter,
 				domain=domain,
 			)'''
-		pass
+
    
 	#@check_spider_pipeline
 	def process_item(self, item, spider):

@@ -30,7 +30,7 @@ class Domains(models.Model):
 class Info(models.Model):
 	name = models.CharField(max_length=100)
 	title = models.CharField(max_length=100, null=True)
-	plz = models.SmallIntegerField(null=True)
+	zip = models.SmallIntegerField(null=True)
 	impressum_url = models.URLField()
 	# kind = models.CharField(null=True) // e.v. GmbH etc.
 	# all other information
@@ -45,12 +45,11 @@ class Info(models.Model):
 	 # This is for basic and custom serialisation to return it to client as a JSON.
 	@property
 	def to_dict(self):
-		logger.info("Domains being dumped")
 		data = {
 			#'domain': json.loads(self.domain),
 			'name': json.loads(self.name),
 			'title': json.loads(self.title),
-			'plz': json.loads(self.plz),
+			'zip': json.loads(self.zp),
 			'other': json.loads(self.other),
 		}
 		return data
@@ -60,6 +59,7 @@ class Info(models.Model):
 
 class Externals(models.Model):
 	url = models.URLField()
+	#pot = models.BooleanField(default=False)
 	# related_name e.g. domain.externals.count()
 	domain = models.ForeignKey(
 		Domains, 

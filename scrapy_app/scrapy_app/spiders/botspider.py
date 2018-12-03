@@ -19,68 +19,46 @@ class BotSpider(CrawlSpider):
         # To make everything dynamic, we need to override them inside __init__ method
         self.url = kwargs.get('url')
         self.domain = kwargs.get('domain')
+        #self.unique_id = kwargs.get('unique_id')
+        self.keywords = kwargs.get('keywords')
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
         self.pipelines = set([
             'impressum',
             'title',
+            'locals',
         ])
+
        
         BotSpider.rules = [
-            Rule(LinkExtractor(allow=('/(?i)impressum')), callback='parse_impressum'),
-            Rule(LinkExtractor(unique=True, allow=('/(?i)(home|index|index\.html)')), callback='parse_title'),
+            Rule(LinkExtractor(allow=('/(?i)impressum')), callback='parse_impressum'), # impressum rule
+            Rule(LinkExtractor(unique=True, allow=('/(?i)(home|index|index\.html)')), callback='parse_title'), # title rule
             #Rule(LinkExtractor(unique=True, allow=('/(?i)(partner|mitglieder|freunde|teilnehmer)')), callback='parse_partner'),
-            #Rule(LinkExtractor(unique=True), callback='parse_item'),
+            Rule(LinkExtractor(unique=True), callback='parse_item'),
 
             # Callback for partner 
             #test_ Rule(LinkExtractor(unique=True), follow=True, callback='parse_item'),
         ]
         super(BotSpider, self).__init__(*args, **kwargs)
 
-        '''
-        rules = (
-            Rule(LinkExtractor(allow=r'Items/'), callback='parse_item', follow=True),
-        )
-        '''
-    def parse_partner(self, response):
-        # Don't forget to return an object.
-        #  self.state['items_count']
-        item = {}
-        item['p_local_urls'] = response.url
-        external_urls = LinkExtractor(allow=(), deny=self.allowed_domains, unique=True).extract_links(response)
-        item['p_external_urls'] = set()
-
-        for link in external_urls:
-            #! THINK TODO check, maybe you need the exact urls not only domains
-            item['p_external_urls'].add(link.url)
-      
-        #i['domain_id'] = response.xpath('//input[@id="sid"]/@value').extract()
-        #i['name'] = response.xpath('//div[@id="name"]').extract()
-        #i['description'] = response.xpath('//div[@id="description"]').extract()
-        return item
-
     def parse_item(self, response):
-        # Don't forget to return an object.
-        #  self.state['items_count']
         item = {}
-        item['local_urls'] = response.url
+        item['locals_url'] = response.url
+
         external_urls = LinkExtractor(allow=(), deny=self.allowed_domains, unique=True).extract_links(response)
         item['external_urls'] = set()
 
         for link in external_urls:
             #! THINK TODO check, maybe you need the exact urls not only domains
-           # domain = urlparse(link.url).netloc
+            # domain = urlparse(link.url).netloc
             item['external_urls'].add(link.url)
       
-        #i['domain_id'] = response.xpath('//input[@id="sid"]/@value').extract()
-        #i['name'] = response.xpath('//div[@id="name"]').extract()
-        #i['description'] = response.xpath('//div[@id="description"]').extract()
         return item
+
     def parse_title(self, response):
         item = {}
         item['title'] = response.xpath('//title/text()').extract_first()
         item['other'] = response.url
-        self.logger.debug('TITLE FOUND %s' % item)
         return item
 
     def parse_impressum(self, response):
@@ -91,7 +69,6 @@ class BotSpider(CrawlSpider):
         item['impressum_url'] = response.url
         # response.xpath("//*[contains(text(), '" + key  + "')]/text()").re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh| ag|kg|gbr|ohg)')
         for key in keywords:
-            self.logger.warning(key)
             tmp = 100
             # we GUESS that typically names include max 5 
             #! TODO: no guesses!
@@ -129,7 +106,7 @@ class BotSpider(CrawlSpider):
                     else: 
                         self.logger.info('found %s in the MIDDLE of the line:\n%s' % (key, item[key]))
 
-        if 'e. V.' in item and 'e.V.' in item:
+        if 'e.V.' in item and 'e. V.' in item:
             ev = ' '.join(item['e.V.'])
             e_v = ' '.join(item['e. V.'])
             if len(ev) > len(e_v):
@@ -137,13 +114,12 @@ class BotSpider(CrawlSpider):
             else:
                 item['name'] = ev
 
-        # PLZ
-        find_plz = response.xpath('//p/text()').extract()
-        for i in find_plz:
+        # zip
+        find_zip = response.xpath('//p/text()').extract()
+        for i in find_zip:
             i = i.strip().split()
             if i and i[0].isdigit() and len(i[0])==5:
-                item['plz'] = i[0]
+                item['zip'] = i[0]
                 break
-        self.logger.debug("item: %s" % item)
 
         return item

@@ -76,10 +76,10 @@ def get(request):
 @csrf_exempt
 def post(request):
 	spider = request.POST.dict()
-	logger.debug('HERE received data params: %s', spider['domain'])
+	logger.debug('HERE received data params: %s', spider)
 	
 	task_id = scrapyd.schedule('default', spider['name'], 
-			url=spider['url'], domain=spider['domain'])
+			url=spider['url'], domain=spider['domain'], keywords=[])
 
 	return JsonResponse( {'domain': spider['domain'], 
 		'task_id': task_id, 
