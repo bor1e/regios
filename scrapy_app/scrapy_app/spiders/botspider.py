@@ -27,6 +27,7 @@ class BotSpider(CrawlSpider):
             'impressum',
             'title',
             'locals',
+            'fullscan',
         ])
 
        

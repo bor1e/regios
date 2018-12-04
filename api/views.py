@@ -78,8 +78,12 @@ def post(request):
 	spider = request.POST.dict()
 	logger.debug('HERE received data params: %s', spider)
 	
+	if not Domains.objects.filter(domain=domain).exists():
+		Domains.objects.create(domain=spider['domain'], url=spider['url'])
+	
 	task_id = scrapyd.schedule('default', spider['name'], 
-			url=spider['url'], domain=spider['domain'], keywords=[])
+			url=spider['url'], domain=spider['domain'], 
+			keywords=spider['keywords'])
 
 	return JsonResponse( {'domain': spider['domain'], 
 		'task_id': task_id, 

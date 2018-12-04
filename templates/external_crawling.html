@@ -65,11 +65,11 @@
     var total_locals = 0;
     var total_externals = 0;
     $("tbody tr").each(function () {
-     domain = $(this).find("#key_domain").text();
-     url = $(this).find("input").val();
+      domain = $(this).find("#key_domain").text();
+      url = $(this).find("input").val();
       var self = this
 
-     function fillRow(stats) {
+    function fillRow(stats) {
       $(self).find('#duration').html(stats.duration);
       $(self).find('#name').html(stats.name);
       $(self).find('#locals').html(stats.locals);
@@ -123,43 +123,6 @@
           })();
       });
     });
-    /*
-    $("#update").click(function(){
-      //alert($("#domain").val())
-        $.post("/api/crawl/", {domain: domain, function: 'debug'},function(data) {
-          console.log(data); // check out how data is structured
-          });
-        return false;
-    });
-    function startCrawling(id) {
-      //$("#table-name td").each(function () {
-        var ex_dmn = $("#ex_dmn_"+id).text();
-        var ex_url = $("#ex_url_"+id).text();
-        $.post("/api/crawl/", {domain: ex_dmn, url: ex_url, level: level, function: 'ajax'}, function(data){
-          if (data['exists']) {
-            console.log(data); // check out how data is structured
-            $("#ex_dmn_"+id).closest("tr").remove();
-          }
-          if (data['status']) {
-            $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(mydata){
-              alert(mydata.status);
-              //$("#ex_url_"+id).html(res['status'])
-            });
-            $("#ex_url_"+id).html(data['status'])
-          }
-          })
-
-        .fail(function(xhr){
-          console.log(xhr); // check out how data is structured
-        });
-        return false; 
-      }
-    $("#start_crawling").click(function(){
-         for (var i = 1; i <= counter; i++){
-          if (i>23) break;
-          startCrawling(i);
-        }
-    });
-    */
+ 
 </script>
 {% endblock %}

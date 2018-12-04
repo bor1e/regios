@@ -81,7 +81,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'scrapy_app.pipelines.ScrapyAppPipeline': 300,
+    'scrapy_app.pipelines.InfoPipeline': 300,
     'scrapy_app.pipelines.BotPipeline': 200,
 }
 

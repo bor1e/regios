@@ -46,6 +46,11 @@
     </tr>
   </tbody>
 </table>
+<div class="content">
+<button id="infoscan" class="button is-primary is-inverted">InfoScan</button>
+<a class="button is-primary is-inverted" href="/TODO">Filters</a>
+<a class="button is-primary is-inverted" href="/TODO">Graph</a>
+</div>
 </div>
 </div>
 </section>
@@ -57,14 +62,16 @@
         <tr>
             <th>External Domains</th>
             <th>External Urls</th>
+            <th>Status</th>
             <th>Options</th>
         </tr>
     </thead>
     <tbody>
-        {% for external in domain.externals.all %}
+        {% for external in domain.externals %}
         <tr>
-            <td>{{external.external_domain}}</td>
-            <td>{{external.url|truncatechars_html:100}}</td>
+            <td id="external_domain">{{external.external_domain}}</td>
+            <td id="external_url">{{external.url|truncatechars_html:100}}</td>
+            <td id="result">---</td>
             <td>filter options</td>
         </tr>
         {% endfor %}
@@ -91,13 +98,14 @@
 
 {% block javascript %}
 <script>
-  function startScraping(spider) {
+  function startScraping(spider, domain, url/*, id*/) {
     var start_spider = {
-      domain:  $("#domain").text(),
-      url: $("#url").val(),
-      name: spider
+      domain: domain,
+      url: url,
+      name: spider,
+      keywords: $("#domain").text(),
+//      display_id: id
     }
-
     //simple spider checking only Impressum, Title, Keywords
     $.post("/api/post/", start_spider, 
       function(data) {
@@ -129,16 +137,29 @@
     });
   }
   $(document).ready(function(){
-    $('#externals').DataTable();
+    $('#externals').DataTable({
+        "order": [[ 1, 'desc' ]]
+      });
     $('#locals').DataTable();
     var isFinished = $("#status").text() == 'finished';
     if (isFinished)
       return ;
-    //return false;     
-    return startScraping('botspider');
+    var url = $("#url").val();
+    var domain = $("#domain").text();
+    return startScraping('botspider', domain, url);
   });
   $("#refresh").click(function(){
-    return startScraping('botspider');
+    var url = $("#url").val();
+    var domain = $("#domain").text();
+    return startScraping('botspider', domain, url);
+  });
+  $("#infoscan").click(function(){
+    $("tbody tr").each(function () {
+      domain = $(this).find("#external_domain").text();
+      url = $(this).find("#external_url").text();
+      return startScraping('infospider', domain, url);
+    });
+    return startScraping('infospider', domain, url);
   });
 
 </script>

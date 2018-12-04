@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, reverse
-from start.models import Domains#, BlackList
+from start.models import Domains
+from filter.models import BlackList
 from django.http import HttpResponse, JsonResponse#, HttpResponseRedirect, 
 from urllib.parse import urlparse
 from django.core import serializers
@@ -56,6 +57,11 @@ def display(request, domain):
 
 def _get_data(domain):
 	duration = domain.duration.total_seconds()
+	externals = [external for external in domain.externals.all() if external.external_domain not in BlackList.objects.all().values_list('ignore', flat=True)]
+	# for external.external_domain in Domains
+	# addattribut plz to external
+	# addattribut name to external
+	#logger.debug('externals: %s' % len(externals))
 	data = {
 		'domain': domain.domain,
 		'url': domain.url,
@@ -66,7 +72,7 @@ def _get_data(domain):
 		'zip': domain.info.zip,
 		'other': domain.info.other,
 		'locals': domain.locals,
-		'externals': domain.externals,
+		'externals': externals,
 		'last_update': domain.updated_at
 	}
 	return data
