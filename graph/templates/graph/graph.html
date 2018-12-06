@@ -1,115 +1,114 @@
 <html>
+
 <head>
-      {% load static %}
-
-<style type="text/css">
-  #container {
-    max-width: 100%;
-    height: 100%;
-    margin: auto;
-  }
-</style>
+    {% load static %}
+    <style type="text/css">
+    #container {
+        max-width: 100%;
+        height: 100%;
+        margin: auto;
+    }
+    </style>
 </head>
-<body>
-<div id="container"></div>
-<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
-<script src="{% static "/js/sigma.min.js" %}"></script>
-<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
-<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
 
-<script>
-  
-var g = {
+<body>
+    <div id="container"></div>
+    <script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+    <script src="{% static "/js/sigma.min.js" %}"></script>
+    <script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+    <script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+    <script>
+    var g = {
         nodes: [],
         edges: []
-    }; 
+    };
 
-function addElems(nodes, edges) {
-    var i, len=nodes.length;
-    console.log('adding nodes');
-    for (i = 0; i < len; i++) {
-         g.nodes.push({
-            id: nodes[i].id,
-            label: nodes[i].label,
-            x: Math.random(),
-            y: Math.random(),
-            size: nodes[i].size*1.5, 
-            color: '#ec5148'
-          });
-     }
-    var i, len=edges.length;
-    console.log('adding nodes');
-    for (i = 0; i < len; i++) {
-         g.edges.push({
-            id: edges[i].id,
-           // label: edges[i].label,
-            source: edges[i].source,
-            target: edges[i].target,
-            size: edges[i].size, 
-            color: (edges[i].size> 3)? ((edges[i].size> 6)? 'blue' :'red' ) : '#666' 
-         });
+    function addElems(nodes, edges) {
+        var i, len = nodes.length;
+        console.log('adding nodes');
+        for (i = 0; i < len; i++) {
+            g.nodes.push({
+                id: nodes[i].id,
+                label: nodes[i].label,
+                x: Math.random(),
+                y: Math.random(),
+                size: nodes[i].size * 1.5,
+                color: '#ec5148'
+            });
+        }
+        var i, len = edges.length;
+        console.log('adding nodes');
+        for (i = 0; i < len; i++) {
+            g.edges.push({
+                id: edges[i].id,
+                // label: edges[i].label,
+                source: edges[i].source,
+                target: edges[i].target,
+                size: edges[i].size,
+                color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+            });
             //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+        }
     }
-}
 
 
-$.get('api/', {}, function(data){
-    console.log(data.data);
-    console.log('received nodes: ' + data.data.nodes.length);
-    addElems(data.data.nodes, data.data.edges);
-}).done( function(){
-    console.log('refreshed sigma');
-     refresh();
-});
-function refresh(){
-var s = new sigma({
-graph: g,
-container: 'container',
-renderer: {
-    container: document.getElementById('container'),
-    type: 'canvas'
-},
-settings: {
-    minNodeSize: 0.2,
-    maxNodeSize: 30,
-    borderSize : 1,
-    sideMargin: 1,
-    minEdgeSize: 0.5,
-    maxEdgeSize: 3,
-    defaultNodeColor: '#ec5148'
+    $.get('api/', {}, function(data) {
+        console.log(data.data);
+        console.log('received nodes: ' + data.data.nodes.length);
+        addElems(data.data.nodes, data.data.edges);
+    }).done(function() {
+        console.log('refreshed sigma');
+        refresh();
+    });
 
-}  });    
- s.startForceAtlas2();
-}
-//    
+    function refresh() {
+        var s = new sigma({
+            graph: g,
+            container: 'container',
+            renderer: {
+                container: document.getElementById('container'),
+                type: 'canvas'
+            },
+            settings: {
+                minNodeSize: 0.2,
+                maxNodeSize: 30,
+                borderSize: 1,
+                sideMargin: 1,
+                minEdgeSize: 0.5,
+                maxEdgeSize: 3,
+                defaultNodeColor: '#ec5148'
 
-
-/*
-  sigma.parsers.json('{% static "/js/data.json" %}', s,
-    function() {
-        var i,
-                nodes = s.graph.nodes(),
-                len = nodes.length;
-
-        for (i = 0; i < len; i++) {
-            nodes[i].x = Math.random();
-            nodes[i].y = Math.random();
-            nodes[i].size = s.graph.degree(nodes[i].id);
-            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
-        }
-        var edges = s.graph.edges(),
-                len = edges.length;  
-        for (i = 0; i < len; i++) {
-          edges[i].size = Math.random()*2.5;
-        }
-        s.refresh();
-
+            }
+        });
         s.startForceAtlas2();
-    } );
-*/
+    }
+    //    
 
 
+    /*
+      sigma.parsers.json('{% static "/js/data.json" %}', s,
+        function() {
+            var i,
+                    nodes = s.graph.nodes(),
+                    len = nodes.length;
 
-</script>
+            for (i = 0; i < len; i++) {
+                nodes[i].x = Math.random();
+                nodes[i].y = Math.random();
+                nodes[i].size = s.graph.degree(nodes[i].id);
+                //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+            }
+            var edges = s.graph.edges(),
+                    len = edges.length;  
+            for (i = 0; i < len; i++) {
+              edges[i].size = Math.random()*2.5;
+            }
+            s.refresh();
+
+            s.startForceAtlas2();
+        } );
+    */
+    </script>
 </body>
+
 </html>

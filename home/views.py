@@ -12,12 +12,11 @@ from django.views.decorators.csrf import csrf_exempt
 import time
 from datetime import datetime, timedelta
 import random
+import logging
 from scrapyd_api import ScrapydAPI
 # connect scrapyd service
 scrapyd = ScrapydAPI('http://localhost:6800')
-
-import logging
-
+# start logger
 logger = logging.getLogger(__name__)
 
 def is_valid_url(url):
@@ -233,4 +232,3 @@ def crawl(request):
 	
 	#! TODO error handling 
 	return HttpResponseRedirect('/ERROR/')
-

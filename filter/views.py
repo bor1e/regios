@@ -6,7 +6,7 @@ def add_to_blacklist(request, src_domain, external_domain):
 	if not BlackList.objects.filter(ignore=external_domain).exists():
 		logger.debug("%s added to ignore list." % external_domain)
 		BlackList.objects.create(src=src_domain, ignore=external_domain)
-
+		
 	logger.debug("BlackList has %s elements" % BlackList.objects.count())
 
 	return redirect('domain', domain=src_domain)
