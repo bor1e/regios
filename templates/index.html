@@ -53,7 +53,7 @@
             <td>{{d.info.name}}</td>
             <td>{{d.duration}}</td>
             <td>{{d.externals.count}}</td>
-            <td>Details/Graph</td>
+            <td><a class="button is-success is-outlined" href="{% url 'display' domain=d.domain%}">Details</a><br/>Graph</td>
         </tr>
         {% endfor %}
     </tbody>

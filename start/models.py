@@ -40,10 +40,11 @@ class Domains(models.Model):
 
     def _filtered(self):
         externals = Externals.objects.filter(domain=self)
-        to_ignore = BlackList.objects.all().values('ignore')
+        to_ignore = BlackList.objects.all().values_list('ignore', flat=True)
         ignore_external_pks = [external.pk for external in externals
                                if external.external_domain in to_ignore]
-
+        logger.debug('ignore: %s' % to_ignore)
+        logger.debug('pks: %s' % ignore_external_pks)
         return externals.exclude(
             pk__in=ignore_external_pks
         )
@@ -99,8 +100,15 @@ class Externals(models.Model):
     def _get_domain(self):
         return urlparse(self.url).netloc
 
+    def _info(self):
+        if Domains.objects.filter(domain=urlparse(self.url).netloc).exists():
+            domain = urlparse(self.url).netloc
+            return Domains.objects.filter(domain=domain).first().info
+        return
+
     # TODO think
     external_domain = property(_get_domain)
+    info = property(_info)
     # external_domain = models.TextField(max_length=200)
 
     def __str__(self):

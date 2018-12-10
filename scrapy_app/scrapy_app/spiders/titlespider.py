@@ -7,8 +7,8 @@ import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
-class InfoSpider(CrawlSpider):
-    name = 'infospider'
+class TitleSpider(CrawlSpider):
+    name = 'titlespider'
 
     def __init__(self, *args, **kwargs):
         self.url = kwargs.get('url')
@@ -17,14 +17,14 @@ class InfoSpider(CrawlSpider):
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
         self.pipelines = set([
-            'info',
+            'title',
         ])
 
-        InfoSpider.rules = [
+        TitleSpider.rules = [
             Rule(LinkExtractor(unique=True, allow=('/(?i)(home|index|index\.html)')), callback='parse_title'), # title rule
             Rule(LinkExtractor(allow=('/(?i)impressum')), callback='parse_impressum'), # impressum rule
         ]
-        super(InfoSpider, self).__init__(*args, **kwargs)
+        super(TitleSpider, self).__init__(*args, **kwargs)
 
     def parse_title(self, response):
         item = {}
@@ -33,7 +33,7 @@ class InfoSpider(CrawlSpider):
         #self.logger.debug('TITLE FOUND %s' % item)
         return item
 
-     def parse_impressum(self, response):
+    def parse_impressum(self, response):
         item = {}
         #! THINK TODO XPATH
         keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',

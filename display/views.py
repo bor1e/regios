@@ -1,5 +1,5 @@
 from start.models import Domains
-from filter.models import BlackList
+# from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
 from urllib.parse import urlparse
 # from django.core import serializers
@@ -61,9 +61,6 @@ def display(request, domain):
 
 def _get_data(domain):
     duration = domain.duration.total_seconds()
-    # for external.external_domain in Domains
-    # addattribut plz to external
-    # addattribut name to external
     # logger.debug('externals: %s' % len(externals))
     data = {
         'domain': domain.domain,

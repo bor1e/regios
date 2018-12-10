@@ -2,7 +2,7 @@
 import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-from urllib.parse import urlparse
+# from urllib.parse import urlparse
 # from scrapy_app import pipelines
 '''
 if the pages you want to crawl change on a regular basis you could create
@@ -26,22 +26,22 @@ class BotSpider(CrawlSpider):
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
         self.pipelines = set([
-            'impressum',
-            'title',
-            'locals',
+            # 'impressum',
+            # 'title',
+            # 'locals',
             'fullscan',
         ])
 
         BotSpider.rules = [
-            Rule(LinkExtractor(allow=('/(?i)impressum')),
-                 ),  # impressum rule
+            Rule(LinkExtractor(allow=('/(?i)impressum|imprint')),
+                 callback='parse_impressum'),
             Rule(LinkExtractor(unique=True, allow=(
                 r'/(?i)(home|index|index\.html)')), callback='parse_title'),
             # Rule(LinkExtractor( \
             # unique=True, allow=('/(?i)(partner|mitglieder|' \
             #   'freunde|teilnehmer)')),
             # callback='parse_partner'),
-            # Rule(LinkExtractor(unique=True), callback='parse_item'),
+            Rule(LinkExtractor(unique=True), callback='parse_item'),
             # Callback for partner
             # test_ Rule(LinkExtractor(unique=True),
             # follow=True, callback='parse_item'),
@@ -52,13 +52,11 @@ class BotSpider(CrawlSpider):
         item = {}
         item['locals_url'] = response.url
 
-        external_urls = LinkExtractor(
-            allow=(), deny=self.allowed_domains, unique=True).extract_links(response)
+        external_urls = LinkExtractor(allow=(), deny=self.allowed_domains,
+                                      unique=True).extract_links(response)
         item['external_urls'] = set()
 
         for link in external_urls:
-            #! THINK TODO check, maybe you need the exact urls not only domains
-            # domain = urlparse(link.url).netloc
             item['external_urls'].add(link.url)
 
         return item
@@ -69,17 +67,13 @@ class BotSpider(CrawlSpider):
         item['other'] = response.url
         return item
 
-    def parse_impressum(self, response):
-        item = {}
-        #! THINK TODO XPATH
+    def _get_name(self, response, item):
         keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',
-                    'OHG', 'KG', 'AG', 'gesellschaft']
-        item['impressum_url'] = response.url
-        # response.xpath("//*[contains(text(), '" + key  + "')]/text()").re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh| ag|kg|gbr|ohg)')
+                    'OHG', 'KG', 'AG', 'gesellschaft', 'KdöR']
         for key in keywords:
             tmp = 100
             # we GUESS that typically names include max 5
-            #! TODO: no guesses!
+            # ! TODO: no guesses!
             sub = 5
             selector = response.xpath(
                 "//*[contains(text(), '" + key + "')]/text()")
@@ -89,7 +83,8 @@ class BotSpider(CrawlSpider):
                 strings = sel.extract().split()
 
                 if key == 'e. V.':
-                    if 'e.' in strings and 'V.' in strings and len(strings) < tmp:
+                    if 'e.' in strings \
+                       and 'V.' in strings and len(strings) < tmp:
                         # get shortest paragrapgh including the keyword
                         tmp = len(strings)
                         index = strings.index('V.')
@@ -98,13 +93,13 @@ class BotSpider(CrawlSpider):
                         sub = min(sub, len(strings) - 1)
                         item[key] = strings[index - sub:index + 1]
                         if len(strings) - 1 == index:
-                            self.logger.info(
-                                'found e. V. on the END of the line:\n%s' % strings)
+                            self.logger.info('found e. V. END of line:\n%s'
+                                             % strings)
                         else:
-                            self.logger.info(
-                                'found e. V. in the MIDDLE of the line:\n%s' % item[key])
-
+                            self.logger.info('found e. V. in MID of line:\n%s'
+                                             % item[key])
                         continue
+
                 if key in strings and len(strings) < tmp:
                     # get shortest paragrapgh including the keyword
                     tmp = len(strings)
@@ -113,11 +108,11 @@ class BotSpider(CrawlSpider):
                     sub = min(sub, len(strings) - 1)
                     item[key] = strings[index - sub:index + 1]
                     if len(strings) - 1 == index:
-                        self.logger.info(
-                            'found %s on the END of the line:\n%s' % (key, strings))
+                        self.logger.info('found %s END of line:\n%s'
+                                         % (key, strings))
                     else:
-                        self.logger.info(
-                            'found %s in the MIDDLE of the line:\n%s' % (key, item[key]))
+                        self.logger.info('found %s in MID of line:\n%s'
+                                         % (key, item[key]))
 
         if 'e.V.' in item and 'e. V.' in item:
             ev = ' '.join(item['e.V.'])
@@ -127,12 +122,22 @@ class BotSpider(CrawlSpider):
             else:
                 item['name'] = ev
 
-        # zip
+    def _get_zip(self, response, item):
         find_zip = response.xpath('//p/text()').extract()
         for i in find_zip:
             i = i.strip().split()
             if i and i[0].isdigit() and len(i[0]) == 5:
                 item['zip'] = i[0]
                 break
+        return item
+
+    def parse_impressum(self, response):
+        item = {}
+        item = _get_name(response, item)
+        item = _get_zip(response, item)
+        item['impressum_url'] = response.url
+        # response.xpath("//*[contains(text(), '" + key  + "')]/text()")
+        # .re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh|
+        # ag|kg|gbr|ohg)')
 
         return item

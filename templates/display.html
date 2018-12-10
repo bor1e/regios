@@ -59,8 +59,11 @@
     <table id="externals" class="display">
         <thead>
             <tr>
+                <th>#</th>
                 <th>External Domains</th>
                 <th>External Urls</th>
+                <th>ZIP</th>
+                <th>Name</th>
                 <th>Status</th>
                 <th>Options</th>
             </tr>
@@ -68,10 +71,23 @@
         <tbody>
             {% for external in domain.filtered_externals %}
             <tr>
+                <th id="id">{{ forloop.counter }}</th>
                 <td id="external_domain">{{external.external_domain}}</td>
-                <td id="external_url">{{external.url|truncatechars_html:100}}</td>
-                <td id="result">---</td>
-                <td>filter options</td>
+                <td id="external_url"><a href="{{ external.url }}">{{external.url|truncatechars_html:50}}</a></td>
+                <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
+                <td id="name_id_{{ forloop.counter }}">
+                    {% if external.info.name != 'dummy' %}
+                    {{external.info.name}}
+                    {% elif external.info.title != 'None!' %}
+                    {{external.info.title}}
+                    {% else %}
+                    Nothing found.
+                    {% endif %}
+                </td>
+                <td id="status_id_{{ forloop.counter }}">---</td>
+                <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">Add to Filter</a>
+                    <button class="button is-success is-outlined" onclick="startScraping('infospider','{{external.external_domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button></td>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -87,7 +103,7 @@
             {% for local in domain.locals.all %}
             <tr>
                 <td>{{local.url|truncatechars_html:120}}</td>
-                <td>filter options</td>
+                <td>Options</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -96,39 +112,49 @@
 {% endblock %}
 {% block javascript %}
 <script>
-function startScraping(spider, domain, url /*, id*/ ) {
+function startScraping(spider, domain, url, display_id, job) {
     var start_spider = {
         domain: domain,
         url: url,
         name: spider,
         keywords: $("#domain").text(),
-        //      display_id: id
+        display_id: display_id,
+        job: job
     }
     //simple spider checking only Impressum, Title, Keywords
     $.post("/api/post/", start_spider,
         function(data) {
             //alert(data['task_id']);
-
+            if (data.info) {
+                $(start_spider.display_id).html('zip: ' + data.info.zip +
+                    'name: ' + new_data.data.info.name + '" readonly></div>');
+                return;
+            }
             var interval = 1500;
             (function doUpdate() {
                 $.get("/api/get/", { task_id: data['task_id'], domain: start_spider.domain },
                         function(new_data) {
                             if (new_data.status)
-                                $("#status").html('<div class="control is-loading">' +
+                                $(start_spider.display_id).html('<div class="control is-loading">' +
                                     '<input class="input" type="text" value="' + new_data.status +
                                     '" readonly></div>');
                             else {
                                 console.log(new_data);
-                                $("#status").html(new_data.data.status);
+                                $(start_spider.display_id).html(new_data.data.status);
                             }
                         })
                     .done(function() {
-                        var status = $("#status").text()
-                        if (status != 'finished') {
+                        var status = $(start_spider.display_id).text()
+                        if (status == 'finished' && start_spider.job == 'None') {
+                            location.reload(true);
+                        } else if (status == 'finished' && start_spider.job == 'refresh') {
+                            console.log('finished domain: ' + start_spider.domain);
+                        } else if (status.includes('zip')) {
+                            console.log('finished domain: ' + start_spider.domain);
+                        } else {
                             console.log('not finished... ');
                             setTimeout(doUpdate, interval);
-                        } else
-                            location.reload(true);
+                        }
                     });
             })();
         });
@@ -145,20 +171,29 @@ $(document).ready(function() {
         return;
     var url = $("#url").val();
     var domain = $("#domain").text();
-    return startScraping('botspider', domain, url);
+    return startScraping('botspider', domain, url, '#status', 'None');
 });
 $("#refresh").click(function() {
     var url = $("#url").val();
     var domain = $("#domain").text();
-    return startScraping('botspider', domain, url);
+    return startScraping('botspider', domain, url, '#status', 'None');
 });
 $("#infoscan").click(function() {
-    $("tbody tr").each(function() {
+    $("#externals > tbody > tr").each(function() {
         domain = $(this).find("#external_domain").text();
         url = $(this).find("#external_url").text();
-        return startScraping('infospider', domain, url);
+        display_id = '#result_id_' + $(this).find("#id").text();
+        return startScraping('infospider', domain, url, display_id, 'None');
     });
-    return startScraping('infospider', domain, url);
+});
+$(".run_infoscan").click(function() {
+    console.log($(this).parent().parent());
+    /*$("#externals > tbody > tr").each(function() {
+        domain = $(this).find("#external_domain").text();
+        url = $(this).find("#external_url").text();
+        display_id = '#result_id_' + $(this).find("#id").text();
+        return startScraping('infospider', domain, url, display_id);
+    });*/
 });
 </script>
 {% endblock %}
