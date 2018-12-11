@@ -101,9 +101,9 @@ class Externals(models.Model):
         return urlparse(self.url).netloc
 
     def _info(self):
-        if Domains.objects.filter(domain=urlparse(self.url).netloc).exists():
-            domain = urlparse(self.url).netloc
-            return Domains.objects.filter(domain=domain).first().info
+        domain = urlparse(self.url).netloc
+        if Domains.objects.filter(domain=domain).exists():
+            return Domains.objects.get(domain=domain).info
         return
 
     # TODO think

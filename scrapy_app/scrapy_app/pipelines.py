@@ -1,6 +1,7 @@
 from start.models import Domains, Info, Externals, Locals
 # import json
 # from urllib.parse import urlparse
+from django.core.exceptions import ObjectDoesNotExist
 
 import logging
 logger = logging.getLogger(__name__)
@@ -98,10 +99,14 @@ class InfoPipeline(object):
         # logger.warning('HELP: %s ' % spider)
         if 'info' not in attr:
             return
-        d = Domains.objects.filter(domain=self.domain).first()
+        d = Domains.objects.get(domain=self.domain)
         logger.warning('domain: %s ' % d)
 
-        obj = Info.objects.get(domain=d)
+        try:
+            obj = Info.objects.get(domain=d)
+        except ObjectDoesNotExist:
+            obj = None
+
         if obj:
             logger.warning('obj: %s ' % obj)
             obj.name = self.name
@@ -126,6 +131,11 @@ class InfoPipeline(object):
             self.name = item['name']
         if 'zip' in item:
             self.zip = item['zip']
+        if 'alternative_name' in item:
+            if self.name == 'dummy':
+                self.name = item['alternative_name']
+            else:
+                self.name = ' '.join([self.name, item['alternative_name']])
         if 'impressum_url' in item:
             self.impressum_url = item['impressum_url']
         if 'title' in item:

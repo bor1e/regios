@@ -77,13 +77,18 @@ def get(request):
 @csrf_exempt
 def post(request):
     spider = request.POST.dict()
-    logger.debug('HERE received data params: %s', spider)
+    logger.debug('received spider params: %s', spider)
 
     domain = Domains.objects.filter(domain=spider['domain'])
+
     if not domain.exists():
         domain = Domains.objects.create(domain=spider['domain'],
                                         url=spider['url'])
+        logger.debug('created domain: %s', spider['domain'])
+
     else:
+        logger.debug('found domain: %s status: %s' %
+                     (spider['domain'], domain.first().status))
         domain = domain.first()
 
     if domain.status == 'finished' and spider['job'] == 'None':
@@ -91,7 +96,7 @@ def post(request):
             'zip': domain.info.zip,
             'name': domain.info.name
         }
-        return JsonResponse({'data': info})
+        return JsonResponse({'info': info})
 
     task_id = scrapyd.schedule('default', spider['name'],
                                url=spider['url'], domain=spider['domain'],

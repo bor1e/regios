@@ -124,12 +124,15 @@ function startScraping(spider, domain, url, display_id, job) {
     //simple spider checking only Impressum, Title, Keywords
     $.post("/api/post/", start_spider,
         function(data) {
+            console.log(data);
+
             //alert(data['task_id']);
             if (data.info) {
-                $(start_spider.display_id).html('zip: ' + data.info.zip +
-                    'name: ' + new_data.data.info.name + '" readonly></div>');
+                console.log('here we go: ' + start_spider.domain)
+                $(start_spider.display_id).html('data exists in DB');
                 return;
             }
+            console.log('starting spider for: ' + start_spider.domain)
             var interval = 1500;
             (function doUpdate() {
                 $.get("/api/get/", { task_id: data['task_id'], domain: start_spider.domain },
@@ -146,11 +149,16 @@ function startScraping(spider, domain, url, display_id, job) {
                     .done(function() {
                         var status = $(start_spider.display_id).text()
                         if (status == 'finished' && start_spider.job == 'None') {
+                            console.log(start_spider.display_id)
                             location.reload(true);
                         } else if (status == 'finished' && start_spider.job == 'refresh') {
                             console.log('finished domain: ' + start_spider.domain);
-                        } else if (status.includes('zip')) {
+                    //    } else if (status.includes('zip')) {
+                    //        console.log('finished domain: ' + start_spider.domain);
+                        } else if (status == 'finished' && start_spider.job == 'InfoScan') {
                             console.log('finished domain: ' + start_spider.domain);
+                    //    } else if (status.includes('zip')) {
+                    //        console.log('finished domain: ' + start_spider.domain);                       
                         } else {
                             console.log('not finished... ');
                             setTimeout(doUpdate, interval);
@@ -162,8 +170,9 @@ function startScraping(spider, domain, url, display_id, job) {
 $(document).ready(function() {
     $('#externals').DataTable({
         "order": [
-            [1, 'desc']
-        ]
+            [3, 'desc']
+        ],
+        "pageLength": 75,
     });
     $('#locals').DataTable();
     var isFinished = $("#status").text() == 'finished';
@@ -182,18 +191,9 @@ $("#infoscan").click(function() {
     $("#externals > tbody > tr").each(function() {
         domain = $(this).find("#external_domain").text();
         url = $(this).find("#external_url").text();
-        display_id = '#result_id_' + $(this).find("#id").text();
-        return startScraping('infospider', domain, url, display_id, 'None');
+        display_id = '#status_id_' + $(this).find("#id").text();
+        return startScraping('infospider', domain, url, display_id, 'InfoScan');
     });
-});
-$(".run_infoscan").click(function() {
-    console.log($(this).parent().parent());
-    /*$("#externals > tbody > tr").each(function() {
-        domain = $(this).find("#external_domain").text();
-        url = $(this).find("#external_url").text();
-        display_id = '#result_id_' + $(this).find("#id").text();
-        return startScraping('infospider', domain, url, display_id);
-    });*/
 });
 </script>
 {% endblock %}

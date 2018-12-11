@@ -73,7 +73,7 @@ def _get_data(domain):
         'zip': domain.info.zip,
         'other': domain.info.other,
         'locals': domain.locals,
-        'filtered_externals': domain.filtered_externals,
+        'filtered_externals': domain.filtered_externals[:3],
         'last_update': domain.updated_at
     }
     return data

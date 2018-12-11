@@ -19,7 +19,7 @@ class InfoSpider(CrawlSpider):
         self.keywords = kwargs.get('keywords')
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
-        self.handle_httpstatus_list = [301, 302]
+        # self.handle_httpstatus_list = [301, 302]
 
         self.pipelines = set([
             'info',
@@ -31,12 +31,24 @@ class InfoSpider(CrawlSpider):
             Rule(LinkExtractor(unique=True, allow=(
                 r'/(?i)(home|index|start|index\.html)')),
                 callback='parse_title'),
-            Rule(LinkExtractor(allow=('/(?i)impressum|legalnotices|imprint')),
+            Rule(LinkExtractor(allow=(
+                 '/(?i)(impressum|legalnotices|imprint)')),
                  callback='parse_impressum2'),  # impressum rule
         ]
         super(InfoSpider, self).__init__(*args, **kwargs)
 
-    '''def parse(self, response):
+    def parse(self, response):
+        # if response.status in range(301, 307):
+        self.logger.debug('response: %s' % response.url)
+        impressum = LinkExtractor(unique=True, allow=(
+            '/(?i)impressum|legalnotices|imprint')).extract_links(response)
+        if impressum:
+            self.logger.debug('impressums: %s' % impressum[0].url)
+            return scrapy.Request(impressum[0].url,
+                                  callback=self.parse_impressum2,
+                                  dont_filter=True)
+
+        '''
         if response.status in (301, 307):
             request = response.request
             location = to_native_str(
@@ -118,9 +130,10 @@ class InfoSpider(CrawlSpider):
             else:
                 item['name'] = ev
 
-        # zip
+        # zip: iterate over paragraphs
         find_zip = response.xpath('//p/text()').extract()
         for i in find_zip:
+            self.logger.debug('paragraphs: %s' % i)
             i = i.strip().split()
             if i and i[0].isdigit() and len(i[0]) == 5:
                 item['zip'] = i[0]
@@ -195,11 +208,32 @@ class InfoSpider(CrawlSpider):
 
     def _get_zip(self, response, item):
         find_zip = response.xpath('//p/text()').extract()
-        for i in find_zip:
-            i = i.strip().split()
-            if i and i[0].isdigit() and len(i[0]) == 5:
-                item['zip'] = i[0]
+        for i, elem in enumerate(find_zip):
+            # self.logger.debug('paragraphs: %s' % i)
+            elem = elem.strip().split()
+            if elem and elem[0].isdigit() and len(elem[0]) == 5:
+                if i > 2 and find_zip[i - 3].strip().split():
+                    item['alternative_name'] = find_zip[i - 3] + ' ' + \
+                        find_zip[i - 2]
+                else:
+                    item['alternative_name'] = find_zip[i - 2]
+                item['zip'] = elem[0]
+                self.logger.debug('alternative_name: %s'
+                                  % item['alternative_name'])
                 break
+            elif elem and 'D-' in elem[0] and len(elem[0]) == 7:
+                if i > 2 and find_zip[i - 3].strip().split():
+                    item['alternative_name'] = find_zip[i - 3] + ' ' + \
+                        find_zip[i - 2]
+                else:
+                    item['alternative_name'] = find_zip[i - 2]
+                self.logger.debug('elem: %s' % elem[0])
+                item['zip'] = int(''.join(elem[0][2:]))
+                self.logger.debug('alternative_name: %s'
+                                  % item['alternative_name'])
+
+                break
+
         return item
 
     def parse_impressum2(self, response):
