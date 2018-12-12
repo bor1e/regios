@@ -32,8 +32,8 @@ class BotPipeline(object):
         d = Domains.objects.filter(domain=self.domain).first()
         objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
         Locals.objects.bulk_create(objs_l)
-        objs_e = ''
         '''
+        objs_e = ''
         if self.p_external_urls:
             objs_e = (Externals(domain=d, url=i) for i in self.p_external_urls)
             self.other.add('partner')

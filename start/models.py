@@ -31,6 +31,7 @@ class Domains(models.Model):
     status = models.CharField(default='started', max_length=10)
     # parent, child, grandchild ...
     level = models.SmallIntegerField(default=0)
+    src_domain = models.TextField(max_length=200, null=True)
     duration = models.DurationField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -49,7 +50,15 @@ class Domains(models.Model):
             pk__in=ignore_external_pks
         )
 
+    def _to_scan(self):
+        externals = self._filtered()
+        existing = [i.pk for i in externals if i.external_domain
+                    in
+                    Domains.objects.all().values_list('domain', flat=True)]
+        return externals.exclude(pk__in=existing)
+
     filtered_externals = property(_filtered)
+    to_scan = property(_to_scan)
 
     class Meta:
         get_latest_by = "updated_at"

@@ -21,7 +21,8 @@
                         <!--      <th><abbr title="last_Updated">Last Updated At</abbr></th> -->
                         <!--     <th><abbr title="Duration of last search">Duration</abbr></th> -->
                         <th><abbr title="Local Urls Crawled">Locals</abbr></th>
-                        <th><abbr title="External Urls Found">Filtered Externals</abbr></th>
+                        <th><abbr title="External Urls Found">Externals</abbr></th>
+                        <th><abbr title="External To Scan">Externals To Scan</abbr></th>
                         <th><abbr title="Options">Options</abbr></th>
                     </tr>
                 </thead>
@@ -40,7 +41,14 @@
         <button id="refresh" class="button is-primary" type="submit">Refresh</button>
       </td-->
                         <td>{{domain.locals.count}}</td>
-                        <td>{{domain.filtered_externals.count}}</td>
+                        <td>{{domain.externals.count}}</td>
+                        <td id="externals_count">
+                            {% if domain.filtered_externals.count > 0 %}
+                            {{domain.filtered_externals.count}}
+                            {% else %}
+                            processing ...
+                            {% endif %}
+                        </td>
                         <td><a class="button is-primary" href="{% url 'refresh' domain.domain%}">Refresh</a> start search for externals</td>
                     </tr>
                 </tbody>
@@ -50,6 +58,7 @@
                 <a class="button is-primary is-inverted" href="/TODO">Filters</a>
                 <a class="button is-primary is-inverted" href="/TODO">Graph</a>
             </div>
+            <div id="remaining"></div>
         </div>
     </div>
 </section>
@@ -64,7 +73,7 @@
                 <th>External Urls</th>
                 <th>ZIP</th>
                 <th>Name</th>
-                <th>Status</th>
+                <th>Title</th>
                 <th>Options</th>
             </tr>
         </thead>
@@ -72,21 +81,26 @@
             {% for external in domain.filtered_externals %}
             <tr>
                 <th id="id">{{ forloop.counter }}</th>
-                <td id="external_domain">{{external.external_domain}}</td>
+                <td id="external_domain">{{external.domain}}</td>
                 <td id="external_url"><a href="{{ external.url }}">{{external.url|truncatechars_html:50}}</a></td>
                 <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
                 <td id="name_id_{{ forloop.counter }}">
                     {% if external.info.name != 'dummy' %}
                     {{external.info.name}}
-                    {% elif external.info.title != 'None!' %}
+                    {% else %}
+                    Nothing found.
+                    {% endif %}
+                </td>
+                <td id="title_id_{{ forloop.counter }}">
+                    {% if external.info.title != 'None!' %}
                     {{external.info.title}}
                     {% else %}
                     Nothing found.
                     {% endif %}
                 </td>
-                <td id="status_id_{{ forloop.counter }}">---</td>
-                <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">Add to Filter</a>
-                    <button class="button is-success is-outlined" onclick="startScraping('infospider','{{external.external_domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button></td>
+                <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
+                    <button class="button is-success is-outlined" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
+                    <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}">
                 </td>
             </tr>
             {% endfor %}
@@ -125,8 +139,6 @@ function startScraping(spider, domain, url, display_id, job) {
     $.post("/api/post/", start_spider,
         function(data) {
             console.log(data);
-
-            //alert(data['task_id']);
             if (data.info) {
                 console.log('here we go: ' + start_spider.domain)
                 $(start_spider.display_id).html('data exists in DB');
@@ -153,12 +165,9 @@ function startScraping(spider, domain, url, display_id, job) {
                             location.reload(true);
                         } else if (status == 'finished' && start_spider.job == 'refresh') {
                             console.log('finished domain: ' + start_spider.domain);
-                    //    } else if (status.includes('zip')) {
-                    //        console.log('finished domain: ' + start_spider.domain);
-                        } else if (status == 'finished' && start_spider.job == 'InfoScan') {
-                            console.log('finished domain: ' + start_spider.domain);
-                    //    } else if (status.includes('zip')) {
-                    //        console.log('finished domain: ' + start_spider.domain);                       
+                            location.reload(true);
+                            // } else if (status == 'finished' && start_spider.job == 'InfoScan') {
+                            //     console.log('finished domain: ' + start_spider.domain);                   
                         } else {
                             console.log('not finished... ');
                             setTimeout(doUpdate, interval);
@@ -172,12 +181,48 @@ $(document).ready(function() {
         "order": [
             [3, 'desc']
         ],
-        "pageLength": 75,
+        "pageLength": 100,
     });
     $('#locals').DataTable();
-    var isFinished = $("#status").text() == 'finished';
-    if (isFinished)
+    var externals_count = parseInt($("#externals_count").text()) > 0;
+    if (externals_count)
         return;
+    var isFinished = $("#status").text() == 'finished';
+    var domain = $("#domain").text();
+    if (isFinished) {
+
+        var externals_count = parseInt($("#externals_count").text());
+        // start crawling 
+        $.post("/api/infoscan/", { 'domain': domain }, function(data) {
+            var interval = 1500;
+            console.log('data: ' + data);
+            (function doUpdate() {
+                $.get("/api/infoscan/status", { 'domain': domain, 'timer': data.time },
+                        function(new_data) {
+                            console.log('new_data: ' + new_data);
+                            if (new_data.remaining > 0)
+                                $('#remaining').html('<div class="control is-loading">' +
+                                    '<input class="input" type="text" value="Remaining to scrap ' + new_data.remaining + ' elapsed: ' + new_data.elapsed + '" readonly></div>');
+                            else {
+                                console.log(new_data);
+                                $('#remaining').html(new_data.status);
+                                console.log('time needed: ' + new_data.elapsed)
+
+                            }
+                        })
+                    .done(function() {
+                        var status = $('#remaining').text()
+                        if (status == 'finished') {
+                            location.reload(true);
+                        } else {
+                            console.log('not finished... ');
+                            setTimeout(doUpdate, interval);
+                        }
+                    });
+            })();
+        });
+        return;
+    }
     var url = $("#url").val();
     var domain = $("#domain").text();
     return startScraping('botspider', domain, url, '#status', 'None');

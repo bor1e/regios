@@ -122,19 +122,23 @@ class BotSpider(CrawlSpider):
             else:
                 item['name'] = ev
 
+        return item
+
     def _get_zip(self, response, item):
         find_zip = response.xpath('//p/text()').extract()
         for i in find_zip:
             i = i.strip().split()
             if i and i[0].isdigit() and len(i[0]) == 5:
+                self.logger.debug('item: %s' % item)
+                self.logger.debug('i: %s' % i)
                 item['zip'] = i[0]
                 break
         return item
 
     def parse_impressum(self, response):
         item = {}
-        item = _get_name(response, item)
-        item = _get_zip(response, item)
+        item = self._get_name(response, item)
+        item = self._get_zip(response, item)
         item['impressum_url'] = response.url
         # response.xpath("//*[contains(text(), '" + key  + "')]/text()")
         # .re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh|

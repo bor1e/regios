@@ -31,8 +31,8 @@ class InfoSpider(CrawlSpider):
             #   r'/(?i)(home|index|start|index\.html)')),
             #   callback='parse_title'),
             Rule(LinkExtractor(allow=(
-                 '/(?i)(impressum|legalnotices|imprint)')),
-                 callback='parse_impressum2'),  # impressum rule
+                 '/(?i)(impressum|legalnotices|imprint|corporate-info)')),
+                 callback='parse_impressum'),  # impressum rule
         ]
         super(InfoSpider, self).__init__(*args, **kwargs)
 
@@ -40,12 +40,23 @@ class InfoSpider(CrawlSpider):
         # if response.status in range(301, 307):
         self.logger.debug('response: %s' % response.url)
         impressum = LinkExtractor(unique=True, allow=(
-            '/(?i)impressum|legalnotices|imprint')).extract_links(response)
+            '/(?i)impressum|legalnotices|imprint|corporate-info')).\
+            extract_links(response)
         if impressum:
             self.logger.debug('impressums: %s' % impressum[0].url)
             return scrapy.Request(impressum[0].url,
-                                  callback=self.parse_impressum2,
+                                  callback=self.parse_impressum,
                                   dont_filter=True)
+        else:
+            externals = LinkExtractor(unique=True,
+                                      allow=()).extract_links(response)
+            pr = ''
+            for i in externals:
+                pr += i.url + '\n'
+
+            self.logger.debug('found: %s' % pr)
+
+            return None
 
     def parse_title(self, response):
         item = {}
@@ -135,6 +146,7 @@ class InfoSpider(CrawlSpider):
         return item
 
     def _get_zip(self, response, item):
+        self.logger.debug('recieved item: %s looking for zip' % item)
         find_zip = response.xpath('//p/text()').extract()
         for i, elem in enumerate(find_zip):
             # self.logger.debug('paragraphs: %s' % i)
@@ -161,5 +173,20 @@ class InfoSpider(CrawlSpider):
                                   % item['alternative_name'])
 
                 break
+        if not getattr(item, 'zip', []):
+            find_zip = response.xpath('//span/text()').extract()
+            for i, elem in enumerate(find_zip):
+                # self.logger.debug('paragraphs: %s' % i)
+                elem = elem.strip().split()
+                if elem and elem[0].isdigit() and len(elem[0]) == 5:
+                    if i > 2 and find_zip[i - 3].strip().split():
+                        item['alternative_name'] = find_zip[i - 3] + ' ' + \
+                            find_zip[i - 2]
+                    else:
+                        item['alternative_name'] = find_zip[i - 2]
+                    item['zip'] = elem[0]
+                    self.logger.debug('alternative_name: %s'
+                                      % item['alternative_name'])
+                    break
 
         return item

@@ -4,7 +4,7 @@ from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
 # import json
-# import time
+import time
 from datetime import datetime, timedelta
 import logging
 from scrapyd_api import ScrapydAPI
@@ -17,6 +17,53 @@ logger = logging.getLogger(__name__)
 
 def multiple(request):
     return HttpResponse('multiple')
+
+
+@csrf_exempt
+def infoscan(request):
+    domain = request.POST.get('domain')
+    obj = Domains.objects.get(domain=domain)
+    to_scan = obj.to_scan
+    pre_jobs = scrapyd.list_jobs('default')
+    pre_num = len(pre_jobs['pending']) + \
+        len(pre_jobs['running']) + len(pre_jobs['finished'])
+    remaining = to_scan.count()
+    logger.debug('remaining: %s' % remaining)
+    logger.debug('jobs: %s' % pre_num)
+    now = time.time()
+    for i in to_scan:
+        logger.debug('creating domain: %s' % i.external_domain)
+        if Domains.objects.filter(domain=i.external_domain).exists():
+            continue
+        Domains.objects.create(domain=i.external_domain,
+                               url=i.url, level=obj.level + 1,
+                               src_domain=obj.domain)
+        scrapyd.schedule('default', 'infospider',
+                         url=i.url, domain=i.external_domain,
+                         keywords=[])
+
+    post_jobs = scrapyd.list_jobs('default')
+    post_num = len(post_jobs['pending']) + \
+        len(post_jobs['running']) + len(post_jobs['finished'])
+    logger.debug('started jobs: %s' % (post_num - pre_num))
+    if (post_num - pre_num) != remaining:
+        logger.error('something went wrong by starting info scan')
+
+    return JsonResponse({'remaining': remaining, 'time': now})
+
+
+@csrf_exempt
+def infoscan_status(request):
+    domain = request.GET.get('domain')
+    logger.debug('domain: %s' % domain)
+    now = time.time()
+    start = request.GET.get('timer')
+    elapsed = now - float(start)
+    post_jobs = scrapyd.list_jobs('default')
+    remaining = len(post_jobs['running']) + len(post_jobs['pending'])
+    status = 'pending' if remaining > 0 else 'finished'
+    return JsonResponse({'remaining': remaining, 'status': status,
+                         'elapsed': elapsed})
 
 
 @csrf_exempt
