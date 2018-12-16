@@ -79,7 +79,8 @@ class InfoSpider(CrawlSpider):
     def _get_title(self, response, item):
         title = response.xpath('//title/text()').extract_first()
         re_title = re.compile('impressum', re.IGNORECASE)
-        item['title'] = re_title.sub('', title).replace('|', '')
+        item['title'] = re_title.sub('', title).replace('|', '').\
+            replace('-', '')
         return item
 
     def _get_name(self, response, item):

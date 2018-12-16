@@ -34,12 +34,6 @@
                         <td>{{domain.zip}}</td>
                         <td>{{domain.duration}}</td>
                         <td>{{domain.last_update}}</td>
-                        <!--td>{{domain.externals.count}}</td-->
-                        <!--td>{ { d omain.updated_at}}</td>
-      <td>
-        {% csrf_token %}
-        <button id="refresh" class="button is-primary" type="submit">Refresh</button>
-      </td-->
                         <td>{{domain.locals.count}}</td>
                         <td>{{domain.externals.count}}</td>
                         <td id="externals_count">
@@ -65,13 +59,16 @@
 {% endblock %}
 {% block content%}
 <div class="container">
-    <table id="externals" class="display">
+    <form method="POST" action="{% url 'api:selected' %}">
+        {% csrf_token %}    
+        <table id="externals" class="display">
         <thead>
             <tr>
                 <th>#</th>
                 <th>External Domains</th>
                 <th>External Urls</th>
                 <th>ZIP</th>
+                <th>Select for Scan</th>
                 <th>Name</th>
                 <th>Title</th>
                 <th>Options</th>
@@ -82,8 +79,13 @@
             <tr>
                 <th id="id">{{ forloop.counter }}</th>
                 <td id="external_domain">{{external.domain}}</td>
-                <td id="external_url"><a href="{{ external.url }}">{{external.url|truncatechars_html:50}}</a></td>
+                <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
                 <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
+                <td>
+                    <label class="checkbox">
+                      <input type="checkbox" name="selected" value="{{external.domain}}" />
+                    </label>
+                </td>
                 <td id="name_id_{{ forloop.counter }}">
                     {% if external.info.name != 'dummy' %}
                     {{external.info.name}}
@@ -106,7 +108,10 @@
             {% endfor %}
         </tbody>
     </table>
-    <table id="locals" class="display">
+    <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
+    </form>
+
+    <!--table id="locals" class="display">
         <thead>
             <tr>
                 <th>Locals Urls</th>
@@ -116,12 +121,12 @@
         <tbody>
             {% for local in domain.locals.all %}
             <tr>
-                <td>{{local.url|truncatechars_html:120}}</td>
+                <td><a href="{{local.url}}" target="_blank">{{local.url|truncatechars_html:120}}</a></td>
                 <td>Options</td>
             </tr>
             {% endfor %}
         </tbody>
-    </table>
+    </table-->
 </div>
 {% endblock %}
 {% block javascript %}
@@ -166,8 +171,6 @@ function startScraping(spider, domain, url, display_id, job) {
                         } else if (status == 'finished' && start_spider.job == 'refresh') {
                             console.log('finished domain: ' + start_spider.domain);
                             location.reload(true);
-                            // } else if (status == 'finished' && start_spider.job == 'InfoScan') {
-                            //     console.log('finished domain: ' + start_spider.domain);                   
                         } else {
                             console.log('not finished... ');
                             setTimeout(doUpdate, interval);

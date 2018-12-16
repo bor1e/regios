@@ -53,6 +53,19 @@ def infoscan(request):
 
 
 @csrf_exempt
+def selected(request):
+    selected = request.POST.getlist('selected')
+    logger.debug('received selected list: %s' % selected)
+    scan_externals = Domains.objects.filter(domain__in=selected)
+
+    for i in scan_externals:
+        scrapyd.schedule('default', 'externalspider',
+                         url=i.url, domain=i.external_domain,
+                         keywords=[])
+    return JsonResponse({'remaining': 'remaining', 'time': 'now'})
+
+
+@csrf_exempt
 def infoscan_status(request):
     domain = request.GET.get('domain')
     logger.debug('domain: %s' % domain)

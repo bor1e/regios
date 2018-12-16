@@ -8,5 +8,6 @@ urlpatterns = [
     path('post/', views.post, name='post'),
     path('get/', views.get, name='get'),
     path('infoscan/', views.infoscan, name='infoscan'),
-    path('infoscan/status', views.infoscan_status, name='infoscan_status'),
+    path('infoscan/status/', views.infoscan_status, name='infoscan_status'),
+    path('selected/', views.selected, name='selected'),
 ]
