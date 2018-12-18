@@ -100,7 +100,7 @@ class InfoPipeline(object):
         if 'info' not in attr:
             return
         d = Domains.objects.get(domain=self.domain)
-        logger.warning('domain: %s ' % d)
+        logger.debug('closing spider for domain: %s ' % d)
 
         try:
             obj = Info.objects.get(domain=d)
@@ -108,7 +108,7 @@ class InfoPipeline(object):
             obj = None
 
         if obj:
-            logger.warning('obj: %s ' % obj)
+            logger.debug('updating information of: %s ' % obj)
             obj.name = self.name
             obj.impressum_url = self.impressum_url
             obj.zip = self.zip
@@ -124,7 +124,7 @@ class InfoPipeline(object):
                 other=self.other,
                 domain=d,
             )
-            logger.warning('info: %s ' % i)
+            logger.debug('info created: %s ' % i)
 
     def process_item(self, item, spider):
         if 'name' in item:
@@ -135,7 +135,7 @@ class InfoPipeline(object):
             if self.name == 'dummy':
                 self.name = item['alternative_name']
             else:
-                self.name = ' '.join([self.name, item['alternative_name']])
+                self.name += item['alternative_name']
         if 'impressum_url' in item:
             self.impressum_url = item['impressum_url']
         if 'title' in item:
