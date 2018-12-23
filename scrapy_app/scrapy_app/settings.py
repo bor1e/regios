@@ -28,7 +28,7 @@ NEWSPIDER_MODULE = 'scrapy_app.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'scrapy_app (+http://www.yourdomain.com)'
+USER_AGENT = 'scrapy_app (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 # ROBOTSTXT_OBEY = True

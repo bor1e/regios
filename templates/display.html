@@ -70,7 +70,6 @@
                 <th>ZIP</th>
                 <th>Select for Scan</th>
                 <th>Name</th>
-                <th>Title</th>
                 <th>Options</th>
             </tr>
         </thead>
@@ -89,19 +88,14 @@
                 <td id="name_id_{{ forloop.counter }}">
                     {% if external.info.name != 'dummy' %}
                     {{external.info.name}}
-                    {% else %}
-                    Nothing found.
-                    {% endif %}
-                </td>
-                <td id="title_id_{{ forloop.counter }}">
-                    {% if external.info.title != 'None!' %}
+                    {% elif external.info.title != 'None!' %}
                     {{external.info.title}}
                     {% else %}
                     Nothing found.
                     {% endif %}
                 </td>
                 <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
-                    <button class="button is-success is-outlined" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
+                    <button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
                     <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}">
                 </td>
             </tr>
@@ -182,7 +176,7 @@ function startScraping(spider, domain, url, display_id, job) {
 $(document).ready(function() {
     $('#externals').DataTable({
         "order": [
-            [3, 'desc']
+            [3, 'asc']
         ],
         "pageLength": 100,
     });

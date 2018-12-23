@@ -26,6 +26,7 @@ def check(request):
     else:
         url = request.session['url']
     domain = urlparse(url).netloc
+    # TODO: if the sites exists already in the db but not fullscan error occurs
     if Domains.objects.filter(domain=domain).exists():
         return redirect('display', domain=domain)
 
@@ -61,8 +62,9 @@ def display(request, domain):
 
 def _get_data(domain):
     duration = domain.duration.total_seconds()
-    # logger.debug('externals: %s' % len(externals))
-    externals_scanned = Domains.objects.filter(src_domain=domain.domain).exclude(domain__in=BlackList.objects.all().values_list('ignore', flat=True))
+    externals_scanned = Domains.objects.filter(src_domain=domain.domain) \
+        .exclude(domain__in=BlackList.objects.all().values_list('ignore',
+                                                                flat=True))
     data = {
         'domain': domain.domain,
         'url': domain.url,
@@ -71,7 +73,7 @@ def _get_data(domain):
         'status': domain.status,
         'name': domain.info.name,
         'title': domain.info.title,
-        'zip': domain.info.zip,
+        'zip': '{:05d}'.format(domain.info.zip),
         'other': domain.info.other,
         'locals': domain.locals,
         'externals': domain.externals,

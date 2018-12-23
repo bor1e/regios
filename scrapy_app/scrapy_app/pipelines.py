@@ -55,7 +55,7 @@ class BotPipeline(object):
     def process_item(self, item, spider):
         # logger.debug('\n\n\nitem:\n%s\n\n\n' % item)
         # if 'impressum' in getattr(spider, 'pipelines', []):
-        if 'name' in item:
+        if 'name' in item and item['name'] != '':
             self.name = item['name']
         if 'zip' in item:
             self.zip = item['zip']
@@ -127,11 +127,13 @@ class InfoPipeline(object):
             logger.debug('info created: %s ' % i)
 
     def process_item(self, item, spider):
-        if 'name' in item:
+        logger.debug('spider: %s' % spider.__dict__)
+
+        if 'name' in item and not item['name'] == '':
             self.name = item['name']
         if 'zip' in item:
             self.zip = item['zip']
-        if 'alternative_name' in item:
+        if 'alternative_name' in item and not item['alternative_name'] == '':
             if self.name == 'dummy':
                 self.name = item['alternative_name']
             else:
@@ -142,5 +144,8 @@ class InfoPipeline(object):
             self.title.add(item['title'])
         if 'other' in item:
             self.other.add(item['other'])
+
+        spider.close_spider = True
+        logger.debug('clsoing spider: %s' % spider.__dict__)
 
         return item
