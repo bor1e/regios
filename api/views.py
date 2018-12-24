@@ -52,6 +52,8 @@ def infoscan(request):
     return JsonResponse({'remaining': remaining, 'time': now})
 
 
+# TODO probably I will need to extract this method into a single started, in
+# order to be independet of the request.
 @csrf_exempt
 def selected(request):
     selected = request.POST.getlist('selected')
@@ -69,16 +71,17 @@ def selected(request):
         scrapyd.schedule('default', 'externalspider',
                          url=domain.url, domain=domain.external_domain,
                          keywords=[])
+    # TODO!
     return JsonResponse({'remaining': 'remaining', 'time': 'now'})
 
 
 @csrf_exempt
-def infoscan_status(request):
-    domain = request.GET.get('domain')
-    logger.debug('domain: %s' % domain)
+def scrapy_jobs_status(request):
+    # domain = request.GET.get('domain')
+    # logger.debug('domain: %s' % domain)
     now = time.time()
-    start = request.GET.get('timer')
-    elapsed = now - float(start)
+    start = float(request.GET.get('timer'))
+    elapsed = now - start
     post_jobs = scrapyd.list_jobs('default')
     remaining = len(post_jobs['running']) + len(post_jobs['pending'])
     status = 'pending' if remaining > 0 else 'finished'

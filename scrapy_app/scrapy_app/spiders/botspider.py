@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import scrapy
+# import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
+import re
+
 # from urllib.parse import urlparse
 # from scrapy_app import pipelines
 '''
@@ -33,18 +35,14 @@ class BotSpider(CrawlSpider):
         ])
 
         BotSpider.rules = [
-            Rule(LinkExtractor(allow=('/(?i)impressum|imprint')),
+            Rule(LinkExtractor(allow=(
+                 '/(?i)(impressum|legalnotices|imprint|' +
+                 'about|legaldisclosure|corporate-info|terms-of-service)')),
                  callback='parse_impressum'),
             Rule(LinkExtractor(unique=True, allow=(
-                r'/(?i)(home|index|index\.html)')), callback='parse_title'),
-            # Rule(LinkExtractor( \
-            # unique=True, allow=('/(?i)(partner|mitglieder|' \
-            #   'freunde|teilnehmer)')),
-            # callback='parse_partner'),
+                r'/(?i)(home|start|index|index\.html)')),
+                callback='parse_title'),
             Rule(LinkExtractor(unique=True), callback='parse_item'),
-            # Callback for partner
-            # test_ Rule(LinkExtractor(unique=True),
-            # follow=True, callback='parse_item'),
         ]
         super(BotSpider, self).__init__(*args, **kwargs)
 
@@ -61,24 +59,46 @@ class BotSpider(CrawlSpider):
 
         return item
 
-    def parse_title(self, response):
+    def parse_impressum(self, response):
         item = {}
-        item['title'] = response.xpath('//title/text()').extract_first()
-        item['other'] = response.url
+        item['title'] = self._get_title(response)
+        item['name'] = self._get_name(response)
+        zipcode, altname = self._get_zip(response)
+        item['zip'] = zipcode
+        item['alternative_name'] = altname
+        item['impressum_url'] = response.url
+        self.logger.debug('item: %s ' % item)
+
         return item
 
-    def _get_name(self, response, item):
+    def _get_title(self, response):
+        docelement = response.xpath('//title/text()').extract_first()
+        re_title = re.compile('impressum', re.IGNORECASE)
+        title = re_title.sub('', docelement).replace('|', ' ').\
+            replace('-', ' ').strip()
+        formated_title = re.sub(' +', ' ', title).strip()
+        self.logger.debug('title: %s ' % formated_title)
+        return formated_title
+
+    def _get_name(self, response):
         keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',
-                    'OHG', 'KG', 'AG', 'gesellschaft', 'KdöR']
+                    'OHG', 'KG', 'AG', 'gesellschaft', 'KdöR', 'Inc', 'INC']
+        name = {}
         for key in keywords:
-            tmp = 100
-            # we GUESS that typically names include max 5
-            # ! TODO: no guesses!
-            sub = 5
+            # selects elements in Document which contain the keyword
             selector = response.xpath(
                 "//*[contains(text(), '" + key + "')]/text()")
             if not selector:
                 continue
+
+            # assuming the address line in  impressum containing the keyword
+            # has less than 100 letters
+            # TODO Problem: it filters the shortest name. Maybe combine with
+            # zip search, i.e. if zip two/three lines afterwards, most probably
+            # the string is the name
+            tmp = 100
+            # assuming name including keyword is not more than 5 words
+            start = 5
             for sel in selector:
                 strings = sel.extract().split()
 
@@ -89,59 +109,42 @@ class BotSpider(CrawlSpider):
                         tmp = len(strings)
                         index = strings.index('V.')
 
-                        # dont go backwards, i.e. negativ;
-                        sub = min(sub, len(strings) - 1)
-                        item[key] = strings[index - sub:index + 1]
-                        if len(strings) - 1 == index:
-                            self.logger.info('found e. V. END of line:\n%s'
-                                             % strings)
-                        else:
-                            self.logger.info('found e. V. in MID of line:\n%s'
-                                             % item[key])
+                        # avoiding negativ start e.g. strings[-1:3];
+                        start = min(start, len(strings) - 1)
+                        name[key] = ' '.join(strings[index - start:index + 1])
                         continue
 
-                if key in strings and len(strings) < tmp:
+                elif key in strings and len(strings) < tmp:
                     # get shortest paragrapgh including the keyword
                     tmp = len(strings)
                     index = strings.index(key)
                     # dont go backwards, i.e. negativ;
-                    sub = min(sub, len(strings) - 1)
-                    item[key] = strings[index - sub:index + 1]
-                    if len(strings) - 1 == index:
-                        self.logger.info('found %s END of line:\n%s'
-                                         % (key, strings))
-                    else:
-                        self.logger.info('found %s in MID of line:\n%s'
-                                         % (key, item[key]))
+                    start = min(start, len(strings) - 1)
+                    name[key] = ' '.join(strings[index - start:index + 1])
 
-        if 'e.V.' in item and 'e. V.' in item:
-            ev = ' '.join(item['e.V.'])
-            e_v = ' '.join(item['e. V.'])
-            if len(ev) > len(e_v):
-                item['name'] = e_v
-            else:
-                item['name'] = ev
+        name['name'] = ''
+        evs = False
+        if 'e.V.' in name and 'e. V.' in name:
+            evs = True
+            ev = name['e.V.']
+            e_v = name['e. V.']
+            # TODO Problem: choosing the shorter version, see prev
+            verein = ev if len(ev) < len(e_v) else e_v
+            name['name'] = verein
 
-        return item
+        for key in keywords:
+            if key in name and not evs:
+                name['name'] += name[key]
 
-    def _get_zip(self, response, item):
-        find_zip = response.xpath('//p/text()').extract()
-        for i in find_zip:
-            i = i.strip().split()
-            if i and i[0].isdigit() and len(i[0]) == 5:
-                self.logger.debug('item: %s' % item)
-                self.logger.debug('i: %s' % i)
-                item['zip'] = i[0]
-                break
-        return item
+        self.logger.debug('name: %s ' % name)
 
-    def parse_impressum(self, response):
-        item = {}
-        item = self._get_name(response, item)
-        item = self._get_zip(response, item)
-        item['impressum_url'] = response.url
-        # response.xpath("//*[contains(text(), '" + key  + "')]/text()")
-        # .re(r'(?i)(gmbh|partner|e\.V\.|e\. V\.|gesellschaft|mbh|
-        # ag|kg|gbr|ohg)')
+        return name['name']
 
-        return item
+    def _get_zip(self, response):
+        docelements = ['p', 'span', 'div', 'strong', 'td']
+        zipcode = None
+        for elem in docelements:
+            elements = response.xpath('//' + elem + '/text()').extract()
+            zipcode, altname = self._search_for_zip(elements)
+            if zipcode:
+                return zipcode, altname

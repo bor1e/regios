@@ -192,7 +192,7 @@ $(document).ready(function() {
             var interval = 1500;
             console.log('data: ' + data);
             (function doUpdate() {
-                $.get("/api/infoscan/status", { 'domain': domain, 'timer': data.time },
+                $.get("/api/scrapy_jobs_status/", { 'domain': domain, 'timer': data.time },
                         function(new_data) {
                             console.log('new_data: ' + new_data);
                             if (new_data.remaining > 0)

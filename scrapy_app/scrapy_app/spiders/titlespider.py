@@ -7,8 +7,8 @@ import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
-class TitleSpider(CrawlSpider):
-    name = 'titlespider'
+class ExternalSpider(CrawlSpider):
+    name = 'externalspider'
 
     def __init__(self, *args, **kwargs):
         self.url = kwargs.get('url')
