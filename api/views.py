@@ -55,6 +55,13 @@ def infoscan(request):
 @csrf_exempt
 def selected(request):
     selected = request.POST.getlist('selected')
+    '''
+    zip_from = request.POST.get('zip_from')
+    zip_to = request.POST.get('zip_to')
+    keywords = request.POST.get('keywords').strip().split(';')
+    domains = Domains.objects.filter(info__zip_gte=zip_from).\
+        exclude('info__zip_lte=zip_to')
+    '''
     logger.debug('received %s selected domains to scan.' % len(selected))
     domains = Domains.objects.filter(domain__in=selected)
 
@@ -106,7 +113,7 @@ def get(request):
                     crawling.save()
                     duration = str(timedelta(seconds=duration.seconds))
 
-            log_placeholder = localhost + '/logs/default/crawler/{}.log'
+            # log_placeholder = localhost + '/logs/default/crawler/{}.log'
             info_name = '---'
             if hasattr(crawling, 'info'):
                 info_name = crawling.info.name
@@ -119,7 +126,7 @@ def get(request):
                 'domain': crawling.domain,
                 'duration': '{0}:{1:5.3f}'.format(int(duration / 60),
                                                   float(duration % 60)),
-                'logs': log_placeholder.format(task_id),
+                # 'logs': log_placeholder.format(task_id),
             }
             return JsonResponse({'data': stats})
             # return render(request, 'home/status.html', stats)

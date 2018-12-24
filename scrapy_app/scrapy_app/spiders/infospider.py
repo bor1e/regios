@@ -17,6 +17,7 @@ class InfoSpider(CrawlSpider):
         self.url = kwargs.get('url')
         self.domain = kwargs.get('domain')
         self.keywords = kwargs.get('keywords')
+        # self.domains_in_db = kwargs.get('domains_in_db')
         self.start_urls = [self.url]
         self.close_spider = False
         self.allowed_domains = [self.domain]
@@ -39,10 +40,23 @@ class InfoSpider(CrawlSpider):
 
     def parse(self, response):
         if self.close_spider:
-            self.logger.debug('\n\n\n\nclosing spider....\n\n\n\n')
             raise CloseSpider('Impressum was found!')
         if response.status in range(402, 405):
             self.logger.debug('!!404: %s' % response.url)
+
+        '''
+        # check for keywords:
+        for key in self.keywords:
+            element = response.xpath('//*[contains(text(), ' + key + ')]').\
+                extract()
+            if element:
+                # key len(element) times found in response.url!
+        for domain in self.domains_in_db:
+            element = response.xpath('//a[contains(@href, ' + domain + ')]').\
+                extract()
+            if element:
+                # domain len(element) times found in response.url!
+        '''
 
         self.logger.debug('response: %s' % response.url)
         impressum = LinkExtractor(unique=True, allow=(
@@ -81,10 +95,11 @@ class InfoSpider(CrawlSpider):
     def _get_title(self, response):
         docelement = response.xpath('//title/text()').extract_first()
         re_title = re.compile('impressum', re.IGNORECASE)
-        title = re_title.sub('', docelement).replace('|', '').\
+        title = re_title.sub('', docelement).replace('|', ' ').\
             replace('-', ' ').strip()
-        self.logger.debug('title: %s ' % title)
-        return title
+        formated_title = re.sub(' +', ' ', title).strip()
+        self.logger.debug('title: %s ' % formated_title)
+        return formated_title
 
     def _get_name(self, response):
         keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',
@@ -134,7 +149,7 @@ class InfoSpider(CrawlSpider):
             evs = True
             ev = name['e.V.']
             e_v = name['e. V.']
-            # TODO Problem: choosing the shorter version, see prev TODO
+            # TODO Problem: choosing the shorter version, see prev
             verein = ev if len(ev) < len(e_v) else e_v
             name['name'] = verein
 
@@ -147,7 +162,7 @@ class InfoSpider(CrawlSpider):
         return name['name']
 
     def _get_zip(self, response):
-        docelements = ['p']#, 'span', 'div', 'strong', 'td']
+        docelements = ['p', 'span', 'div', 'strong', 'td']
         zipcode = None
         for elem in docelements:
             elements = response.xpath('//' + elem + '/text()').extract()

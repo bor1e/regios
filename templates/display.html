@@ -48,7 +48,7 @@
                 </tbody>
             </table>
             <div class="content">
-                <button id="infoscan" class="button is-primary is-inverted">InfoScan</button>
+                <button id="infoscan" class="button is-primary is-inverted"><a href="/">Start</a></button>
                 <a class="button is-primary is-inverted" href="/TODO">Filters</a>
                 <a class="button is-primary is-inverted" href="/TODO">Graph</a>
             </div>
@@ -61,14 +61,14 @@
 <div class="container">
     <form method="POST" action="{% url 'api:selected' %}">
         {% csrf_token %}    
+        <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
         <table id="externals" class="display">
         <thead>
             <tr>
-                <th>#</th>
+                <th>Select for Scan</th>
                 <th>External Domains</th>
                 <th>External Urls</th>
                 <th>ZIP</th>
-                <th>Select for Scan</th>
                 <th>Name</th>
                 <th>Options</th>
             </tr>
@@ -76,15 +76,14 @@
         <tbody>
             {% for external in domain.filtered_externals %}
             <tr>
-                <th id="id">{{ forloop.counter }}</th>
-                <td id="external_domain">{{external.domain}}</td>
-                <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
-                <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
                 <td>
                     <label class="checkbox">
                       <input type="checkbox" name="selected" value="{{external.domain}}" />
                     </label>
                 </td>
+                <td id="external_domain">{{external.domain}}</td>
+                <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
+                <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
                 <td id="name_id_{{ forloop.counter }}">
                     {% if external.info.name != 'dummy' %}
                     {{external.info.name}}
@@ -102,7 +101,6 @@
             {% endfor %}
         </tbody>
     </table>
-    <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
     </form>
 
     <!--table id="locals" class="display">

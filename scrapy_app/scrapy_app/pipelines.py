@@ -11,7 +11,7 @@ class BotPipeline(object):
     def __init__(self, domain, *args, **kwargs):
         self.domain = domain
         self.name = 'dummy'
-        self.zip = '00000'
+        self.zip = '0'
         self.impressum_url = '-----'
         self.title = set()
         self.other = set()
@@ -28,18 +28,11 @@ class BotPipeline(object):
         attr = getattr(spider, 'pipelines', [])
         if 'fullscan' not in attr:
             return
-        # if self.impressum_url != '-----' and self.title:
         d = Domains.objects.filter(domain=self.domain).first()
+
         objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
         Locals.objects.bulk_create(objs_l)
-        '''
-        objs_e = ''
-        if self.p_external_urls:
-            objs_e = (Externals(domain=d, url=i) for i in self.p_external_urls)
-            self.other.add('partner')
-        else:
-            objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
-        '''
+
         objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
         Externals.objects.bulk_create(objs_e)
 
@@ -83,9 +76,8 @@ class InfoPipeline(object):
     def __init__(self, domain, *args, **kwargs):
         self.domain = domain
         self.name = 'dummy'
-        self.zip = '00000'
-        self.title = set()
-        self.other = set()
+        self.zip = '0'
+        self.title = ''
         self.impressum_url = '-----'
 
     @classmethod
@@ -113,15 +105,13 @@ class InfoPipeline(object):
             obj.impressum_url = self.impressum_url
             obj.zip = self.zip
             obj.title = self.title.pop() if self.title else 'None!'
-            obj.other = self.other
             obj.save()
         else:
             i = Info.objects.create(
                 name=self.name,
                 impressum_url=self.impressum_url,
                 zip=self.zip,
-                title=self.title.pop() if self.title else 'None!',
-                other=self.other,
+                title=self.title if self.title else 'None!',
                 domain=d,
             )
             logger.debug('info created: %s ' % i)
@@ -141,9 +131,7 @@ class InfoPipeline(object):
         if 'impressum_url' in item:
             self.impressum_url = item['impressum_url']
         if 'title' in item:
-            self.title.add(item['title'])
-        if 'other' in item:
-            self.other.add(item['other'])
+            self.title = item['title']
 
         spider.close_spider = True
         logger.debug('clsoing spider: %s' % spider.__dict__)
