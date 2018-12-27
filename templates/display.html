@@ -58,14 +58,16 @@
 </section>
 {% endblock %}
 {% block content%}
+<section class="section">
 <div class="container">
+
     <form method="POST" action="{% url 'api:selected' %}">
-        {% csrf_token %}    
-        <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
+        {% csrf_token %} 
+            <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
         <table id="externals" class="display">
         <thead>
             <tr>
-                <th>Select for Scan</th>
+                <th>Select</th>
                 <th>External Domains</th>
                 <th>External Urls</th>
                 <th>ZIP</th>
@@ -101,6 +103,7 @@
             {% endfor %}
         </tbody>
     </table>
+    <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
     </form>
 
     <!--table id="locals" class="display">
@@ -120,6 +123,7 @@
         </tbody>
     </table-->
 </div>
+</section>
 {% endblock %}
 {% block javascript %}
 <script>

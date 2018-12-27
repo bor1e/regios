@@ -5,7 +5,7 @@ Finds the title of index/home directory and ZIP Code, and name from impressum
 '''
 # import scrapy
 from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider
+from scrapy.spiders import CrawlSpider, Rule
 
 
 class ExternalSpider(CrawlSpider):
@@ -20,6 +20,10 @@ class ExternalSpider(CrawlSpider):
         self.pipelines = set([
             'external',
         ])
+
+        ExternalSpider.rules = [
+            Rule(LinkExtractor(unique=True, allow=()), callback='parse_item')
+        ]
         super(ExternalSpider, self).__init__(*args, **kwargs)
 
     def parse_item(self, response):
@@ -32,5 +36,6 @@ class ExternalSpider(CrawlSpider):
 
         for link in external_urls:
             item['external_urls'].add(link.url)
+        self.logger.debug('external_urls found: %s' % len(external_urls))
 
         return item

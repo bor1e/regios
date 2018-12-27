@@ -2,6 +2,7 @@ from django.db import models
 import json
 from urllib.parse import urlparse
 from filter.models import BlackList
+from datetime import timedelta
 import logging
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class Domains(models.Model):
     # parent, child, grandchild ...
     level = models.SmallIntegerField(default=0)
     src_domain = models.TextField(max_length=200, null=True)
-    duration = models.DurationField(null=True)
+    duration = models.DurationField(default=timedelta(), null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

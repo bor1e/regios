@@ -61,7 +61,7 @@ def display(request, domain):
 
 
 def _get_data(domain):
-    duration = domain.duration.total_seconds()
+    duration = domain.duration.total_seconds() if domain.duration else 0
     externals_scanned = Domains.objects.filter(src_domain=domain.domain) \
         .exclude(domain__in=BlackList.objects.all().values_list('ignore',
                                                                 flat=True))

@@ -1,0 +1,104 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Crawling of <span id=externals_count>{{jobs.items|length}}<span> domains started</h1>
+            <h2 class="subtitle">
+                Status: <span id="statusExternalScan"></span><br>
+                Remaining Domains to crawl: <span id="remaining"></span><br>
+                Time elapsed since start: <span id="timeElapsed"></span>sec
+            </h2>
+            <input type="hidden" id="timer" value="{{timer}}">
+            <div class="content">
+                <a class="button is-primary is-inverted" href="/TODO">Graph</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block content%}
+<section class="section">
+    <div class="container">
+        <table id="externals" class="display">
+            <thead>
+                <tr>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for domain, job_id in jobs.items%}
+                <tr>
+                    <td id="domain">{{domain}}
+                        <input type="hidden" id="job_id" value="{{job_id}}">
+                    </td>
+                    <td id="status">-</td>
+                    <td id="duration">-</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block javascript %}
+<script>
+function getStatus(domain, job_id, doc_elem) {
+    console.log('received domain: ' + domain)
+    console.log('received doc_elem:');
+    console.log(doc_elem);
+   
+}
+$(document).ready(function() {
+    $('#externals').DataTable();
+    var isFinished = $("#statusExternalScan").text() == 'finished';
+    if (isFinished)
+        return;
+    $("#externals > tbody > tr").each(function() {
+        var domain = $(this).find("#domain").text();
+        var job_id = $(this).find("#job_id").val();
+        var self = this;
+        var interval = 1500;
+        (function doUpdate() {
+            $.get("/api/get/", { task_id: job_id, domain: domain },
+                    function(data) {
+                        console.log(data);
+                        if (data.status)
+                            $(self).find('#status').html('<div class="control is-loading">' +
+                                '<input class="input" type="text" value="' + data.status +
+                                '" readonly></div>');
+                        else {
+                            $(self).find('#status').html(data.data.status);
+                            $(self).find('#duration').html(data.data.duration)
+                        }
+                    })
+                .done(function() {
+                    var status = $(self).find('#status').text()
+                    if (status == 'finished') {
+                        console.log(domain + ' finished!')
+                    } else {
+                        console.log('not finished... ');
+                        setTimeout(doUpdate, interval);
+                    }
+                });
+        })();
+    });
+    var timer = $('#timer').val();
+    var interval = 3500;
+    (function doUpdate() {
+        $.get('/api/scrapy_jobs_status/', { timer: timer }, function(data) {
+            console.log(data);
+            $('#remaining').html(data.remaining);
+            $('#timeElapsed').html(data.elapsed);
+            $('#statusExternalScan').html(data.status);
+        }).done(function() {
+            if ( $('#statusExternalScan').text() != 'finished') {
+                setTimeout(doUpdate, interval);
+            }
+        });
+    })();
+});
+</script>
+{% endblock %}
