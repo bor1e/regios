@@ -46,7 +46,7 @@ class Domains(models.Model):
         ignore_external_pks = [external.pk for external in externals
                                if external.external_domain in to_ignore]
         logger.debug('ignore: %s' % to_ignore)
-        logger.debug('pks: %s' % ignore_external_pks)
+        logger.debug('ignore_external_pks: %s' % ignore_external_pks)
         return externals.exclude(
             pk__in=ignore_external_pks
         )

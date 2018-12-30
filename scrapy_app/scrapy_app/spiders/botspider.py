@@ -39,9 +39,9 @@ class BotSpider(CrawlSpider):
                  '/(?i)(impressum|legalnotices|imprint|' +
                  'about|legaldisclosure|corporate-info|terms-of-service)')),
                  callback='parse_impressum'),
-            Rule(LinkExtractor(unique=True, allow=(
-                r'/(?i)(home|start|index|index\.html)')),
-                callback='parse_title'),
+            # Rule(LinkExtractor(unique=True, allow=(
+            #    r'/(?i)(home|start|index|index\.html)')),
+            #    callback='parse_title'),
             Rule(LinkExtractor(unique=True), callback='parse_item'),
         ]
         super(BotSpider, self).__init__(*args, **kwargs)

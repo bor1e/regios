@@ -8,8 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 class ItemPipeline(object):
-    def __init__(self, domain, *args, **kwargs):
+    def __init__(self, domain, url, *args, **kwargs):
         self.domain = domain
+        self.url = url
         self.name = 'dummy'
         self.zip = '0'
         self.title = ''
@@ -21,29 +22,38 @@ class ItemPipeline(object):
     def from_crawler(cls, crawler):
         return cls(
             domain=crawler.spider.domain,
+            url=crawler.spider.url,
         )
 
     def close_spider(self, spider):
         attr = getattr(spider, 'pipelines', [])
-        d = Domains.objects.get(domain=self.domain)
-        logger.debug('closing spider for domain: %s ' % d)
+        d, x = Domains.objects.get_or_create(domain=self.domain, url=self.url)
+        logger.debug('closing spider for domain: %s created: %s' % (d, x))
 
         if 'fullscan' in attr:
-            objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
-            Locals.objects.bulk_create(objs_l)
+            logger.debug('\nBOTSPIDER\n')
 
-            objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
+            objs_l = (Locals(domain=d, url=i)
+                      for i in self.locals_url)
+            objs_e = (Externals(domain=d, url=i)
+                      for i in self.external_urls)
+
+            Locals.objects.bulk_create(objs_l)
             Externals.objects.bulk_create(objs_e)
 
-            Info.objects.create(
+            logger.debug('locals found: %s' % len(self.locals_url))
+            logger.debug('externals found: %s' % len(self.external_urls))
+            i = Info.objects.create(
                 name=self.name,
                 impressum_url=self.impressum_url,
                 zip=self.zip,
                 title=self.title if self.title else 'None!',
                 domain=d,
             )
+            logger.debug('info created: %s ' % i)
 
         elif 'info' in attr:
+            logger.debug('\nINFOSPIDER\n')
             try:
                 obj = Info.objects.get(domain=d)
             except ObjectDoesNotExist:
@@ -67,11 +77,14 @@ class ItemPipeline(object):
                 logger.debug('info created: %s ' % i)
 
         elif 'external' in attr:
+            logger.debug('\nEXTERNALSPIDER\n')
             objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
             Locals.objects.bulk_create(objs_l)
 
             objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
             Externals.objects.bulk_create(objs_e)
+            logger.debug('locals created: %s' % len(self.locals_url))
+            logger.debug('externals created: %s' % len(self.external_urls))
 
         else:
             return

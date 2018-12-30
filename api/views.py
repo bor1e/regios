@@ -84,6 +84,7 @@ def cancel_job(request, job_id):
     logger.debug('scrapies result: %s' % result)
     return HttpResponse(result)
 
+
 @csrf_exempt
 def scrapy_jobs_status(request):
     now = time.time()
@@ -105,8 +106,6 @@ def get(request):
     if not task_id or not domain:
         return JsonResponse({'error': 'Missing args'})
     logger.debug('task_id: %s\ndomain: %s' % (task_id, domain))
-    logger.debug(u'%s' % domain)
-    logger.debug('domain equals: %s' % (domain == 'germanaccelerator.com'))
     crawling = Domains.objects.get(domain=domain)
     logger.debug('domain to crawl: %s' % crawling)
     status = scrapyd.job_status('default', task_id)
