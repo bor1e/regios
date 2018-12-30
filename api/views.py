@@ -15,10 +15,6 @@ scrapyd = ScrapydAPI(localhost)
 logger = logging.getLogger(__name__)
 
 
-def multiple(request):
-    return HttpResponse('multiple')
-
-
 @csrf_exempt
 def infoscan(request):
     domain = request.POST.get('domain')
@@ -69,23 +65,24 @@ def selected(request):
     existing_domains = [d.pk for d in selected_domains if d.externals.exists()]
     domains = selected_domains.exclude(pk__in=existing_domains)
     jobs = {}
-    start = 0
     now = time.time()
     for domain in domains:
-        start += 1
         job_id = scrapyd.schedule('default', 'externalspider',
                                   url=domain.url,
                                   domain=domain.domain,
                                   keywords=[])
         jobs[domain.domain] = job_id
-        if start == 2:
-            break
-    logger.debug('jobs: %s' % jobs)
+    # logger.debug('jobs: %s' % jobs)
     # TODO should render a website in api, rather a JsonResponse
     # return JsonResponse({'jobs': jobs})
     return render(request, 'selected.html', {'jobs': jobs,
                                              'timer': now})
 
+
+def cancel_job(request, job_id):
+    result = scrapyd.cancel('default', job_id)
+    logger.debug('scrapies result: %s' % result)
+    return HttpResponse(result)
 
 @csrf_exempt
 def scrapy_jobs_status(request):

@@ -43,7 +43,7 @@
                             processing ...
                             {% endif %}
                         </td>
-                        <td><a class="button is-primary" href="{% url 'refresh' domain.domain%}">Refresh</a> start search for externals</td>
+                        <td><a class="button is-primary" href="{% url 'refresh' domain.domain %}">Refresh</a> start search for externals</td>
                     </tr>
                 </tbody>
             </table>
@@ -96,8 +96,8 @@
                     {% endif %}
                 </td>
                 <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
-                    <button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
-                    <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}">
+                    <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
+                    <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
                 </td>
             </tr>
             {% endfor %}

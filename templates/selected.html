@@ -26,6 +26,7 @@
                     <th>Domain</th>
                     <th>Status</th>
                     <th>Duration</th>
+                    <th>Cancel</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,6 +37,7 @@
                     </td>
                     <td id="status">-</td>
                     <td id="duration">-</td>
+                    <td><a class="button is-danger is-outlined" href="{% url 'api:cancel_job' job_id=job_id %}">Stop scan</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

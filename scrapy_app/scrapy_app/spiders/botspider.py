@@ -148,3 +148,43 @@ class BotSpider(CrawlSpider):
             zipcode, altname = self._search_for_zip(elements)
             if zipcode:
                 return zipcode, altname
+
+    def _search_for_zip(self, elements):
+        zipcode = 0
+        altname = ''
+        for i, docelem in enumerate(elements):
+            elem = docelem.strip().split()
+            if not elem:
+                continue
+            # finds the first zipcode displayed on website. Most probably it is
+            # the main one.
+            if elem[0].isdigit() and len(elem[0]) == 5 \
+               or 'D-' in elem[0] and len(elem[0]) == 7:
+                if i > 2 and elements[i - 3].strip().split():
+                    altname = elements[i - 3] + ' ' + \
+                        elements[i - 2]
+                else:
+                    altname = elements[i - 2]
+                zipcode = elem[0] if len(elem[0]) == 5 \
+                    else int(''.join(elem[0][2:]))
+                self.logger.debug('alternative_name: %s'
+                                  % altname)
+
+                break
+            # case: D_-_12345 (_: whitespace) => elem = ['D','-','12345']
+            elif elem[0] == 'D' and elem[2] and elem[2].isdigit() \
+                    and len(elem[2]) == 5:
+                if i > 2 and elements[i - 3].strip().split():
+                    altname = elements[i - 3] + ' ' + \
+                        elements[i - 2]
+                else:
+                    altname = elements[i - 2]
+                zipcode = elem[2]
+                self.logger.debug('alternative_name: %s'
+                                  % altname)
+                break
+            else:
+                self.logger.debug('elem: %s'
+                                  % docelem)
+
+        return zipcode, altname

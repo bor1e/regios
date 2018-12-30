@@ -24,7 +24,7 @@ def check(request):
     if request.POST.get('url'):
         url = request.POST.get('url')
     else:
-        url = request.session['url']
+        url = request.COOKIES['url']
     domain = urlparse(url).netloc
     # TODO: if the sites exists already in the db but not fullscan error occurs
     if Domains.objects.filter(domain=domain).exists():
@@ -39,11 +39,13 @@ def check(request):
 def refresh(request, domain):
     if not Domains.objects.filter(domain=domain).exists():
         response = redirect('start')
-        response.set_cookie('domain', domain)
         return response
     d = Domains.objects.filter(domain=domain).first()
     response = redirect('check')
     response.set_cookie('url', d.url)
+    logger.debug('dir - response: %s' % dir(response))
+    logger.debug('__dict__ - response: %s' % response.__dict__)
+
     d.delete()
     return response
 
