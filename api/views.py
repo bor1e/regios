@@ -80,9 +80,9 @@ def selected(request):
 
 
 def cancel_job(request, job_id):
-    result = scrapyd.cancel('default', job_id)
-    logger.debug('scrapies result: %s' % result)
-    return HttpResponse(result)
+    state = scrapyd.cancel('default', job_id)
+    logger.debug('cancled while in state: %s' % state)
+    return JsonResponse({'state': state})
 
 
 @csrf_exempt
@@ -149,6 +149,8 @@ def get(request):
             return JsonResponse({'error': str(e)})
     else:
         logger.info("STATUS : %s", status)
+        if not status:
+            status = 'not found/canceled'
         return JsonResponse({'status': status})
 
     # !TODO error handling

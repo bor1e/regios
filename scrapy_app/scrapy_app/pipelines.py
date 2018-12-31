@@ -2,15 +2,17 @@ from start.models import Domains, Info, Externals, Locals
 # import json
 # from urllib.parse import urlparse
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 class ItemPipeline(object):
-    def __init__(self, domain, url, *args, **kwargs):
+    def __init__(self, domain, url, stats, *args, **kwargs):
         self.domain = domain
         self.url = url
+        self.stats = stats
         self.name = 'dummy'
         self.zip = '0'
         self.title = ''
@@ -23,34 +25,40 @@ class ItemPipeline(object):
         return cls(
             domain=crawler.spider.domain,
             url=crawler.spider.url,
+            stats=crawler.stats,
         )
 
     def close_spider(self, spider):
         attr = getattr(spider, 'pipelines', [])
         d, x = Domains.objects.get_or_create(domain=self.domain, url=self.url)
-        logger.debug('closing spider for domain: %s created: %s' % (d, x))
+        # logger.debug('closing spider for domain: %s created: %s' % (d, x))
+        # logger.debug(self.stats.get_stats()['log_count/ERROR'])
 
         if 'fullscan' in attr:
             logger.debug('\nBOTSPIDER\n')
+            try:
+                objs_l = (Locals(domain=d, url=i)
+                          for i in self.locals_url)
+                objs_e = (Externals(domain=d, url=i)
+                          for i in self.external_urls)
 
-            objs_l = (Locals(domain=d, url=i)
-                      for i in self.locals_url)
-            objs_e = (Externals(domain=d, url=i)
-                      for i in self.external_urls)
+                Locals.objects.bulk_create(objs_l)
+                Externals.objects.bulk_create(objs_e)
 
-            Locals.objects.bulk_create(objs_l)
-            Externals.objects.bulk_create(objs_e)
-
-            logger.debug('locals found: %s' % len(self.locals_url))
-            logger.debug('externals found: %s' % len(self.external_urls))
-            i = Info.objects.create(
-                name=self.name,
-                impressum_url=self.impressum_url,
-                zip=self.zip,
-                title=self.title if self.title else 'None!',
-                domain=d,
-            )
-            logger.debug('info created: %s ' % i)
+                logger.debug('locals found: %s' % len(self.locals_url))
+                logger.debug('externals found: %s' % len(self.external_urls))
+                i = Info.objects.create(
+                    name=self.name,
+                    impressum_url=self.impressum_url,
+                    zip=self.zip,
+                    title=self.title if self.title else 'None!',
+                    domain=d,
+                )
+                logger.debug('info created: %s ' % i)
+                d.fullscan = True
+                d.save()
+            except IntegrityError:
+                pass
 
         elif 'info' in attr:
             logger.debug('\nINFOSPIDER\n')
@@ -78,6 +86,7 @@ class ItemPipeline(object):
 
         elif 'external' in attr:
             logger.debug('\nEXTERNALSPIDER\n')
+
             objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
             Locals.objects.bulk_create(objs_l)
 
@@ -86,6 +95,8 @@ class ItemPipeline(object):
             logger.debug('locals created: %s' % len(self.locals_url))
             logger.debug('externals created: %s' % len(self.external_urls))
 
+            d.fullscan = True
+            d.save()
         else:
             return
 

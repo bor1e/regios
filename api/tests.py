@@ -78,7 +78,7 @@ class ApiTestCase(TestCase):
                                    url=url,
                                    domain=domain,
                                    keywords=[])
-        time.sleep(15)
+        time.sleep(10)
         res = self.client.get('/api/get/', {'task_id': task_id,
                                             'domain': domain})
         print('duration externalspider: ' +
@@ -90,7 +90,7 @@ class ApiTestCase(TestCase):
                                    url=url,
                                    domain=domain,
                                    keywords=[])
-        time.sleep(15)
+        time.sleep(10)
         res = self.client.get('/api/get/', {'task_id': task_id,
                                             'domain': domain})
         print('duration botspider: ' +
@@ -99,3 +99,15 @@ class ApiTestCase(TestCase):
         botspider_count_ext = json.loads(res.content)['data']['externals']
         self.assertEqual(externalspider_count_locals, botspider_count_locals)
         self.assertEqual(externalspider_count_ext, botspider_count_ext)
+
+    def test_fullscan_check(self):
+        # domain = 'medical-valley-emn.de'
+        # url = 'http://medical-valley-emn.de'
+        # scrapyd.schedule('default', 'externalspider',
+        #                 url=url,
+        #                 domain=domain,
+        #                 keywords=[])
+        d = Domains.objects.get(domain='medical-valley-emn.de')
+        self.assertEqual(d.fullscan, False)
+        # time.sleep(10)
+        # self.assertEqual(d.fullscan, True)

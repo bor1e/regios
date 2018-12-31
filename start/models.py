@@ -32,6 +32,7 @@ class Domains(models.Model):
     status = models.CharField(default='started', max_length=10)
     # parent, child, grandchild ...
     level = models.SmallIntegerField(default=0)
+    fullscan = models.BooleanField(null=True, default=False)
     src_domain = models.TextField(max_length=200, null=True)
     duration = models.DurationField(default=timedelta(), null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -100,6 +101,7 @@ class Externals(models.Model):
     url = models.URLField()
     # pot = models.BooleanField(default=False)
     # related_name e.g. domain.externals.count()
+    selected = models.BooleanField(null=True, default=False)
     domain = models.ForeignKey(
         Domains,
         on_delete=models.CASCADE,

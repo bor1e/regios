@@ -31,13 +31,15 @@
             </thead>
             <tbody>
                 {% for domain, job_id in jobs.items%}
-                <tr>
+                <tr class="{{domain}}">
                     <td id="domain">{{domain}}
                         <input type="hidden" id="job_id" value="{{job_id}}">
                     </td>
                     <td id="status">-</td>
                     <td id="duration">-</td>
-                    <td><a class="button is-danger is-outlined" href="{% url 'api:cancel_job' job_id=job_id %}">Stop scan</a></td>
+                    <td>
+                         <button class="button is-danger is-outlined" type="button" onclick="cancelJob('{{ job_id }}', '{{ domain }}')">Cancel Scan</button>
+                        <!--a class="button is-danger is-outlined" href="{% url 'api:cancel_job' job_id=job_id %}">Stop scan</a--></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -47,11 +49,11 @@
 {% endblock %}
 {% block javascript %}
 <script>
-function getStatus(domain, job_id, doc_elem) {
-    console.log('received domain: ' + domain)
-    console.log('received doc_elem:');
-    console.log(doc_elem);
-   
+function cancelJob(job_id, domain) {
+    $.get("/api/cancel_job/"+job_id, {}, function(data) {
+        console.log(data)
+        $('.'+domain).find('td').eq(1).text('cancled while in state: <b>' + data.state +'</b>');
+    }); 
 }
 $(document).ready(function() {
     $('#externals').DataTable();
@@ -67,10 +69,16 @@ $(document).ready(function() {
             $.get("/api/get/", { task_id: job_id, domain: domain },
                     function(data) {
                         console.log(data);
-                        if (data.status)
+                        if (data.status) {
+                            if (data.status == 'not found/canceled') {
+
+                                $(self).find('#status').html('canceled/not found');
+                            } else {
                             $(self).find('#status').html('<div class="control is-loading">' +
                                 '<input class="input" type="text" value="' + data.status +
                                 '" readonly></div>');
+                        }
+                        }
                         else {
                             $(self).find('#status').html(data.data.status);
                             $(self).find('#duration').html(data.data.duration)
@@ -78,7 +86,7 @@ $(document).ready(function() {
                     })
                 .done(function() {
                     var status = $(self).find('#status').text()
-                    if (status == 'finished') {
+                    if (status == 'finished' || status == 'canceled/not found') {
                         console.log(domain + ' finished!')
                     } else {
                         console.log('not finished... ');
