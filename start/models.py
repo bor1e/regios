@@ -101,7 +101,7 @@ class Externals(models.Model):
     url = models.URLField()
     # pot = models.BooleanField(default=False)
     # related_name e.g. domain.externals.count()
-    selected = models.BooleanField(null=True, default=False)
+    # selected = models.BooleanField(null=True, default=False)
     domain = models.ForeignKey(
         Domains,
         on_delete=models.CASCADE,

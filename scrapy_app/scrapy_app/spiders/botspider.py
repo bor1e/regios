@@ -27,6 +27,8 @@ class BotSpider(CrawlSpider):
         self.keywords = kwargs.get('keywords')
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
+        if self.domain[0:4] == 'www.':
+            self.allowed_domains = [self.domain, self.domain[4:]]
         self.pipelines = set([
             # 'impressum',
             # 'title',

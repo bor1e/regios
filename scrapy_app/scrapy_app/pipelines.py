@@ -45,8 +45,8 @@ class ItemPipeline(object):
                 Locals.objects.bulk_create(objs_l)
                 Externals.objects.bulk_create(objs_e)
 
-                logger.debug('locals found: %s' % len(self.locals_url))
-                logger.debug('externals found: %s' % len(self.external_urls))
+                logger.debug('bot: locals %s' % len(self.locals_url))
+                logger.debug('bot: externals %s' % len(self.external_urls))
                 i = Info.objects.create(
                     name=self.name,
                     impressum_url=self.impressum_url,
@@ -55,10 +55,12 @@ class ItemPipeline(object):
                     domain=d,
                 )
                 logger.debug('info created: %s ' % i)
-                d.fullscan = True
-                d.save()
+
             except IntegrityError:
                 pass
+            finally:
+                d.fullscan = True
+                d.save()
 
         elif 'info' in attr:
             logger.debug('\nINFOSPIDER\n')
@@ -92,8 +94,8 @@ class ItemPipeline(object):
 
             objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
             Externals.objects.bulk_create(objs_e)
-            logger.debug('locals created: %s' % len(self.locals_url))
-            logger.debug('externals created: %s' % len(self.external_urls))
+            logger.debug('ex: locals created: %s' % len(self.locals_url))
+            logger.debug('ex: externals created: %s' % len(self.external_urls))
 
             d.fullscan = True
             d.save()
@@ -111,7 +113,7 @@ class ItemPipeline(object):
             if self.name == 'dummy':
                 self.name = item['alternative_name']
             else:
-                self.name += item['alternative_name']
+                self.name += '\n[alt: ' + item['alternative_name'] + ' ]'
         if 'impressum_url' in item:
             self.impressum_url = item['impressum_url']
         if 'title' in item:

@@ -21,6 +21,8 @@ class InfoSpider(CrawlSpider):
         self.start_urls = [self.url]
         self.close_spider = False
         self.allowed_domains = [self.domain]
+        if self.domain[0:4] == 'www.':
+            self.allowed_domains = [self.domain, self.domain[4:]]
         self.pipelines = set([
             'info',
         ])

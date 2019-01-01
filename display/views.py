@@ -3,8 +3,9 @@ from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
 from urllib.parse import urlparse
 # from django.core import serializers
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect  # , reverse
-
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,15 @@ def check(request):
     return render(request, 'display.html', {'domain': d})
 
 
+@csrf_exempt
+def externals_selected(request, domain):
+    # domain = Domains.objects.get(domain=domain)
+    selected = request.POST.getlist('selected')
+    now = time.time()
+    return render(request, 'external_selected.html', {'selected': selected,
+                                                      'timer': now})
+
+
 def refresh(request, domain):
     if not Domains.objects.filter(domain=domain).exists():
         response = redirect('start')
@@ -43,8 +53,8 @@ def refresh(request, domain):
     d = Domains.objects.filter(domain=domain).first()
     response = redirect('check')
     response.set_cookie('url', d.url)
-    logger.debug('dir - response: %s' % dir(response))
-    logger.debug('__dict__ - response: %s' % response.__dict__)
+    # logger.debug('dir - response: %s' % dir(response))
+    # logger.debug('__dict__ - response: %s' % response.__dict__)
 
     d.delete()
     return response

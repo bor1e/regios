@@ -60,7 +60,8 @@
 {% block content%}
 <section class="section">
     <div class="container">
-        <form method="POST" action="{% url 'api:selected' %}">
+        <!--form method="POST" action="{% url 'api:selected' %}"-->
+        <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
             {% csrf_token %}
             <div class="field is-grouped">
                 <div class="control">
@@ -98,7 +99,11 @@
                     <tr>
                         <td>
                             <label class="checkbox">
+                                {% if external.fullscan %}
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled/>
+                                {% else %}
                                 <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                                {% endif %}
                             </label>
                         </td>
                         <td id="external_domain">{{external.domain}}</td>
@@ -235,9 +240,8 @@ $(document).ready(function() {
     var isFinished = $("#status").text() == 'finished';
     var domain = $("#domain").text();
     if (isFinished) {
-
         var externals_count = parseInt($("#externals_count").text());
-        // start crawling 
+        // start crawling
         $.post("/api/infoscan/", { 'domain': domain }, function(data) {
             var interval = 1500;
             console.log('data: ' + data);

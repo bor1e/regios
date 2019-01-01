@@ -17,12 +17,14 @@ class ExternalSpider(CrawlSpider):
         self.keywords = kwargs.get('keywords')
         self.start_urls = [self.url]
         self.allowed_domains = [self.domain]
+        if self.domain[0:4] == 'www.':
+            self.allowed_domains = [self.domain, self.domain[4:]]
         self.pipelines = set([
             'external',
         ])
 
         ExternalSpider.rules = [
-            Rule(LinkExtractor(unique=True, allow=()), callback='parse_item')
+            Rule(LinkExtractor(unique=True), callback='parse_item')
         ]
         super(ExternalSpider, self).__init__(*args, **kwargs)
 

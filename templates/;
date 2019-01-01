@@ -1,0 +1,136 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Crawling of <span id=externals_count>{{selected|length}}<span> domains selected</h1>
+            <h2 class="subtitle">
+                Status: <span id="statusExternalScan"></span><br>
+                Remaining Domains to crawl: <span id="remaining"></span><br>
+                Time elapsed since start: <span id="timeElapsed"></span>sec
+            </h2>
+            <input type="hidden" id="timer" value="{{timer}}">
+            <div class="content">
+                <a class="button is-primary is-inverted" href="/TODO">Graph</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block content%}
+<section class="section">
+    <div class="container">
+        <table id="externals" class="display">
+            <thead>
+                <tr>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Externals</th>
+                    <th>Cancel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for domain in selected %}
+                <tr class="{{domain}}">
+                    <td id="domain">{{domain}}
+                        <input type="hidden" id="job_id" value="-">
+                    </td>
+                    <td id="status">-</td>
+                    <td id="duration">-</td>
+                    <td id="externals">-</td>
+                    <td>
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob('{{ domain }}')">Cancel Scan</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block javascript %}
+<script>
+function cancelJob(domain) {
+    var job_id = $('.'+domain).find("#job_id").val();
+    $.get("/api/cancel_job/" + job_id, {}, function(data) {
+        console.log(data)
+        $('.' + domain).find('td').eq(1).text('cancled while in state: <b>' + data.state + '</b>');
+    });
+}
+$(document).ready(function() {
+    var table = $('#externals').DataTable({
+        "pageLength": 100,
+    });
+    var isFinished = $("#statusExternalScan").text() == 'finished';
+    if (isFinished)
+        return;
+
+    var $rows = table
+        .rows()
+        .nodes()
+        .to$();
+    $rows.each(function() {
+        var domain = $.trim($(this).find("#domain").text());
+        var payload = { domain: domain, name: 'externalspider', keywords: ''};
+        $.post("/api/post/", payload, function(data) {
+            console.log(data);
+            if (data.info) {
+                console.log(domain)M
+                $('tr.' + domain).find('#status').html('data exists in DB');
+                            console.log($('tr.' + domain).find('#status').length);
+
+                return;
+            }
+            // var job_id = $(this).find("#job_id").val();
+            $(self).find("#job_id").val(data['task_id']);
+
+            var payload = { task_id: data['task_id'], domain: domain };
+            var self = this;
+            var interval = 1500;
+            (function doUpdate() {
+                $.get("/api/get/", payload, function(data) {
+                        console.log('received data: ' + data);
+                        if (data.status) {
+                            if (data.status == 'not found/canceled') {
+                                $(self).find('#status').html('canceled/not found');
+                            } else {
+                                $(self).find('#status').html('<div class="control is-loading">' +
+                                    '<input class="input" type="text" value="' + data.status +
+                                    '" readonly></div>');
+                            }
+                        } else {
+                            $(self).find('#status').html(data.data.status);
+                            $(self).find('#duration').html(data.data.duration)
+                            $(self).find('#externals').html(data.data.externals)
+                        }
+                    })
+                    .done(function() {
+                        var status = $(self).find('#status').text()
+                        if (status == 'finished' || status == 'canceled/not found') {
+                            console.log(domain + ' finished!')
+                        } else {
+                            console.log(domain + 'not finished... ');
+                            setTimeout(doUpdate, interval);
+                        }
+                    });
+            })();
+        });
+    });
+    var timer = $('#timer').val();
+    var interval = 3500;
+    (function doUpdate() {
+        $.get('/api/scrapy_jobs_status/', { timer: timer }, function(data) {
+            console.log(data);
+            $('#remaining').html(data.remaining);
+            $('#timeElapsed').html(data.elapsed);
+            $('#statusExternalScan').html(data.status);
+        }).done(function() {
+            if ($('#statusExternalScan').text() != 'finished') {
+                setTimeout(doUpdate, interval);
+            }
+        });
+    })();
+});
+</script>
+{% endblock %}

@@ -50,7 +50,7 @@ def infoscan(request):
 
 # TODO probably I will need to extract this method into a single started, in
 # order to be independet of the request.
-# TODO should render a website in api, rather a JsonResponse
+# TODO should not render a website in api, rather return a JsonResponse
 @csrf_exempt
 def selected(request):
     selected = request.POST.getlist('selected')
@@ -89,7 +89,9 @@ def cancel_job(request, job_id):
 def scrapy_jobs_status(request):
     now = time.time()
     start = float(request.GET.get('timer'))
-    elapsed = now - start
+    duration = now - start
+    elapsed = '{0}min {1:5.3f}sec'.format(int(duration / 60),
+                                          float(duration % 60)),
     post_jobs = scrapyd.list_jobs('default')
     remaining = len(post_jobs['running']) + len(post_jobs['pending'])
     status = 'pending' if remaining > 0 else 'finished'
@@ -162,27 +164,29 @@ def post(request):
     spider = request.POST.dict()
     logger.debug('received spider params: %s', spider)
 
-    domain = Domains.objects.filter(domain=spider['domain'])
-
+    domain = Domains.objects.filter(domain=spider['domain'].strip())
+    url = ''
     if not domain.exists():
         domain = Domains.objects.create(domain=spider['domain'],
                                         url=spider['url'])
+        url = spider['url']
         logger.debug('created domain: %s', spider['domain'])
-
     else:
         logger.debug('found domain: %s status: %s' %
                      (spider['domain'], domain.first().status))
         domain = domain.first()
+        url = domain.url
 
-    if domain.status == 'finished' and spider['job'] == 'None':
+    if domain.status == 'finished' and getattr(spider, 'job', '') == 'None' \
+       or domain.fullscan:
         info = {
             'zip': domain.info.zip,
-            'name': domain.info.name
+            'name': domain.info.name,
         }
         return JsonResponse({'info': info})
 
     task_id = scrapyd.schedule('default', spider['name'],
-                               url=spider['url'], domain=spider['domain'],
+                               url=url, domain=spider['domain'],
                                keywords=spider['keywords'])
 
     return JsonResponse({'domain': spider['domain'],
