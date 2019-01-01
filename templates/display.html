@@ -59,54 +59,71 @@
 {% endblock %}
 {% block content%}
 <section class="section">
-<div class="container">
-
-    <form method="POST" action="{% url 'api:selected' %}">
-        {% csrf_token %} 
-            <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
-        <table id="externals" class="display">
-        <thead>
-            <tr>
-                <th>Select</th>
-                <th>External Domains</th>
-                <th>External Urls</th>
-                <th>ZIP</th>
-                <th>Name</th>
-                <th>Options</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for external in domain.filtered_externals %}
-            <tr>
-                <td>
-                    <label class="checkbox">
-                      <input type="checkbox" name="selected" value="{{external.domain}}" />
-                    </label>
-                </td>
-                <td id="external_domain">{{external.domain}}</td>
-                <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
-                <td id="zip_id_{{ forloop.counter }}">{{external.info.zip}}</td>
-                <td id="name_id_{{ forloop.counter }}">
-                    {% if external.info.name != 'dummy' %}
-                    {{external.info.name}}
-                    {% elif external.info.title != 'None!' %}
-                    {{external.info.title}}
-                    {% else %}
-                    Nothing found.
-                    {% endif %}
-                </td>
-                <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
-                    <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
+    <div class="container">
+        <form method="POST" action="{% url 'api:selected' %}">
+            {% csrf_token %}
+            <div class="field is-grouped">
+                <div class="control">
+                    <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+                </div>
+                <p class="control">
+                    <input class="input" id="zip_from" type="number" placeholder="Range from ZIP">
+                </p>
+                <p class="control">
+                    <input class="input" id="zip_to" type="number" placeholder="to ZIP">
+                </p>
+                <div class="control">
+                    <button id="select_range" class="button is-primary" type="button">Select range
+                    </button>
+                </div>
+                <div class="control">
+                    <div class="is-pulled-right">
+                        <a class="button is-info"><input type="checkbox" id="checkAll">&nbsp;Check All</a>
+                    </div>
+                </div>
+            </div>
+            <table id="externals" class="display">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>External Domains</th>
+                        <th>External Urls</th>
+                        <th>ZIP</th>
+                        <th>Name</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for external in domain.filtered_externals %}
+                    <tr>
+                        <td>
+                            <label class="checkbox">
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                            </label>
+                        </td>
+                        <td id="external_domain">{{external.domain}}</td>
+                        <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
+                        <td id="zip">{{external.info.zip}}</td>
+                        <td id="name_id_{{ forloop.counter }}">
+                            {% if external.info.name != 'dummy' %}
+                            {{external.info.name}}
+                            {% elif external.info.title != 'None!' %}
+                            {{external.info.title}}
+                            {% else %}
+                            Nothing found.
+                            {% endif %}
+                        </td>
+                        <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
+                            <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
                     <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <button id="start" class="button is-primary" type="submit">Start Selected Scan</button>
-    </form>
-
-    <!--table id="locals" class="display">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+           <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+        </form>
+        <!--table id="locals" class="display">
         <thead>
             <tr>
                 <th>Locals Urls</th>
@@ -122,7 +139,7 @@
             {% endfor %}
         </tbody>
     </table-->
-</div>
+    </div>
 </section>
 {% endblock %}
 {% block javascript %}
@@ -176,13 +193,42 @@ function startScraping(spider, domain, url, display_id, job) {
         });
 }
 $(document).ready(function() {
-    $('#externals').DataTable({
+    var table = $('#externals').DataTable({
         "order": [
             [3, 'asc']
         ],
         "pageLength": 100,
     });
-    $('#locals').DataTable();
+    var $checkboxes = table
+        .rows()
+        .nodes()
+        .to$()      // Convert to a jQuery object
+    .find('input[type="checkbox"].groupCheckBox');
+    $("#checkAll").click(function() {
+        $checkboxes.not(this).prop('checked', this.checked);
+        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
+        $('#groupCheckBox').text(countCheckedCheckboxes);
+    });
+    $checkboxes.change(function(){
+        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
+        $('#groupCheckBox').text(countCheckedCheckboxes);
+    });
+    $('#select_range').click(function() {
+        var zip_from = parseInt($('#zip_from').val());
+        var zip_to = parseInt($('#zip_to').val());
+        var $rows = table
+        .rows()
+        .nodes()
+        .to$();
+        $rows.each(function() {
+            var zip = parseInt($(this).find('#zip').text());
+            if ( zip >= zip_from && zip <= zip_to) {
+                $(this).find('input[type="checkbox"].groupCheckBox').prop( "checked", true );
+            }
+        });
+        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
+        $('#groupCheckBox').text(countCheckedCheckboxes);
+    });
     var externals_count = parseInt($("#externals_count").text()) > 0;
     if (externals_count)
         return;

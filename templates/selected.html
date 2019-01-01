@@ -38,8 +38,9 @@
                     <td id="status">-</td>
                     <td id="duration">-</td>
                     <td>
-                         <button class="button is-danger is-outlined" type="button" onclick="cancelJob('{{ job_id }}', '{{ domain }}')">Cancel Scan</button>
-                        <!--a class="button is-danger is-outlined" href="{% url 'api:cancel_job' job_id=job_id %}">Stop scan</a--></td>
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob('{{ job_id }}', '{{ domain }}')">Cancel Scan</button>
+                        <!--a class="button is-danger is-outlined" href="{% url 'api:cancel_job' job_id=job_id %}">Stop scan</a-->
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -50,10 +51,10 @@
 {% block javascript %}
 <script>
 function cancelJob(job_id, domain) {
-    $.get("/api/cancel_job/"+job_id, {}, function(data) {
+    $.get("/api/cancel_job/" + job_id, {}, function(data) {
         console.log(data)
-        $('.'+domain).find('td').eq(1).text('cancled while in state: <b>' + data.state +'</b>');
-    }); 
+        $('.' + domain).find('td').eq(1).text('cancled while in state: <b>' + data.state + '</b>');
+    });
 }
 $(document).ready(function() {
     $('#externals').DataTable();
@@ -74,19 +75,18 @@ $(document).ready(function() {
 
                                 $(self).find('#status').html('canceled/not found');
                             } else {
-                            $(self).find('#status').html('<div class="control is-loading">' +
-                                '<input class="input" type="text" value="' + data.status +
-                                '" readonly></div>');
-                        }
-                        }
-                        else {
+                                $(self).find('#status').html('<div class="control is-loading">' +
+                                    '<input class="input" type="text" value="' + data.status +
+                                    '" readonly></div>');
+                            }
+                        } else {
                             $(self).find('#status').html(data.data.status);
                             $(self).find('#duration').html(data.data.duration)
                         }
                     })
                 .done(function() {
                     var status = $(self).find('#status').text()
-                    if (status == 'finished' || status == 'canceled/not found') {
+                    if (status == 'finished' || status == 'canceled/not found') {
                         console.log(domain + ' finished!')
                     } else {
                         console.log('not finished... ');
@@ -104,7 +104,7 @@ $(document).ready(function() {
             $('#timeElapsed').html(data.elapsed);
             $('#statusExternalScan').html(data.status);
         }).done(function() {
-            if ( $('#statusExternalScan').text() != 'finished') {
+            if ($('#statusExternalScan').text() != 'finished') {
                 setTimeout(doUpdate, interval);
             }
         });
