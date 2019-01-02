@@ -21,11 +21,9 @@ def check(request):
         # TODO set error for session
         return redirect('start')
 
-    url = ''
-    if request.POST.get('url'):
-        url = request.POST.get('url')
-    else:
-        url = request.COOKIES['url']
+    url = request.POST.get('url') if request.POST.get('url') else \
+        request.COOKIES['url']
+
     domain = urlparse(url).netloc
     # TODO: if the sites exists already in the db but not fullscan error occurs
     if Domains.objects.filter(domain=domain).exists():
