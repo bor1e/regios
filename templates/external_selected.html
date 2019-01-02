@@ -11,7 +11,7 @@
             </h2>
             <input type="hidden" id="timer" value="{{timer}}">
             <div class="content">
-                <a class="button is-primary is-inverted" href="/TODO">Graph</a>
+                <a class="button is-primary is-inverted" href="/graph/FINDDOMAIN">Graph</a>
             </div>
         </div>
     </div>
@@ -60,6 +60,11 @@ function cancelJob(elem, domain) {
     });
 }
 $(document).ready(function() {
+    var domain_array = window.location.href.split('/')
+    var domain = domain_array[domain_array.length-2]
+    var url = window.location.protocol + '//' + window.location.host + '/graph/' + domain;
+    $("a[href='/graph/FINDDOMAIN']").attr("href", url)
+
     var table = $('#externals').DataTable({
         "pageLength": 100,
     });

@@ -50,7 +50,7 @@
             <div class="content">
                 <button id="infoscan" class="button is-primary is-inverted"><a href="/">Start</a></button>
                 <a class="button is-primary is-inverted" href="/TODO">Filters</a>
-                <a class="button is-primary is-inverted" href="/TODO">Graph</a>
+                <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">Graph</a>
             </div>
             <div id="remaining"></div>
         </div>
@@ -60,7 +60,6 @@
 {% block content%}
 <section class="section">
     <div class="container">
-        <!--form method="POST" action="{% url 'api:selected' %}"-->
         <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
             {% csrf_token %}
             <div class="field is-grouped">

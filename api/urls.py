@@ -9,6 +9,6 @@ urlpatterns = [
     path('infoscan/', views.infoscan, name='infoscan'),
     path('scrapy_jobs_status/', views.scrapy_jobs_status,
          name='scrapy_jobs_status'),
-    path('selected/', views.selected, name='selected'),
+    # path('selected/', views.selected, name='selected'),
     path('cancel_job/<job_id>', views.cancel_job, name='cancel_job'),
 ]

@@ -13,20 +13,22 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
+# from django.contrib import admin
 from django.urls import path, include
-from django.conf.urls.static import static
+# from django.conf.urls.static import static
 
 urlpatterns = [
-    #path('admin/', admin.site.urls),
-    #path('', include('home.urls')),
+    # path('admin/', admin.site.urls),
+    # path('', include('home.urls')),
     path('', include('start.urls')),
     path('display/', include('display.urls')),
     path('filter/', include('filter.urls')),
     path('api/', include('api.urls', namespace='api')),
-   # path('domain=<domain>', views.domain, name='domain'),
-   # path('start_external_crawling=<domain>', views.external_crawling, name='crawling'),
-   # path('filter=<src_domain>/<external_domain>', views.filter, name='filter'),
-   # path('graph/', include('graph.urls')),
-    #path('crawler/', include('main.urls')),
-] #+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # path('domain=<domain>', views.domain, name='domain'),
+    # path('start_external_crawling=<domain>', views.external_crawling,
+    #      name='crawling'),
+    # path('filter=<src_domain>/<external_domain>', views.filter,
+    # name='filter'),
+    path('graph/', include('graph.urls')),
+    # path('crawler/', include('main.urls')),
+]  # + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
