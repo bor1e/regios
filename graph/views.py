@@ -59,31 +59,43 @@ def init_graph(request, domain):
     '''
     logger.debug('initialized domains_counter: %s' % domains_counter)
     edges_counter = list()
+    # check = set(key for key, item in domains_counter.items())
+    check = set()
     for d in remaining:
-        node = {
-            'id': d.domain,
-            # size depends on externals sites pointing to that one.
-            'size': domains_counter[d.domain] * 3 \
-            if domains_counter[d.domain]\
-            else 1,
-            'label': d.domain
-        }
-        nodes.append(node)
+        d_domain_cleaned = remove_prefix(d.domain)
+        if d_domain_cleaned not in check:
+            check.add(d_domain_cleaned)
+            node = {
+                'id': d_domain_cleaned,
+                # size depends on externals sites pointing to that one.
+                'size': domains_counter[d_domain_cleaned] * 10 \
+                if domains_counter[d_domain_cleaned]\
+                else 5,
+                'label': d_domain_cleaned
+            }
+            nodes.append(node)
         for e in d.externals.all():
-            e_domain = e.external_domain
-            if e_domain not in remaining.values_list('domain', flat=True):
+            if e.external_domain not in remaining.values_list('domain',
+                                                              flat=True):
                 continue
+            e_domain_cleaned = remove_prefix(e.external_domain)
+
             # can be seperated if we want a bidrictional graph
             # creating a structure in the dicts:
-            edge_id = node['id'] + '_' + e_domain if node['id'] < e_domain \
-                else e_domain + '_' + node['id']
+            if node['id'] < e_domain_cleaned:
+                edge_id = node['id'] + '_' + e_domain_cleaned
+            else:
+                edge_id = e_domain_cleaned + '_' + node['id']
             if edge_id not in edges_counter:
                 edges_counter.append(edge_id)
+                target_domain = remove_prefix(Domains.objects.
+                                              get(domain=e.external_domain).
+                                              domain)
                 edge = {
                     # TODO to be unique if we want to have different directions
                     'id': edge_id,  # + '_' + j
                     'source': node['id'],
-                    'target': Domains.objects.get(domain=e_domain).domain,
+                    'target': target_domain,
                     'size': 1
                 }
                 edges.append(edge)
@@ -99,6 +111,7 @@ def init_graph(request, domain):
     return JsonResponse({'data': data})
 
 
+''' DEPRECATED see init_graph for corrections
 def api(request, domain=None):
     domains = set()
     objs = Domains.objects.all()
@@ -146,14 +159,14 @@ def api(request, domain=None):
     data = {'nodes': nodes, 'edges': edges}
 
     return JsonResponse({'data': data})
+'''
 
 
 def initialize_domains(domains):
-    domains_list = [d.domain for d in domains]
+    domains_list = [remove_prefix(d.domain) for d in domains]
     domains_size = {}
     for d in domains_list:
         domains_size[d] = 0
-
     '''
     # in this case the counter of domains linked to is only based on the
     # selected domains for the fullscan
@@ -166,10 +179,21 @@ def initialize_domains(domains):
 
     # in this case the counter of domains checks all the db for given domain
     for e in Externals.objects.all():
-        if e.external_domain in domains_size:
-            domains_size[e.external_domain] += 1
+        e_domain_cleaned = remove_prefix(e.external_domain)
+        if e_domain_cleaned in domains_size:
+            domains_size[e_domain_cleaned] += 1
 
     return domains_size
+
+
+def remove_prefix(domain):
+    domain_split = domain.split('.')
+    # categorize domains matchmaking of words after skiping 'de','org','com'...
+    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+    if domain_split[0] in common_prefixes:
+        return remove_prefix('.'.join(domain_split[1:]))
+    else:
+        return domain
 
 
 def test(request):

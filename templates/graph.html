@@ -87,10 +87,14 @@
         console.log('received nodes: ' + data.data.nodes.length);
         addElems(data.data.nodes, data.data.edges);
     }).done(function() {
-        console.log('refreshed sigma');
         refresh();
+        console.log('refreshed sigma');
     });
+    function stopForceAtlas2(s) {
+        console.log('stopForceAtlas2');
 
+        s.stopForceAtlas2();
+    }
     function refresh() {
         var s = new sigma({
             graph: g,
@@ -100,7 +104,7 @@
                 type: 'canvas'
             },
             settings: {
-                minNodeSize: 0.2,
+                minNodeSize: 5,
                 maxNodeSize: 30,
                 borderSize: 1,
                 sideMargin: 1,
@@ -110,7 +114,15 @@
 
             }
         });
+
+        console.log('startForceAtlas2');
+
         s.startForceAtlas2();
+        setTimeout(function(){
+            console.log('stopForceAtlas2');
+
+            s.stopForceAtlas2();
+        }, 4000);
     }
     </script>
 

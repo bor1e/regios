@@ -6,6 +6,6 @@ urlpatterns = [
     # path('', views.index, name='complete_graph'),
     path('<domain>', views.index, name='show_graph'),
     path('init/<domain>', views.init_graph, name='init_graph'),
-    path('api/', views.api, name='api'),
+    # path('api/', views.api, name='api'),
     path('test/', views.test, name='test'),
 ]
