@@ -43,12 +43,12 @@
                             processing ...
                             {% endif %}
                         </td>
-                        <td><a class="button is-primary" href="{% url 'refresh' domain.domain %}">Refresh</a> start search for externals</td>
+                        <td><a class="button is-primary" href="{% url 'refresh' domain.domain %}">Refresh</a></td>
                     </tr>
                 </tbody>
             </table>
             <div class="content">
-                <button id="infoscan" class="button is-primary is-inverted"><a href="/">Start</a></button>
+                <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
                 <a class="button is-primary is-inverted" href="/TODO">Filters</a>
                 <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">Graph</a>
             </div>
