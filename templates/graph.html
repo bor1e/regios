@@ -1,4 +1,5 @@
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -6,110 +7,111 @@
     {% load static %}
     <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">-->
     <link rel="stylesheet" href="{% static '/css/bulma.min.css' %}">
-    <script src="{% static '/js/fontawesome-5.5.0.js' %}"></script> 
-     <style type="text/css">
+    <script src="{% static '/js/fontawesome-5.5.0.js' %}"></script>
+    <style type="text/css">
     #sigmajs {
         max-width: 100%;
         height: 100%;
         margin: auto;
     }
     </style>
-    </head>
+</head>
 
 <body>
-<nav class="level">
-    <div class="level-item has-text-centered">
-        <div>
-            <p class="heading">Graph for</p>
-            <p class="title">{{ stats.domain }}</p>
+    <nav class="level">
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Graph for</p>
+                <p class="title">{{ stats.domain }}</p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Domains displayed</p>
+                <p class="title">{{ stats.displaying|length }}</p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Not displaying</p>
+                <p class="title">{{ stats.rest }}</p>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div id="sigmajs">
         </div>
     </div>
-    <div class="level-item has-text-centered">
-        <div>
-            <p class="heading">Domains displayed</p>
-            <p class="title">{{ stats.displaying|length }}</p>
-        </div>
-    </div>
-    <div class="level-item has-text-centered">
-        <div>
-            <p class="heading">Not displaying</p>
-            <p class="title">{{ stats.rest }}</p>
-        </div>
-    </div>
-</nav>
-<div class="container">
-<div id="sigmajs">
-</div></div>
+    <script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+    <script src="{% static "/js/sigma.min.js" %}"></script>
+    <script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+    <script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+    <script>
+    var g = {
+        nodes: [],
+        edges: []
+    };
 
-<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
-<script src="{% static "/js/sigma.min.js" %}"></script>
-<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
-<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
-<script>
-var g = {
-    nodes: [],
-    edges: []
-};
-
-function addElems(nodes, edges) {
-    var i, len = nodes.length;
-    // console.log('adding nodes');
-    for (i = 0; i < len; i++) {
-        g.nodes.push({
-            id: nodes[i].id,
-            label: nodes[i].label,
-            x: Math.random(),
-            y: Math.random(),
-            size: nodes[i].size * 1.5,
-            color: '#ec5148'
-        });
-    }
-    var i, len = edges.length;
-    // console.log('adding nodes');
-    for (i = 0; i < len; i++) {
-        g.edges.push({
-            id: edges[i].id,
-            // label: edges[i].label,
-            source: edges[i].source,
-            target: edges[i].target,
-            size: edges[i].size,
-            color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
-        });
-        //  nodes[i].color = nodes[i].center ? '#333' : '#666';
-    }
-}
-
-var domain_array = window.location.href.split('/')
-var domain = domain_array[domain_array.length - 1]
-$.get('api/', {}, function(data) {
-    console.log(data.data);
-    console.log('received nodes: ' + data.data.nodes.length);
-    addElems(data.data.nodes, data.data.edges);
-}).done(function() {
-    console.log('refreshed sigma');
-    refresh();
-});
-
-function refresh() {
-    var s = new sigma({
-        graph: g,
-        container: 'sigmajs',
-        renderer: {
-            container: document.getElementById('sigmajs'),
-            type: 'canvas'
-        },
-        settings: {
-            minNodeSize: 0.2,
-            maxNodeSize: 30,
-            borderSize: 1,
-            sideMargin: 1,
-            minEdgeSize: 0.5,
-            maxEdgeSize: 3,
-            defaultNodeColor: '#ec5148'
-
+    function addElems(nodes, edges) {
+        var i, len = nodes.length;
+        // console.log('adding nodes');
+        for (i = 0; i < len; i++) {
+            g.nodes.push({
+                id: nodes[i].id,
+                label: nodes[i].label,
+                x: Math.random(),
+                y: Math.random(),
+                size: nodes[i].size * 1.5,
+                color: '#ec5148'
+            });
         }
+        var i, len = edges.length;
+        // console.log('adding nodes');
+        for (i = 0; i < len; i++) {
+            g.edges.push({
+                id: edges[i].id,
+                // label: edges[i].label,
+                source: edges[i].source,
+                target: edges[i].target,
+                size: edges[i].size,
+                color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+            });
+            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+        }
+    }
+
+    var domain_array = window.location.href.split('/')
+    var domain = domain_array[domain_array.length - 1]
+    $.get('init/'+domain, {}, function(data) {
+        console.log(data.data);
+        console.log('received nodes: ' + data.data.nodes.length);
+        addElems(data.data.nodes, data.data.edges);
+    }).done(function() {
+        console.log('refreshed sigma');
+        refresh();
     });
-    s.startForceAtlas2();
-}
-</script>
+
+    function refresh() {
+        var s = new sigma({
+            graph: g,
+            container: 'sigmajs',
+            renderer: {
+                container: document.getElementById('sigmajs'),
+                type: 'canvas'
+            },
+            settings: {
+                minNodeSize: 0.2,
+                maxNodeSize: 30,
+                borderSize: 1,
+                sideMargin: 1,
+                minEdgeSize: 0.5,
+                maxEdgeSize: 3,
+                defaultNodeColor: '#ec5148'
+
+            }
+        });
+        s.startForceAtlas2();
+    }
+    </script>
+
 </html>
