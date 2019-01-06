@@ -2,6 +2,7 @@ from django.shortcuts import render
 import json
 from django.http import JsonResponse, HttpResponse
 from start.models import Domains
+from filter.models import BlackList
 from urllib.parse import urlparse
 
 import logging
@@ -11,10 +12,32 @@ logger = logging.getLogger(__name__)
 
 def index(request, domain):
     # logger.info(Domains.objects.order_by('domain').distinct().count())
-    return render(request, 'graph.html', {})
+    domain = Domains.objects.get(domain=domain)
+    filtered = [obj.external_domain for obj in domain.externals.all()
+                if obj.external_domain in
+                BlackList.objects.values_list('ignore', flat=True)]
+    logger.debug('external.filtered: %s' % len(filtered))
+    non_filtered = [obj.external_domain for obj in domain.externals.all()
+                    if obj.external_domain not in filtered]
+
+    logger.debug('external.non_filtered: %s' % len(non_filtered))
+
+    displaying = [obj.domain for obj in Domains.objects.all()
+                  if obj.domain in non_filtered and obj.fullscan]
+
+    logger.debug('external.displaying: %s' % len(displaying))
+
+    stats = {
+        'domain': domain.domain,
+        'filtered': filtered,  # .count()
+        'non_filtered': non_filtered,  # .count()
+        'displaying': displaying,  # .count()
+        'rest': domain.externals.count() - len(displaying),  # .count()
+    }
+    return render(request, 'graph.html', {'stats': stats})
 
 
-def api(request):
+def api(request, domain=None):
     domains = set()
     objs = Domains.objects.all()
     check = set(x.domain for x in objs)
@@ -43,9 +66,11 @@ def api(request):
             if edge_id not in domain_external:
                 domain_external.append(edge_id)
                 edge = {
-                    'id': edge_id,  # + '_' + j, # TODO to be unique if we want to have different directions
+                    # TODO to be unique if we want to have different directions
+                    'id': edge_id,  # + '_' + j
                     'source': i.domain,
-                    'target': Domains.objects.filter(domain=ex_domain).first().domain,
+                    'target': Domains.objects.filter(domain=ex_domain)\
+                                             .first().domain,
                     'size': 1
                 }
                 edges.append(edge)
