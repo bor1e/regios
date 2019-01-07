@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from filter.models import BlackList
 from start.models import Domains, Externals
-from urllib.parse import urlparse
 
 import logging
 
@@ -10,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def index(request, domain):
-    # logger.info(Domains.objects.order_by('domain').distinct().count())
+    # TODO: display complete graph based on Domain
     domain = Domains.objects.get(domain=domain)
     filtered = [obj.external_domain for obj in domain.externals.all()
                 if obj.external_domain in
@@ -35,22 +34,30 @@ def index(request, domain):
     return render(request, 'graph.html', {'stats': stats})
 
 
-def init_graph(request, domain):
-    db_domain = Domains.objects.get(domain=domain)
-    filtered = [obj.external_domain for obj in db_domain.externals.all()
-                if obj.external_domain in
-                BlackList.objects.values_list('ignore', flat=True)]
-    non_filtered = [obj.external_domain for obj in db_domain.externals.all()
-                    if obj.external_domain not in filtered]
-    # need to add the domain for which the graph was called, because it is not
-    # included in the non_filtered list, because it is based on the domain...
-    non_filtered.append(domain)
-    remaining = Domains.objects.all().filter(domain__in=non_filtered,
-                                             fullscan=True)
+def init_graph(request, domain=None):
+    remaining = None
+    if domain:
+        db_domain = Domains.objects.get(domain=domain)
+        filtered = [obj.external_domain for obj in db_domain.externals.all()
+                    if obj.external_domain in
+                    BlackList.objects.values_list('ignore', flat=True)]
+        non_filtered = [obj.external_domain
+                        for obj in db_domain.externals.all()
+                        if obj.external_domain not in filtered]
+        # need to add the domain for which the graph was called,
+        # because it is not included in the non_filtered list,
+        # because it is based on the domain...
+        non_filtered.append(domain)
+        remaining = Domains.objects.all().filter(domain__in=non_filtered,
+                                                 fullscan=True)
+    else:
+        remaining = Domains.objects.all().exclude(domain__in=BlackList.objects
+                                                  .values_list('ignore',
+                                                               flat=True))
     nodes = list()
     edges = list()
     domains_counter = initialize_domains(remaining)
-    ''' TODO:
+    ''' TODO: FIXED by ignoring it during initialization
     - extract www. from domain prefix
     --> do it on DB level (Domains & Externals)
     --> add spider start_urls & allowed_domains

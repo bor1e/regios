@@ -51,7 +51,17 @@
         nodes: [],
         edges: []
     };
+    var domain_array = window.location.href.split('/');
+    var domain = domain_array[domain_array.length - 1];
+    var compare_domain = domain;
+    var compare_domain_array = domain.split('.');
+    var common_prefixes = ['www', 'er', 'en', 'fr', 'de']
 
+    if (common_prefixes.includes(compare_domain_array[0])) {
+        compare_domain_array = compare_domain_array.slice(1, compare_domain_array.length);
+        compare_domain = compare_domain_array.join('.')
+    }
+    // console.log('compare_domain: ' + compare_domain);
     function addElems(nodes, edges) {
         var i, len = nodes.length;
         // console.log('adding nodes');
@@ -62,7 +72,7 @@
                 x: Math.random(),
                 y: Math.random(),
                 size: nodes[i].size * 1.5,
-                color: '#ec5148'
+                color: (nodes[i].id != compare_domain) ? '#ec5148' : 'green'
             });
         }
         var i, len = edges.length;
@@ -80,9 +90,7 @@
         }
     }
 
-    var domain_array = window.location.href.split('/')
-    var domain = domain_array[domain_array.length - 1]
-    $.get('init/'+domain, {}, function(data) {
+    $.get('init/' + domain, {}, function(data) {
         console.log(data.data);
         console.log('received nodes: ' + data.data.nodes.length);
         addElems(data.data.nodes, data.data.edges);
@@ -90,11 +98,13 @@
         refresh();
         console.log('refreshed sigma');
     });
+
     function stopForceAtlas2(s) {
         console.log('stopForceAtlas2');
 
         s.stopForceAtlas2();
     }
+
     function refresh() {
         var s = new sigma({
             graph: g,
@@ -118,7 +128,7 @@
         console.log('startForceAtlas2');
 
         s.startForceAtlas2();
-        setTimeout(function(){
+        setTimeout(function() {
             console.log('stopForceAtlas2');
 
             s.stopForceAtlas2();
