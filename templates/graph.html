@@ -28,12 +28,12 @@
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Domains displayed</p>
-                <p class="title">{{ stats.displaying|length }}</p>
+                <p class="title" id="displaying">{{ stats.displaying|length }}</p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-                <p class="heading">Not displaying</p>
+                <p class="heading">Not displaying from original domain</p>
                 <p class="title">{{ stats.rest }}</p>
             </div>
         </div>
@@ -47,6 +47,7 @@
 <script src="{% static "/js/sigma.min.js" %}"></script>
 <script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
 <script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+<script src="{% static "/js/sigma.renderers.parallelEdges.min.js" %}"></script>
 <script>
 var g = {
     nodes: [],
@@ -148,6 +149,8 @@ function addElems(nodes, edges) {
             source: edges[i].source,
             target: edges[i].target,
             size: edges[i].size,
+            count: edges[i].count,
+            type: 'curvedArrow',
             color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
         });
         //  nodes[i].color = nodes[i].center ? '#333' : '#666';
@@ -226,12 +229,15 @@ s.bind('doubleClickNode', function(e) {
                     source: edges[i].source,
                     target: edges[i].target,
                     size: edges[i].size,
+                    count: edges[i].count,
+                    type: 'curvedArrow',
                     color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
                 });
 
         }
     }).done(function() {
         refreshGraph(g);
+        $('#displaying').html(g.nodes.length)
     });
 });
 

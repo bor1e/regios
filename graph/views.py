@@ -8,8 +8,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def index(request, domain):
+def index(request, domain=None):
     # TODO: display complete graph based on Domain
+    if not domain:
+        externals = [e.url for e in Externals.objects.all()
+                     if e.external_domain in BlackList.objects
+                     .values_list('ignore',
+                                  flat=True)]
+        stats = {
+            'domain': 'all entries in DB',
+            'filtered': BlackList.objects.count(),  # .count()
+            'displaying': Domains.objects.all()
+                                 .exclude(domain__in=BlackList.objects
+                                          .values_list('ignore',
+                                                       flat=True)),
+            'rest': len(externals),  # .count()
+        }
+        return render(request, 'graph.html', {'stats': stats})
     domain = Domains.objects.get(domain=domain)
     filtered = [obj.external_domain for obj in domain.externals.all()
                 if obj.external_domain in
@@ -26,8 +41,8 @@ def index(request, domain):
 
     stats = {
         'domain': domain.domain,
-        'filtered': filtered,  # .count()
-        'non_filtered': non_filtered,  # .count()
+        # 'filtered': filtered,  # .count()
+        # 'non_filtered': non_filtered,  # .count()
         'displaying': displaying,  # .count()
         'rest': domain.externals.count() - len(displaying),  # .count()
     }
@@ -36,6 +51,7 @@ def index(request, domain):
 
 def init_graph(request, domain=None):
     remaining = None
+    parallel_edges = False
     if domain:
         logger.debug('recieved domain: %s' % domain)
 
@@ -85,7 +101,8 @@ def init_graph(request, domain=None):
             node = {
                 'id': d_domain_cleaned,
                 # size depends on externals sites pointing to that one.
-                'size': domains_counter[d_domain_cleaned] * 10 \
+                # 'size': domains_counter[d_domain_cleaned] * 10 \
+                'size': domains_counter[d_domain_cleaned] \
                 if domains_counter[d_domain_cleaned]\
                 else 5,
                 'label': d_domain_cleaned
@@ -99,10 +116,13 @@ def init_graph(request, domain=None):
 
             # can be seperated if we want a bidrictional graph
             # creating a structure in the dicts:
-            if node['id'] < e_domain_cleaned:
+            if node['id'] < e_domain_cleaned or parallel_edges:
                 edge_id = node['id'] + '_' + e_domain_cleaned
             else:
                 edge_id = e_domain_cleaned + '_' + node['id']
+            # TODO for parallel_edges inside graph
+            edge_id = node['id'] + '_' + e_domain_cleaned
+
             if edge_id not in edges_counter:
                 edges_counter.append(edge_id)
                 target_domain = remove_prefix(Domains.objects.
@@ -113,18 +133,24 @@ def init_graph(request, domain=None):
                     'id': edge_id,  # + '_' + j
                     'source': node['id'],
                     'target': target_domain,
-                    'size': 1
+                    'size': 1,
+                    'count': 1,
                 }
                 edges.append(edge)
+                for node in nodes:
+                    if node['id'] == target_domain:
+                        node['size'] += 2
             else:
                 # i.e. there exists already a connection between those domains
                 for edge in edges:
                     if edge['id'] == edge_id:
+                        # TODO: THINK!
                         edge['size'] += 1
+                        edge['count'] += 1
                         break
 
     data = {'nodes': nodes, 'edges': edges}
-    logger.debug('data: %s' % data)
+    # logger.debug('data: %s' % data)
     return JsonResponse({'data': data})
 
 
