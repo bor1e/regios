@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from filter.models import BlackList
 from start.models import Domains, Externals
-
+from django.core.exceptions import ObjectDoesNotExist
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,12 @@ def index(request, domain):
 def init_graph(request, domain=None):
     remaining = None
     if domain:
-        db_domain = Domains.objects.get(domain=domain)
+        try:
+            db_domain = Domains.objects.get(domain=domain)
+        except ObjectDoesNotExist:
+            db_domain = Domains.objects.filter(domain__icontains=domain)\
+                .first()
+
         filtered = [obj.external_domain for obj in db_domain.externals.all()
                     if obj.external_domain in
                     BlackList.objects.values_list('ignore', flat=True)]
@@ -205,4 +210,5 @@ def remove_prefix(domain):
 
 def test(request):
     # return render(request, 'graph/test-1.html', {})
-    return render(request, 'graph/index.html', {})
+    # return render(request, 'sigmajs-graphfunctionalities-test.html', {})
+    return render(request, 'sigmajs-test2.html', {})

@@ -1,0 +1,91 @@
+<html>
+<head>
+      {% load static %}
+
+<style type="text/css">
+  #container {
+    max-width: 800px;
+    height: 800px;
+    margin: auto;
+  }
+</style>
+</head>
+<body>
+<div id="container"></div>
+<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+<script src="{% static "/js/sigma.min.js" %}"></script>
+<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+<script src="{% static "/js/sigma.renderers.parallelEdges.min.js" %}"></script>
+<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+
+<script>
+  
+var g = {
+        nodes: [],
+        edges: []
+    }; 
+var s = new sigma({
+graph: g,
+container: 'container',
+renderer: {
+    container: document.getElementById('container'),
+    type: 'canvas'
+},
+settings: {
+    minNodeSize: 8,
+    maxNodeSize: 24,
+    borderSize : 3,
+    sideMargin: 1,
+    minEdgeSize: 1,
+    maxEdgeSize: 3,
+    defaultNodeColor: '#ec5148',
+    //defaultEdgeType: 'parallel'
+
+}  }); 
+s.addCamera();
+setTimeout(function() {
+    console.log('changing camera')
+    s.cameras[0].goTo({ x: 0, y: 0, angle: 45, ratio: 1 });
+}, 2000);
+
+  sigma.parsers.json('{% static "/js/data.json" %}', s,
+    function() {
+        var i,
+                nodes = s.graph.nodes(),
+                len = nodes.length;
+
+        for (i = 0; i < len; i++) {
+            nodes[i].x = Math.random();
+            nodes[i].y = Math.random();
+            nodes[i].size = i*8;
+            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+        }
+        var edges = s.graph.edges(),
+                len = edges.length;  
+
+       for (i = 0; i < len; i++) s.graph.dropEdge('e'+i);
+        for (i = 0; i < len; i++) {
+          console.log(i);
+  s.graph.addEdge({
+    id: 'e' + i,
+    label: 'Edge ' + i,
+    source: (i%2 == 0)? 'n0' : 'n1',
+    target:  (i%2 == 0)? 'n1' : 'n0',
+    size: i,
+    color: '#ccc',
+    type: 'curvedArrow',
+    count: i
+  });
+}
+       
+        s.refresh();
+
+       // s.startForceAtlas2();
+    } );
+
+
+
+
+</script>
+</body>
+</html>

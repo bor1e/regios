@@ -38,102 +38,255 @@
             </div>
         </div>
     </nav>
-    <div class="container">
+    <div class="container has-background-grey-lighter">
         <div id="sigmajs">
         </div>
     </div>
-    <script src="{% static "/js/jquery-3.3.1.js" %}"></script>
-    <script src="{% static "/js/sigma.min.js" %}"></script>
-    <script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
-    <script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
-    <script>
-    var g = {
-        nodes: [],
-        edges: []
-    };
-    var domain_array = window.location.href.split('/');
-    var domain = domain_array[domain_array.length - 1];
-    var compare_domain = domain;
-    var compare_domain_array = domain.split('.');
-    var common_prefixes = ['www', 'er', 'en', 'fr', 'de']
-
-    if (common_prefixes.includes(compare_domain_array[0])) {
-        compare_domain_array = compare_domain_array.slice(1, compare_domain_array.length);
-        compare_domain = compare_domain_array.join('.')
-    }
-    // console.log('compare_domain: ' + compare_domain);
-    function addElems(nodes, edges) {
-        var i, len = nodes.length;
-        // console.log('adding nodes');
-        for (i = 0; i < len; i++) {
-            g.nodes.push({
-                id: nodes[i].id,
-                label: nodes[i].label,
-                x: Math.random(),
-                y: Math.random(),
-                size: nodes[i].size * 1.5,
-                color: (nodes[i].id != compare_domain) ? '#ec5148' : 'green'
-            });
-        }
-        var i, len = edges.length;
-        // console.log('adding nodes');
-        for (i = 0; i < len; i++) {
-            g.edges.push({
-                id: edges[i].id,
-                // label: edges[i].label,
-                source: edges[i].source,
-                target: edges[i].target,
-                size: edges[i].size,
-                color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
-            });
-            //  nodes[i].color = nodes[i].center ? '#333' : '#666';
-        }
+</body>
+<script src="{% static "/js/jquery-3.3.1.js" %}"></script>
+<script src="{% static "/js/sigma.min.js" %}"></script>
+<script src="{% static "/js/sigma.parsers.json.min.js" %}"></script>
+<script src="{% static "/js/sigma.layout.forceAtlas2.min.js" %}"></script>
+<script>
+var g = {
+    nodes: [],
+    edges: []
+};
+sigma.classes.graph.addMethod('existsEdgeId', function(edgeId) {
+    return (this.edgesIndex[edgeId]) ? true : false;
+});
+sigma.classes.graph.addMethod('existsNodeId', function(nodeId) {
+    return (this.nodesIndex[nodeId]) ? true : false;
+    /*
+    for (k in this.nodesIndex) {
+        if (k == nodeId)
+            console.log('YESSSS')
+        console.log(this.nodesIndex[k]);
     }
 
-    $.get('init/' + domain, {}, function(data) {
-        console.log(data.data);
-        console.log('received nodes: ' + data.data.nodes.length);
-        addElems(data.data.nodes, data.data.edges);
-    }).done(function() {
-        refresh();
-        console.log('refreshed sigma');
+//    console.log('nodesIndexes[id]: ' + this.nodesIndex[id]);
+
+    /*
+    if (this.nodesIndex(id))
+        return true;
+    else 
+        return true;*/
+});
+sigma.classes.graph.addMethod('neighbors', function(nodeId) {
+    var k,
+        neighbors = {},
+        index = this.allNeighborsIndex[nodeId] || {};
+
+    for (k in index)
+        neighbors[k] = this.nodesIndex[k];
+
+    return neighbors;
+});
+var s = new sigma({
+    graph: g,
+    container: 'sigmajs',
+    renderer: {
+        container: document.getElementById('sigmajs'),
+        type: 'canvas'
+    },
+    settings: {
+        minNodeSize: 10,
+        maxNodeSize: 50,
+        borderSize: 1,
+        sideMargin: 1,
+        minEdgeSize: 1,
+        maxEdgeSize: 4,
+        defaultNodeColor: '#ec5148',
+        enableEdgeHovering: true,
+        edgeHoverColor: 'default',
+        defaultEdgeHoverColor: '#000',
+        edgeHoverSizeRatio: 2,
+        edgeHoverExtremities: true,
+    }
+});
+s.addCamera();
+var domain_array = window.location.href.split('/');
+var domain = domain_array[domain_array.length - 1];
+var compare_domain = domain;
+var compare_domain_array = domain.split('.');
+var common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+
+if (common_prefixes.includes(compare_domain_array[0])) {
+    compare_domain_array = compare_domain_array.slice(1, compare_domain_array.length);
+    compare_domain = compare_domain_array.join('.')
+}
+
+function reloadGraph(s) {
+    console.log('snd startForceAtlas2');
+    s.startForceAtlas2();
+
+    setTimeout(function() {
+        console.log('snd stopForceAtlas2');
+        s.killForceAtlas2();
+    }, 2000);
+}
+// console.log('compare_domain: ' + compare_domain);
+function addElems(nodes, edges) {
+    var i, len = nodes.length;
+    // console.log('adding nodes');
+    for (i = 0; i < len; i++) {
+        g.nodes.push({
+            id: nodes[i].id,
+            label: nodes[i].label,
+            x: Math.random(),
+            y: Math.random(),
+            size: nodes[i].size * 1.5,
+            color: (nodes[i].id != compare_domain) ? '#ec5148' : 'green'
+        });
+    }
+    var i, len = edges.length;
+    // console.log('adding nodes');
+    for (i = 0; i < len; i++) {
+        g.edges.push({
+            id: edges[i].id,
+            // label: edges[i].label,
+            source: edges[i].source,
+            target: edges[i].target,
+            size: edges[i].size,
+            color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+        });
+        //  nodes[i].color = nodes[i].center ? '#333' : '#666';
+    }
+}
+
+$.get('init/' + domain, {}, function(data) {
+    console.log('received nodes: ' + data.data.nodes.length);
+    addElems(data.data.nodes, data.data.edges);
+}).done(function() {
+    refreshGraph(g);
+});
+
+
+s.bind('clickNode', function(e) {
+    var nodeId = e.data.node.id,
+        toKeep = s.graph.neighbors(nodeId);
+    toKeep[nodeId] = e.data.node;
+
+    s.graph.nodes().forEach(function(n) {
+        if (toKeep[n.id])
+            n.color = (n.color != 'green') ? ((n.color == 'yellow') ? 'yellow' : n.originalColor) : 'green';
+        else
+            n.color = '#eee';
     });
 
-    function stopForceAtlas2(s) {
-        console.log('stopForceAtlas2');
+    s.graph.edges().forEach(function(e) {
+        if (toKeep[e.source] && toKeep[e.target])
+            e.color = (e.size > 3) ? ((e.size > 6) ? 'blue' : 'red') : '#666';
+        else
+            e.color = '#eee';
+    });
 
-        s.stopForceAtlas2();
-    }
+    // Since the data has been modified, we need to
+    // call the refresh method to make the colors
+    // update effective.
+    s.refresh();
+});
 
-    function refresh() {
-        var s = new sigma({
-            graph: g,
-            container: 'sigmajs',
-            renderer: {
-                container: document.getElementById('sigmajs'),
-                type: 'canvas'
-            },
-            settings: {
-                minNodeSize: 10,
-                maxNodeSize: 50,
-                borderSize: 1,
-                sideMargin: 1,
-                minEdgeSize: 1,
-                maxEdgeSize: 4,
-                defaultNodeColor: '#ec5148'
+s.bind('doubleClickNode', function(e) {
+    console.log(e.type, e.data.node.id, e.data.captor);
 
+    $.get('init/' + e.data.node.id, {}, function(data) {
+        console.log('received nodes length: ' + data.data.nodes.length);
+
+        var nodes = data.data.nodes;
+        var i, len = nodes.length;
+        for (i = 0; i < len; i++) {
+            if (s.graph.existsNodeId(nodes[i].id)) {
+                // console.log('exists: ' + nodes[i].id + ' ... conitnuing');
+                continue;
+            } else {
+                // console.log('adding: ' + nodes[i].id);
+                //s.graph.addNode({
+                g.nodes.push({
+                    id: nodes[i].id,
+                    label: nodes[i].label,
+                    x: 10 * Math.random(),
+                    y: 10 * Math.random(),
+                    size: nodes[i].size * 1.5,
+                    color: 'yellow'
+                });
             }
-        });
+        }
 
-        console.log('startForceAtlas2');
+        var edges = data.data.edges;
+        var i, len = edges.length;
+        for (i = 0; i < len; i++) {
+            if (s.graph.existsEdgeId(edges[i].id)) {
+                continue;
+            } else
+                //s.graph.addEdge({
+                g.edges.push({
+                    id: edges[i].id,
+                    // label: edges[i].label,
+                    source: edges[i].source,
+                    target: edges[i].target,
+                    size: edges[i].size,
+                    color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+                });
 
-        s.startForceAtlas2();
-        setTimeout(function() {
-            console.log('stopForceAtlas2');
+        }
+    }).done(function() {
+        refreshGraph(g);
+    });
+});
 
-            s.stopForceAtlas2();
-        }, 4000);
+function refreshGraph(g) {
+    // First, let's stop the ForceAtlas2 algorithm:
+    s.killForceAtlas2();
+    // Restart the camera:
+    s.camera.goTo({
+        x: 0,
+        y: 0,
+        angle: 0,
+        ratio: 1
+    });
+    // Empty the graph:
+    s.graph.clear();
+    // Read the graph:
+    s.graph.read({ nodes: g.nodes, edges: g.edges });
+    // Randomize the positions of the nodes and initialize their size:
+    var i,
+        nodes = s.graph.nodes(),
+        len = nodes.length;
+    for (i = 0; i < len; i++) {
+        nodes[i].x = Math.cos(Math.PI * 2 * i / len);
+        nodes[i].y = Math.sin(Math.PI * 2 * i / len);
     }
-    </script>
+    // Refresh the display:
+    s.refresh();
+    // Start the ForceAtlas2 algorithm:
+    s.startForceAtlas2({ worker: true });
+    setTimeout(function() {
+        console.log('stopForceAtlas2');
+        s.stopForceAtlas2();
+    }, 2000);
+}
+// When the stage is clicked, we just color each
+// node and edge with its original color.
+s.bind('clickStage', function(e) {
+    s.graph.nodes().forEach(function(n) {
+        n.color = (n.color != 'green') ? ((n.color == 'yellow') ? 'yellow' : n.originalColor) : 'green';
+    });
+
+    s.graph.edges().forEach(function(e) {
+        e.color = (e.size > 3) ? ((e.size > 6) ? 'blue' : 'red') : '#666';
+    });
+
+    // Same as in the previous event:
+    s.refresh();
+});
+
+function rotate(angle) {
+    setTimeout(function() {
+        console.log('changing camera')
+        s.cameras[0].goTo({ x: 0, y: 0, angle: angle, ratio: 1 });
+    }, 2000);
+}
+</script>
 
 </html>

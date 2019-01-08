@@ -8,5 +8,5 @@ urlpatterns = [
     # path('', views.index, name='show_graph'),
     path('init/<domain>', views.init_graph, name='init_graph'),
     # path('api/', views.api, name='api'),
-    path('test/', views.test, name='test'),
+    path('test/', views.test, name='test-sigmajs'),
 ]
