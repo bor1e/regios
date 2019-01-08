@@ -25,7 +25,10 @@ def index(request, domain=None):
             'rest': len(externals),  # .count()
         }
         return render(request, 'graph.html', {'stats': stats})
-    domain = Domains.objects.get(domain=domain)
+    try:
+        domain = Domains.objects.get(domain=domain)
+    except ObjectDoesNotExist:
+        domain = Domains.objects.filter(domain__icontains=domain).first()
     filtered = [obj.external_domain for obj in domain.externals.all()
                 if obj.external_domain in
                 BlackList.objects.values_list('ignore', flat=True)]

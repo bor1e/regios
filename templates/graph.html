@@ -287,6 +287,18 @@ s.bind('clickStage', function(e) {
     s.refresh();
 });
 
+s.bind('rightClickNode', function(e) {
+    console.log(e.type, e.data.node.id, e.data.node.label, e.data.captor);
+    // alert('<a href="/display/' + e.data.node.id + '"> display Details for: ' + e.data.node.id + '</a>');
+if (window.confirm('If you click "ok" you would be redirected to ' + e.data.node.id + '.')) {
+    if (window.location.port != '')
+window.location = 'http://'+window.location.hostname+ ':'+window.location.port + '/display/' + e.data.node.id;
+    else
+    window.location = 'http://'+window.location.hostname + '/display/' + e.data.node.id;
+
+}
+});
+
 function rotate(angle) {
     setTimeout(function() {
         console.log('changing camera')

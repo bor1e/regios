@@ -5,6 +5,8 @@ from urllib.parse import urlparse
 # from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect  # , reverse
+from django.core.exceptions import ObjectDoesNotExist
+
 import time
 import logging
 logger = logging.getLogger(__name__)
@@ -26,7 +28,8 @@ def check(request):
 
     domain = urlparse(url).netloc
     # TODO: if the sites exists already in the db but not fullscan error occurs
-    if Domains.objects.filter(domain=domain).exists():
+    if Domains.objects.filter(domain__icontains=domain).exists():
+        domain = Domains.objects.filter(domain__icontains=domain).first()
         return redirect('display', domain=domain)
 
     d = Domains.objects.create(domain=domain, url=url)
@@ -60,11 +63,20 @@ def refresh(request, domain):
 
 def display(request, domain):
     # domain was given over manually
-    if not Domains.objects.filter(domain=domain).exists():
+    logger.debug('received : %s' % domain)
+    if not Domains.objects.filter(domain__icontains=domain).exists():
         request.session['domain'] = domain
         return redirect('start')
 
-    domain = Domains.objects.filter(domain=domain).first()
+    try:
+        domain = Domains.objects.get(domain=domain)
+    except ObjectDoesNotExist:
+        logger.debug('not found : %s' % domain)
+        domain = Domains.objects.filter(domain__icontains=domain).first()
+        logger.debug('replaced : %s' % domain)
+
+        return redirect('display', domain=domain)
+
     data = _get_data(domain)
 
     return render(request, 'display.html', {'domain': data})
