@@ -37,12 +37,14 @@ def index(request, domain):
 def init_graph(request, domain=None):
     remaining = None
     if domain:
+        logger.debug('recieved domain: %s' % domain)
+
         try:
             db_domain = Domains.objects.get(domain=domain)
         except ObjectDoesNotExist:
             db_domain = Domains.objects.filter(domain__icontains=domain)\
                 .first()
-
+        logger.debug('found domain in DB: %s' % db_domain.domain)
         filtered = [obj.external_domain for obj in db_domain.externals.all()
                     if obj.external_domain in
                     BlackList.objects.values_list('ignore', flat=True)]
@@ -50,9 +52,11 @@ def init_graph(request, domain=None):
                         for obj in db_domain.externals.all()
                         if obj.external_domain not in filtered]
         # need to add the domain for which the graph was called,
-        # because it is not included in the non_filtered list,
-        # because it is based on the domain...
-        non_filtered.append(domain)
+        # because domain is not included in the non_filtered list,
+        # because the non_filtered list is based on the domain
+        # db_domain.domain is used because maybe the prefix of domain was
+        # removed and the domain is now not in DB
+        non_filtered.append(db_domain.domain)
         remaining = Domains.objects.all().filter(domain__in=non_filtered,
                                                  fullscan=True)
     else:
@@ -62,7 +66,8 @@ def init_graph(request, domain=None):
     nodes = list()
     edges = list()
     domains_counter = initialize_domains(remaining)
-    ''' TODO: FIXED by ignoring it during initialization
+    ''' TODO:
+    FIXED by ignoring it during initialization with remove_prefix method
     - extract www. from domain prefix
     --> do it on DB level (Domains & Externals)
     --> add spider start_urls & allowed_domains
@@ -119,7 +124,7 @@ def init_graph(request, domain=None):
                         break
 
     data = {'nodes': nodes, 'edges': edges}
-
+    logger.debug('data: %s' % data)
     return JsonResponse({'data': data})
 
 
