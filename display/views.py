@@ -84,9 +84,19 @@ def display(request, domain):
 
 def _get_data(domain):
     duration = domain.duration.total_seconds() if domain.duration else 0
-    externals_scanned = Domains.objects.filter(src_domain=domain.domain) \
-        .exclude(domain__in=BlackList.objects.all().values_list('ignore',
-                                                                flat=True))
+#    Problem with the followiing code, is that it might be that we have a
+#    domain which is externally dependened on this one, but was already
+#    beforehand scanned, so it wouldn't appear here
+#    externals_scanned = Domains.objects.filter(src_domain=domain.domain) \
+#        .exclude(domain__in=BlackList.objects.all().values_list('ignore',
+#                                                                flat=True))
+    externals_domains_in_DB = set(e.external_domain
+                                  for e in domain.filtered_externals)
+    externals_scanned = Domains.objects.\
+        filter(domain__in=externals_domains_in_DB)
+    multiple = set(e.external_domain for e in domain.externals.all())
+    diff = domain.externals.count() - len(multiple)
+    filtered = domain.externals.count() - domain.filtered_externals.count() - diff
     data = {
         'domain': domain.domain,
         'url': domain.url,
@@ -96,6 +106,7 @@ def _get_data(domain):
         'name': domain.info.name,
         'title': domain.info.title,
         'zip': '{:05d}'.format(domain.info.zip),
+        'filtered': filtered,
         'other': domain.info.other,
         'locals': domain.locals,
         'externals': domain.externals,

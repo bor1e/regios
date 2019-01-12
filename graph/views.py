@@ -29,23 +29,18 @@ def index(request, domain=None):
         domain = Domains.objects.get(domain=domain)
     except ObjectDoesNotExist:
         domain = Domains.objects.filter(domain__icontains=domain).first()
-    filtered = [obj.external_domain for obj in domain.externals.all()
-                if obj.external_domain in
-                BlackList.objects.values_list('ignore', flat=True)]
-    logger.debug('external.filtered: %s' % len(filtered))
-    non_filtered = [obj.external_domain for obj in domain.externals.all()
-                    if obj.external_domain not in filtered]
+
+    non_filtered_ext = set(obj.external_domain
+                           for obj in domain.filtered_externals)
 
     displaying = [obj.domain for obj in Domains.objects.all()
-                  if obj.domain in non_filtered and obj.fullscan]
+                  if obj.domain in non_filtered_ext and obj.fullscan]
 
     logger.debug('external.displaying %s from external.non_filtered %s' %
-                 (len(displaying), len(non_filtered)))
+                 (len(displaying), len(non_filtered_ext)))
 
     stats = {
         'domain': domain.domain,
-        # 'filtered': filtered,  # .count()
-        # 'non_filtered': non_filtered,  # .count()
         'displaying': displaying,  # .count()
         'rest': domain.externals.count() - len(displaying),  # .count()
     }
@@ -64,19 +59,15 @@ def init_graph(request, domain=None):
             db_domain = Domains.objects.filter(domain__icontains=domain)\
                 .first()
         logger.debug('found domain in DB: %s' % db_domain.domain)
-        filtered = [obj.external_domain for obj in db_domain.externals.all()
-                    if obj.external_domain in
-                    BlackList.objects.values_list('ignore', flat=True)]
-        non_filtered = [obj.external_domain
-                        for obj in db_domain.externals.all()
-                        if obj.external_domain not in filtered]
+        non_filtered_ext = set(obj.external_domain
+                               for obj in db_domain.filtered_externals)
         # need to add the domain for which the graph was called,
         # because domain is not included in the non_filtered list,
-        # because the non_filtered list is based on the domain
+        # because the filtered_externals list is based on the domain
         # db_domain.domain is used because maybe the prefix of domain was
         # removed and the domain is now not in DB
-        non_filtered.append(db_domain.domain)
-        remaining = Domains.objects.all().filter(domain__in=non_filtered,
+        non_filtered_ext.add(db_domain.domain)
+        remaining = Domains.objects.all().filter(domain__in=non_filtered_ext,
                                                  fullscan=True)
     else:
         remaining = Domains.objects.all().exclude(domain__in=BlackList.objects
@@ -85,14 +76,7 @@ def init_graph(request, domain=None):
     nodes = list()
     edges = list()
     domains_counter = initialize_domains(remaining)
-    ''' TODO:
-    FIXED by ignoring it during initialization with remove_prefix method
-    - extract www. from domain prefix
-    --> do it on DB level (Domains & Externals)
-    --> add spider start_urls & allowed_domains
-    OR
-    --> when calculating IGNORE www while initializing domains_counter
-    '''
+
     logger.debug('initialized domains_counter: %s' % domains_counter)
     edges_counter = list()
     # check = set(key for key, item in domains_counter.items())
@@ -213,21 +197,22 @@ def initialize_domains(domains):
     domains_size = {}
     for d in domains_list:
         domains_size[d] = 0
-    '''
-    # in this case the counter of domains linked to is only based on the
-    # selected domains for the fullscan
-    # the loop below search the entire DB
-    for d in domains:
-        for e in d.externals.all():
-            if e.external_domain in domains_size:
-                domains_size[e.external_domain] += 1
-    '''
 
     # in this case the counter of domains checks all the db for given domain
     for e in Externals.objects.all():
         e_domain_cleaned = remove_prefix(e.external_domain)
         if e_domain_cleaned in domains_size:
             domains_size[e_domain_cleaned] += 1
+
+    '''
+    # in this case the counter of domains linked to is only based on the
+    # selected domains for the fullscan
+    # the loop above search the entire DB
+    for d in domains:
+        for e in d.externals.all():
+            if e.external_domain in domains_size:
+                domains_size[e.external_domain] += 1
+    '''
 
     return domains_size
 

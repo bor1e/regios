@@ -7,6 +7,7 @@
             <h2 class="subtitle">Status: <span id="status">{{domain.status}}</span>
       </h2>
             <input type="hidden" id="url" value="{{domain.url}}">
+            <input type="hidden" id="fullscan" value="{{domain.fullscan}}">
             <!--h1 class=title">Simple check running for Domain: {{domain}}</h1-->
             <table class="table">
                 <thead>
@@ -49,7 +50,7 @@
             </table>
             <div class="content">
                 <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
-                <a class="button is-primary is-inverted" href="/TODO">Filters</a>
+                <a class="button is-primary is-inverted" href="{% url 'display_filter' src_domain=domain.domain %}">Filters ({{domain.filtered}})</a>
                 <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">Graph</a>
             </div>
             <div id="remaining"></div>
@@ -117,7 +118,11 @@
                             Nothing found.
                             {% endif %}
                         </td>
-                        <td><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Add to Filter</a>
+                        <td>
+                            <div class="field is-grouped">
+                        <div class="control"><a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">Filter only for this domain</a>
+                            <div class="control"><a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">Filter for all domains</a>
+                        </div>
                             <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
                     <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
                         </td>
@@ -239,7 +244,6 @@ $(document).ready(function() {
     var isFinished = $("#status").text() == 'finished';
     var domain = $("#domain").text();
     if (isFinished) {
-        var externals_count = parseInt($("#externals_count").text());
         // start crawling
         $.post("/api/infoscan/", { 'domain': domain }, function(data) {
             var interval = 1500;

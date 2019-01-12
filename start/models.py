@@ -43,11 +43,12 @@ class Domains(models.Model):
 
     def _filtered(self):
         externals = Externals.objects.filter(domain=self)
-        to_ignore = BlackList.objects.all().values_list('ignore', flat=True)
+        local_ignored = LocalIgnore.objects.filter(domain=self).\
+            values_list('local_ignore', flat=True)
+        on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
         ignore_external_pks = [external.pk for external in externals
-                               if external.external_domain in to_ignore]
-        logger.debug('ignore: %s' % to_ignore)
-        logger.debug('ignore_external_pks: %s' % ignore_external_pks)
+                               if external.external_domain in local_ignored or
+                               external.external_domain in on_BlackList]
         return externals.exclude(
             pk__in=ignore_external_pks
         )
@@ -59,6 +60,7 @@ class Domains(models.Model):
                     Domains.objects.all().values_list('domain', flat=True)]
         return externals.exclude(pk__in=existing)
 
+    # externals which are NOT on BlackList or Locally_Ignored
     filtered_externals = property(_filtered)
     to_scan = property(_to_scan)
 
@@ -145,3 +147,18 @@ class Locals(models.Model):
 
     class Meta:
         unique_together = (('url', 'domain'),)
+
+
+class LocalIgnore(models.Model):
+    local_ignore = models.TextField(max_length=200, unique=True)
+    domain = models.ForeignKey(
+        Domains,
+        on_delete=models.CASCADE,
+        related_name='local_ignore'
+    )
+
+    def __str__(self):
+        return self.local_ignore
+
+    class Meta:
+        unique_together = (('local_ignore', 'domain'),)
