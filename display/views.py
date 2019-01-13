@@ -1,5 +1,5 @@
 from start.models import Domains
-from filter.models import BlackList
+# from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
 from urllib.parse import urlparse
 # from django.core import serializers
@@ -84,19 +84,15 @@ def display(request, domain):
 
 def _get_data(domain):
     duration = domain.duration.total_seconds() if domain.duration else 0
-#    Problem with the followiing code, is that it might be that we have a
-#    domain which is externally dependened on this one, but was already
-#    beforehand scanned, so it wouldn't appear here
-#    externals_scanned = Domains.objects.filter(src_domain=domain.domain) \
-#        .exclude(domain__in=BlackList.objects.all().values_list('ignore',
-#                                                                flat=True))
-    externals_domains_in_DB = set(e.external_domain
-                                  for e in domain.filtered_externals)
+
+    externals_filtered_domains_in_DB = set(e.external_domain
+                                           for e in domain.filtered_externals)
     externals_scanned = Domains.objects.\
-        filter(domain__in=externals_domains_in_DB)
-    multiple = set(e.external_domain for e in domain.externals.all())
-    diff = domain.externals.count() - len(multiple)
-    filtered = domain.externals.count() - domain.filtered_externals.count() - diff
+        filter(domain__in=externals_filtered_domains_in_DB)
+
+    filtered = domain.externals.count() - domain.filtered_externals.count()
+    unique_externals = set(e.external_domain for e in domain.externals.all())
+
     data = {
         'domain': domain.domain,
         'url': domain.url,
@@ -109,8 +105,48 @@ def _get_data(domain):
         'filtered': filtered,
         'other': domain.info.other,
         'locals': domain.locals,
-        'externals': domain.externals,
+        'unique_externals': unique_externals,
         'filtered_externals': externals_scanned,
         'last_update': domain.updated_at
     }
     return data
+
+    '''
+    explaining the counter of filtered domains based on medical-valley-emn.de:
+    d = Domains.object.get(domain='www.medical-valley-emn.de')
+    d.externals.count()  # 92
+    unique = set(e.external_domain for e in domain.externals.all())  # 59
+    ==> only 59 unique external domains,
+    i.e. 33 domains are mentioned more often
+
+    multiple = {}
+    for e in domain.externals.all():
+        multiple[e.external_domain] = multiple.get(e.external_domain, 0) + 1
+
+    logger.debug(len(multiple) == 59)
+
+    doppelte = 0
+    for key, val in multiple.items():
+        if int(val) > 1:
+            logger.debug('[{}]: {}'.format(key, val))
+            doppelte += 1
+
+    doppelte ==> 33 !
+
+    filtered_multiple = {}
+    for e in domain.filtered_externals.all():
+        filtered_multiple[e.external_domain] = filtered_multiple
+                                               .get(e.external_domain, 0) + 1
+    anzahl, counter = 0, 0
+    for k,v in multiple.items():
+        if k not in filtered_multiple:
+            logger.debug('[{}]: {}'.format(k, v))
+            anzahl += 1
+            counter += v
+    logger.debug('counter: {}, anzahl der doppelten: {}'
+                 .format(counter, anzahl))
+    anzahl ==> 18 domains were filtered
+    counter ==> 31, this 18 domains were 31 times in the d.externals.all
+
+    externals_to_scan ==> unique - anzahl => 59 - 18 = 41 !
+    '''

@@ -43,12 +43,17 @@ class Domains(models.Model):
 
     def _filtered(self):
         externals = Externals.objects.filter(domain=self)
+        # logger.debug('externals: {}'.format(externals.count()))
         local_ignored = LocalIgnore.objects.filter(domain=self).\
             values_list('local_ignore', flat=True)
+        # logger.debug('local_ignored: {}'.format(len(local_ignored)))
         on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
         ignore_external_pks = [external.pk for external in externals
                                if external.external_domain in local_ignored or
                                external.external_domain in on_BlackList]
+        # logger.debug('ignore_external_pks: {}'
+        #            .format(len(ignore_external_pks)))
+
         return externals.exclude(
             pk__in=ignore_external_pks
         )
