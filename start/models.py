@@ -42,8 +42,9 @@ class Domains(models.Model):
         return self.domain
 
     def _filtered(self):
+        logger.debug('external for {}'.format(self.domain))
         externals = Externals.objects.filter(domain=self)
-        # logger.debug('externals: {}'.format(externals.count()))
+        logger.debug(externals.values_list('url', flat=True))
         local_ignored = LocalIgnore.objects.filter(domain=self).\
             values_list('local_ignore', flat=True)
         # logger.debug('local_ignored: {}'.format(len(local_ignored)))

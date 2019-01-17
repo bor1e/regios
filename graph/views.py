@@ -30,11 +30,14 @@ def index(request, domain=None):
     except ObjectDoesNotExist:
         domain = Domains.objects.filter(domain__icontains=domain).first()
 
-    non_filtered_ext = set(obj.external_domain
+    non_filtered_ext = set(remove_prefix(obj.external_domain)
                            for obj in domain.filtered_externals)
-
+    logger.debug(non_filtered_ext)
     displaying = [obj.domain for obj in Domains.objects.all()
-                  if obj.domain in non_filtered_ext and obj.fullscan]
+                  if remove_prefix(obj.domain) in non_filtered_ext
+                  and obj.fullscan]
+
+    logger.debug(displaying)
 
     logger.debug('external.displaying %s from external.non_filtered %s' %
                  (len(displaying), len(non_filtered_ext)))
@@ -61,12 +64,12 @@ def init_graph(request, domain=None):
         logger.debug('found domain in DB: %s' % db_domain.domain)
         non_filtered_ext = set(obj.external_domain
                                for obj in db_domain.filtered_externals)
-        # need to add the domain for which the graph was called,
-        # because domain is not included in the non_filtered list,
-        # because the filtered_externals list is based on the domain
-        # db_domain.domain is used because maybe the prefix of domain was
-        # removed and the domain is now not in DB
+        # need to add the domain for which the graph was called
         non_filtered_ext.add(db_domain.domain)
+        logger.debug(non_filtered_ext)
+        # TODO Problem: medical-valley-emn.de in infoteam.externals and in
+        # non_filtered_ext BUT NOT IN DOMAINS OBJECTS ALL!!!
+        # ie.: www.medical-valley-emn.de NOT IN medical-valley-emn.de
         remaining = Domains.objects.all().filter(domain__in=non_filtered_ext,
                                                  fullscan=True)
     else:
