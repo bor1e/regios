@@ -18,27 +18,69 @@
 </head>
 
 <body>
-    <nav class="level">
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Graph for</p>
-                <p class="title">{{ stats.domain }}</p>
+        <section class="hero is-info">
+            <div class="hero-body">
+                <nav class="level">
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="heading">Graph for</p>
+                            <p class="title">{{ stats.domain }}</p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="heading">Domains displayed</p>
+                            <p class="title" id="displaying">{{ stats.displaying|length }}</p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="heading">Not displaying from original domain</p>
+                            <p class="title">{{ stats.rest }}</p>
+                        </div>
+                    </div>
+                </nav>
+                <div class="hero-foot">
+                    <div class="container">
+                        <nav class="tabs is-boxed is-fullwidth">
+                            <ul>
+                                <li><span class="title">Legend:</span>&nbsp;</li>
+                                <li>
+                                    <span class="tag" style="background-color:#ec5148;color:white">Default Node</span>
+                                </li>
+                                <li>
+                                    <span class="tag is-success">Source Node</span>
+                                </li>
+                                <li>
+                                    <span class="tag is-warning">Additional Nodes</span>
+                                </li>
+                                <li>
+                                    <span class="tag is-dark">Simple Edges</span>
+                                </li>
+                                <li>
+                                    <span class="tag is-primary">References > 3</span>
+                                </li>
+                                <li>
+                                    <span class="tag is-link">References > 6</span>
+                                </li>
+                                <li>
+                                    <p class="help">Display <b>Nodes</b> which have at least<br />the following number of <b>Edges</b>:</p>
+                                    <input id="sliderWithValue" class="slider has-output is-fullwidth" min="1" max="20" value="1" step="1" type="range">
+                                    <output for="sliderWithValue">1</output>
+                                    <p class="help">rotate by angle:</p>
+                                    <input id="angle" class="slider has-output is-fullwidth" min="0" max="90" value="0" step="5" type="range" onchange="rotate()">
+                                    <output for="angle">0</output>&deg;
+                                </li>
+                                <li>
+                                    <button class="button is-success" type="button" onclick="displayArrows()">Display</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Domains displayed</p>
-                <p class="title" id="displaying">{{ stats.displaying|length }}</p>
-            </div>
-        </div>
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Not displaying from original domain</p>
-                <p class="title">{{ stats.rest }}</p>
-            </div>
-        </div>
-    </nav>
-    <div class="container has-background-grey-lighter">
+        </section>
+    <div class="container is-fluid has-background-grey-lighter">
         <div id="sigmajs">
         </div>
     </div>
@@ -55,6 +97,12 @@ var g = {
 };
 sigma.classes.graph.addMethod('existsEdgeId', function(edgeId) {
     return (this.edgesIndex[edgeId]) ? true : false;
+});
+sigma.classes.graph.addMethod('getEdgeById', function(edgeId) {
+    return this.edgesIndex[edgeId];
+});
+sigma.classes.graph.addMethod('getNodeById', function(nodeId) {
+    return this.nodesIndex[nodeId];
 });
 sigma.classes.graph.addMethod('existsNodeId', function(nodeId) {
     return (this.nodesIndex[nodeId]) ? true : false;
@@ -73,6 +121,10 @@ sigma.classes.graph.addMethod('existsNodeId', function(nodeId) {
     else 
         return true;*/
 });
+sigma.classes.graph.addMethod('getIncomingEdgesCount', function(nodeId) {
+    // An object containing for each node (IDs are the object's keys) the number of incoming edges.
+    return this.inNeighborsCount[nodeId];
+});
 sigma.classes.graph.addMethod('neighbors', function(nodeId) {
     var k,
         neighbors = {},
@@ -83,6 +135,33 @@ sigma.classes.graph.addMethod('neighbors', function(nodeId) {
 
     return neighbors;
 });
+sigma.classes.graph.addMethod('countEdgeSizeOfNode', function(nodeId) {
+    var k, sum = 0,
+        entries
+    edges = {},
+        index = this.allNeighborsIndex[nodeId] || {};
+    console.log(nodeId);
+    console.log(index);
+    len = Object.keys(index).length;
+    for (k in index) {
+        var obj = index[k];
+        for (entries in obj) {
+            edges[entries] = this.edgesIndex[entries].size;
+        }
+    }
+    console.log(edges);
+    for (k in edges) {
+        console.log(edges[k]);
+        sum += parseInt(edges[k]);
+    }
+    console.log('result: ' + sum);
+    //for (k = 0; k<len; k++) {
+    //neighboringEdges[k] = this.edgesIndex[index[k]];
+    //}
+    //console.log(neighbors);
+    return sum;
+});
+
 var s = new sigma({
     graph: g,
     container: 'sigmajs',
@@ -116,16 +195,12 @@ if (common_prefixes.includes(compare_domain_array[0])) {
     compare_domain_array = compare_domain_array.slice(1, compare_domain_array.length);
     compare_domain = compare_domain_array.join('.')
 }
+var source_node, add_node, high_ref, very_high_ref;
+source_node = '#5dcdb3';
+add_node = '#fadc6e';
+high_ref = '#64cc6d';
+very_high_ref = '#3f75d5';
 
-function reloadGraph(s) {
-    console.log('snd startForceAtlas2');
-    s.startForceAtlas2();
-
-    setTimeout(function() {
-        console.log('snd stopForceAtlas2');
-        s.killForceAtlas2();
-    }, 2000);
-}
 // console.log('compare_domain: ' + compare_domain);
 function addElems(nodes, edges) {
     var i, len = nodes.length;
@@ -136,8 +211,9 @@ function addElems(nodes, edges) {
             label: nodes[i].label,
             x: Math.random(),
             y: Math.random(),
-            size: nodes[i].size * 1.5,
-            color: (nodes[i].id != compare_domain) ? '#ec5148' : 'green'
+            // size: nodes[i].size * 1.5,
+            size: nodes[i].size * 1,
+            color: (nodes[i].id != compare_domain) ? '#ec5148' : source_node
         });
     }
     var i, len = edges.length;
@@ -151,7 +227,7 @@ function addElems(nodes, edges) {
             size: edges[i].size,
             count: edges[i].count,
             type: 'curvedArrow',
-            color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+            color: (edges[i].size > 3) ? ((edges[i].size > 6) ? very_high_ref : high_ref) : '#666',
         });
         //  nodes[i].color = nodes[i].center ? '#333' : '#666';
     }
@@ -163,23 +239,136 @@ $.get('init/' + domain, {}, function(data) {
 }).done(function() {
     refreshGraph(g);
 });
+/* Trying to highlight all edges involved
+s.bind('overEdge', function(e) {
+    console.log('processes');
+    console.log(e);
+    if (!e.data.edge) {
+        console.log('returns for');
+        console.log(e);
+        // Helper variables for hover renderers and contexts
+        var nodeHoverRenderers = sigma.canvas.hovers;
+        var edgeHoverRenderers = sigma.canvas.edgehovers;
+        var hoverContext = s.renderers[0].contexts.hover;
+        var extremitiesRenderers = sigma.canvas.extremities;
 
+        // Get the renderer prefix
+        var options = s.renderers[0].options;
+        var embedSettings = s.settings.embedObjects(options, {
+            prefix: s.renderers[0] instanceof sigma.renderers.webgl ? 'cam0:' : options.prefix
+        });
+        var node_ids = e.data.id.split('_');
+        var target = node_ids[1];
+        var source = node_ids[0];
+        edgeHoverRenderers.def(e, source,
+            target,
+            hoverContext,
+            embedSettings
+        );
+        extremitiesRenderers.def
+              (
+                e,
+                source,
+                target,
+               hoverContext,
+                embedSettings
+              );
+    } else {
 
+        console.log(e.type, e.data.edge, e.data.captor);
+     
+        //  if the nodes which are connected by the edge have another edge it shall also get highlighted
+        
+        var node_ids = e.data.edge.id.split('_');
+        var target = node_ids[0];
+        var source = node_ids[1];
+        var edgeId = source + '_' + target;
+        if (s.graph.existsEdgeId(edgeId)) {
+            console.log('overEdge : ' + edgeId)
+            s.dispatchEvent('overEdge', s.graph.getEdgeById(edgeId));
+        }
+    }
+}); */
+function displayArrows() {
+    var output = document.getElementsByTagName('output');
+    var min_ref = output[0].value;
+    var nodes = g.nodes;
+    var i, j, len = nodes.length;
+    var edgeSize = 0;
+    var toKeep = []
+    /*
+    for (i = 0; i < len; i++) {
+        if (s.graph.getIncomingEdgesCount(nodes[i].id) >= min_ref) {
+            console.log('here we go: ' + nodes[i].id + ' has incoming: ' + s.graph.getIncomingEdgesCount(nodes[i].id));
+            toKeep.push(nodes[i].id);
+        }
+    }*/
+    for (i = 0; i < len; i++) {
+        edgeSize = s.graph.countEdgeSizeOfNode(nodes[i].id);
+        if (edgeSize >= min_ref) {
+            console.log('here we go: ' + nodes[i].id + ' has edgeSize: ' + edgeSize);
+            toKeep.push(nodes[i].id);
+        }
+    }
+    // s.graph.nodes().forEach(function(n) {
+    //     n.originalColor = n.color;
+    // });
+    // s.graph.edges().forEach(function(e) {
+    //     e.originalColor = e.color;
+    // });
+    // s.refresh();
+    s.graph.nodes().forEach(function(n) {
+        if (toKeep.includes(n.id)) {
+            // console.log(n.id);
+            n.color = n.originalColor;
+        } else
+            n.color = '#eee';
+    });
+
+    s.graph.edges().forEach(function(e) {
+        if (toKeep.includes(e.source) && toKeep.includes(e.target))
+            e.color = e.originalColor;
+        else
+            e.color = '#eee';
+    });
+    s.refresh();
+}
+var wasStageClicked = true;
 s.bind('clickNode', function(e) {
+    // the if-else block makes sure that the stage is clean.
+    if (wasStageClicked)
+        wasStageClicked = false;
+    else {
+        s.graph.nodes().forEach(function(n) {
+            n.color = n.originalColor;
+            //n.color = (n.color != source_node) ? ((n.color == add_node) ? add_node : n.originalColor) : source_node;
+        });
+
+        s.graph.edges().forEach(function(e) {
+            e.color = e.originalColor;
+            //e.color = (e.size > 3) ? ((e.size > 6) ? very_high_ref : high_ref) : '#666';
+        });
+
+        // Same as in the previous event:
+        s.refresh();
+    }
+
     var nodeId = e.data.node.id,
         toKeep = s.graph.neighbors(nodeId);
     toKeep[nodeId] = e.data.node;
-
     s.graph.nodes().forEach(function(n) {
+        // console.log(n.id + ': ' + n.originalColor);
         if (toKeep[n.id])
-            n.color = (n.color != 'green') ? ((n.color == 'yellow') ? 'yellow' : n.originalColor) : 'green';
+            n.color = n.originalColor;
+        //n.color = (n.color != source_node) ? ((n.color == add_node) ? add_node : n.originalColor) : source_node;
         else
             n.color = '#eee';
     });
 
     s.graph.edges().forEach(function(e) {
         if (toKeep[e.source] && toKeep[e.target])
-            e.color = (e.size > 3) ? ((e.size > 6) ? 'blue' : 'red') : '#666';
+            e.color = e.originalColor;
+        //e.color = (e.size > 3) ? ((e.size > 6) ? very_high_ref : high_ref) : '#666';
         else
             e.color = '#eee';
     });
@@ -192,7 +381,15 @@ s.bind('clickNode', function(e) {
 
 s.bind('doubleClickNode', function(e) {
     console.log(e.type, e.data.node.id, e.data.captor);
-
+    // find node in g.nodes and make node color yellow
+    var nodes = g.nodes;
+    var i, len = nodes.length;
+    for (i = 0; i < len; i++) {
+        if (nodes[i].id == e.data.node.id) {
+            nodes[i].color = source_node;
+            break;
+        }
+    }
     $.get('init/' + e.data.node.id, {}, function(data) {
         console.log('received nodes length: ' + data.data.nodes.length);
 
@@ -210,8 +407,9 @@ s.bind('doubleClickNode', function(e) {
                     label: nodes[i].label,
                     x: 10 * Math.random(),
                     y: 10 * Math.random(),
-                    size: nodes[i].size * 1.5,
-                    color: 'yellow'
+                    //size: nodes[i].size * 1.5,
+                    size: nodes[i].size * 1.0,
+                    color: add_node
                 });
             }
         }
@@ -231,7 +429,7 @@ s.bind('doubleClickNode', function(e) {
                     size: edges[i].size,
                     count: edges[i].count,
                     type: 'curvedArrow',
-                    color: (edges[i].size > 3) ? ((edges[i].size > 6) ? 'blue' : 'red') : '#666'
+                    color: (edges[i].size > 3) ? ((edges[i].size > 6) ? very_high_ref : high_ref) : '#666'
                 });
 
         }
@@ -264,6 +462,12 @@ function refreshGraph(g) {
         nodes[i].y = Math.sin(Math.PI * 2 * i / len);
     }
     // Refresh the display:
+    s.graph.nodes().forEach(function(n) {
+        n.originalColor = n.color;
+    });
+    s.graph.edges().forEach(function(e) {
+        e.originalColor = e.color;
+    });
     s.refresh();
     // Start the ForceAtlas2 algorithm:
     s.startForceAtlas2({ worker: true });
@@ -275,12 +479,15 @@ function refreshGraph(g) {
 // When the stage is clicked, we just color each
 // node and edge with its original color.
 s.bind('clickStage', function(e) {
+    wasStageClicked = true;
     s.graph.nodes().forEach(function(n) {
-        n.color = (n.color != 'green') ? ((n.color == 'yellow') ? 'yellow' : n.originalColor) : 'green';
+        n.color = n.originalColor;
+        //n.color = (n.color != source_node) ? ((n.color == add_node) ? add_node : n.originalColor) : source_node;
     });
 
     s.graph.edges().forEach(function(e) {
-        e.color = (e.size > 3) ? ((e.size > 6) ? 'blue' : 'red') : '#666';
+        e.color = e.originalColor;
+        //e.color = (e.size > 3) ? ((e.size > 6) ? very_high_ref : high_ref) : '#666';
     });
 
     // Same as in the previous event:
@@ -290,21 +497,100 @@ s.bind('clickStage', function(e) {
 s.bind('rightClickNode', function(e) {
     console.log(e.type, e.data.node.id, e.data.node.label, e.data.captor);
     // alert('<a href="/display/' + e.data.node.id + '"> display Details for: ' + e.data.node.id + '</a>');
-if (window.confirm('If you click "ok" you would be redirected to ' + e.data.node.id + '.')) {
-    if (window.location.port != '')
-window.location = 'http://'+window.location.hostname+ ':'+window.location.port + '/display/' + e.data.node.id;
-    else
-    window.location = 'http://'+window.location.hostname + '/display/' + e.data.node.id;
+    if (window.confirm('If you click "ok" you would be redirected to ' + e.data.node.id + '.')) {
+        if (window.location.port != '')
+            window.location = 'http://' + window.location.hostname + ':' + window.location.port + '/display/' + e.data.node.id;
+        else
+            window.location = 'http://' + window.location.hostname + '/display/' + e.data.node.id;
 
-}
+    }
 });
-
-function rotate(angle) {
-    setTimeout(function() {
-        console.log('changing camera')
-        s.cameras[0].goTo({ x: 0, y: 0, angle: angle, ratio: 1 });
-    }, 2000);
+var currentAngle = 0;
+function rotate() {
+    console.log('currentAngle: '+currentAngle);
+    console.log(this);
+    var output = document.getElementsByTagName('output');
+    var angle = parseInt(output[1].value);
+    var diffAngle = angle - currentAngle;
+    currentAngle = diffAngle;
+    console.log('currentAngle changed: '+currentAngle);
+    //setTimeout(function() {
+    console.log('changing camera by degree: ' + diffAngle)
+    s.cameras[0].goTo({ x: 0, y: 0, angle: diffAngle, ratio: 1 });
+    //}, 200);
 }
+
+// Find output DOM associated to the DOM element passed as parameter
+function findOutputForSlider(element) {
+    var idVal = element.id;
+    outputs = document.getElementsByTagName('output');
+    for (var i = 0; i < outputs.length; i++) {
+        if (outputs[i].htmlFor == idVal)
+            return outputs[i];
+    }
+}
+
+function getSliderOutputPosition(slider) {
+    // Update output position
+    var newPlace,
+        minValue;
+
+    var style = window.getComputedStyle(slider, null);
+    // Measure width of range input
+    sliderWidth = parseInt(style.getPropertyValue('width'), 10);
+
+    // Figure out placement percentage between left and right of input
+    if (!slider.getAttribute('min')) {
+        minValue = 0;
+    } else {
+        minValue = slider.getAttribute('min');
+    }
+    var newPoint = (slider.value - minValue) / (slider.getAttribute('max') - minValue);
+
+    // Prevent bubble from going beyond left or right (unsupported browsers)
+    if (newPoint < 0) {
+        newPlace = 0;
+    } else if (newPoint > 1) {
+        newPlace = sliderWidth;
+    } else {
+        newPlace = sliderWidth * newPoint;
+    }
+
+    return {
+        'position': newPlace + 'px'
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all document sliders
+    var sliders = document.querySelectorAll('input[type="range"].slider');
+    [].forEach.call(sliders, function(slider) {
+        var output = findOutputForSlider(slider);
+        if (output) {
+            if (slider.classList.contains('has-output-tooltip')) {
+                // Get new output position
+                var newPosition = getSliderOutputPosition(slider);
+
+                // Set output position
+                output.style['left'] = newPosition.position;
+            }
+
+            // Add event listener to update output when slider value change
+            slider.addEventListener('input', function(event) {
+                if (event.target.classList.contains('has-output-tooltip')) {
+                    // Get new output position
+                    var newPosition = getSliderOutputPosition(event.target);
+
+                    // Set output position
+                    output.style['left'] = newPosition.position;
+                }
+
+                // Update output with slider value
+                output.value = event.target.value;
+            });
+        }
+    });
+});
 </script>
 
 </html>
