@@ -1,3 +1,5 @@
 from django.contrib import admin
+from start.models import Domains, Externals
 
-# Register your models here.
+admin.site.register(Domains)
+admin.site.register(Externals)
