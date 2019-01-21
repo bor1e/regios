@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def index(request):
     # TODO! check if session has errors
-    ds = Domains.objects.all()
+    ds = Domains.objects.all().filter(fullscan=True)
 
     return render(request, 'index.html', {'domains': ds})
 

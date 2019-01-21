@@ -29,9 +29,10 @@ def infoscan(request):
     now = time.time()
     for i in to_scan:
         logger.debug('creating domain: %s' % i.external_domain)
-        if Domains.objects.filter(domain=i.external_domain).exists():
+        external_domain_name = _remove_prefix(i.external_domain)
+        if Domains.objects.filter(domain__in=external_domain_name).exists():
             continue
-        Domains.objects.create(domain=i.external_domain,
+        Domains.objects.create(domain=external_domain_name,
                                url=i.url, level=obj.level + 1,
                                src_domain=obj.domain)
         scrapyd.schedule('default', 'infospider',
@@ -164,17 +165,17 @@ def get(request):
 def post(request):
     spider = request.POST.dict()
     logger.debug('received spider params: %s', spider)
-
-    domain = Domains.objects.filter(domain=spider['domain'].strip())
+    domain_name = _remove_prefix(spider['domain'].strip())
+    domain = Domains.objects.filter(domain__icontains=domain_name)
     url = ''
     if not domain.exists():
-        domain = Domains.objects.create(domain=spider['domain'],
+        domain = Domains.objects.create(domain=domain_name,
                                         url=spider['url'])
         url = spider['url']
-        logger.debug('created domain: %s', spider['domain'])
+        logger.debug('created domain: {}'.format(domain_name))
     else:
-        logger.debug('found domain: %s status: %s' %
-                     (spider['domain'], domain.first().status))
+        logger.debug('found domain: {} status: {}'.
+                     format(domain_name, domain.first().status))
         domain = domain.first()
         url = domain.url
 
@@ -194,3 +195,13 @@ def post(request):
                          'task_id': task_id,
                          'status': 'started'
                          })
+
+
+def _remove_prefix(domain):
+    domain_split = domain.split('.')
+    # categorize domains matchmaking of words after skiping 'de','org','com'...
+    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+    if domain_split[0] in common_prefixes:
+        return _remove_prefix('.'.join(domain_split[1:]))
+    else:
+        return domain

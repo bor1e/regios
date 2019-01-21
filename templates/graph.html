@@ -65,7 +65,7 @@
                                 </li>
                                 <li>
                                     <p class="help">Display <b>Nodes</b> which have at least<br />the following number of <b>Edges</b>:</p>
-                                    <input id="sliderWithValue" class="slider has-output is-fullwidth" min="1" max="20" value="1" step="1" type="range">
+                                    <input id="sliderWithValue" class="slider has-output is-fullwidth" min="1" max="10" value="1" step="1" type="range">
                                     <output for="sliderWithValue">1</output>
                                     <!--<p class="help">rotate by angle:</p>
                                     <input id="angle" class="slider has-output is-fullwidth" min="0" max="90" value="0" step="5" type="range" onchange="rotate()">
@@ -296,20 +296,21 @@ function displayArrows() {
     var i, j, len = nodes.length;
     var edgeSize = 0;
     var toKeep = []
-    /*
+    
     for (i = 0; i < len; i++) {
         if (s.graph.getIncomingEdgesCount(nodes[i].id) >= min_ref) {
             console.log('here we go: ' + nodes[i].id + ' has incoming: ' + s.graph.getIncomingEdgesCount(nodes[i].id));
             toKeep.push(nodes[i].id);
         }
-    }*/
+    }
+    /*
     for (i = 0; i < len; i++) {
         edgeSize = s.graph.countEdgeSizeOfNode(nodes[i].id);
         if (edgeSize >= min_ref) {
             console.log('here we go: ' + nodes[i].id + ' has edgeSize: ' + edgeSize);
             toKeep.push(nodes[i].id);
         }
-    }
+    }*/
     // s.graph.nodes().forEach(function(n) {
     //     n.originalColor = n.color;
     // });

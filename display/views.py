@@ -26,16 +26,25 @@ def check(request):
     url = request.POST.get('url') if request.POST.get('url') else \
         request.COOKIES['url']
 
-    domain = urlparse(url).netloc
+    domain_name = _remove_prefix(urlparse(url).netloc)
     # TODO: if the sites exists already in the db but not fullscan error occurs
-    if Domains.objects.filter(domain__icontains=domain).exists():
-        domain = Domains.objects.filter(domain__icontains=domain).first()
+    if Domains.objects.filter(domain__icontains=domain_name).exists():
+        domain = Domains.objects.filter(domain__icontains=domain_name).first()
         return redirect('display', domain=domain)
 
-    d = Domains.objects.create(domain=domain, url=url)
-    # logger.debug('Domains object: %s created' % d.__dict__)
+    domain = Domains.objects.create(domain=domain_name, url=url)
 
-    return render(request, 'display.html', {'domain': d})
+    return render(request, 'display.html', {'domain': domain})
+
+
+def _remove_prefix(domain):
+    domain_split = domain.split('.')
+    # categorize domains matchmaking of words after skiping 'de','org','com'...
+    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+    if domain_split[0] in common_prefixes:
+        return _remove_prefix('.'.join(domain_split[1:]))
+    else:
+        return domain
 
 
 @csrf_exempt
@@ -69,7 +78,7 @@ def display(request, domain):
         return redirect('start')
 
     try:
-        domain = Domains.objects.get(domain=domain)
+        domain = Domains.objects.filter(domain__icontains=domain).first()
     except ObjectDoesNotExist:
         logger.debug('not found : %s' % domain)
         domain = Domains.objects.filter(domain__icontains=domain).first()

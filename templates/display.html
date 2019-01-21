@@ -40,6 +40,8 @@
                         <td id="externals_count">
                             {% if domain.filtered_externals.count > 0 %}
                             {{domain.filtered_externals.count}}
+                            {% elif domain.status == 'finished' and domain.filtered_externals.count == 0 %}
+                            nothing found | probably discardable domain
                             {% else %}
                             processing ...
                             {% endif %}
@@ -134,9 +136,9 @@
                             <div class="field is-grouped">
                                 <div class="control">
                                     <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
-                                <div class="control">
-                                    <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
-                                </div>
+                                    <div class="control">
+                                        <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
+                                    </div>
                                     <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
                     <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
                         </td>
@@ -266,9 +268,12 @@ $(document).ready(function() {
     var externals_count = parseInt($("#externals_count").text()) > 0;
     if (externals_count)
         return;
+    if (externals_count == 0) {
+
+    }
     var isFinished = $("#status").text() == 'finished';
     var domain = $("#domain").text();
-    if (isFinished) {
+    if (isFinished && externals_count != 0) {
         // start crawling
         $.post("/api/infoscan/", { 'domain': domain }, function(data) {
             var interval = 1500;

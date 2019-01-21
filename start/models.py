@@ -7,18 +7,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class FilteredExternal(models.Manager):
-    def get_queryset(self):
-        logger.debug(self.__dict__)
-        externals = Externals.objects.filter(domain=self)
-        to_ignore = BlackList.objects.all().values('ignore')
-        ignore_external_pks = [external.pk for external in externals
-                               if external.external_domain in to_ignore]
-        return super().get_queryset().exclude(
-            pk__in=ignore_external_pks
-        )
-
-
 class Domains(models.Model):
     # I don't want to use the original id in the web. So a unique
     # unique_id = models.CharField(max_length=100, null=True)
@@ -46,8 +34,7 @@ class Domains(models.Model):
         externals = Externals.objects.filter(domain=self)
         logger.debug(externals.values_list('url', flat=True))
         local_ignored = LocalIgnore.objects.filter(domain=self).\
-            values_list('local_ignore', flat=True)
-        # logger.debug('local_ignored: {}'.format(len(local_ignored)))
+            values_list('ignore', flat=True)
         on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
         ignore_external_pks = [external.pk for external in externals
                                if external.external_domain in local_ignored or
@@ -118,7 +105,7 @@ class Externals(models.Model):
 
     # @property
     def _get_domain(self):
-        return urlparse(self.url).netloc
+        return _remove_prefix(urlparse(self.url).netloc)
 
     def _info(self):
         domain = urlparse(self.url).netloc
@@ -156,7 +143,7 @@ class Locals(models.Model):
 
 
 class LocalIgnore(models.Model):
-    local_ignore = models.TextField(max_length=200, unique=True)
+    ignore = models.TextField(max_length=200, unique=True)
     domain = models.ForeignKey(
         Domains,
         on_delete=models.CASCADE,
@@ -164,7 +151,22 @@ class LocalIgnore(models.Model):
     )
 
     def __str__(self):
-        return self.local_ignore
+        return self.ignore
 
     class Meta:
-        unique_together = (('local_ignore', 'domain'),)
+        unique_together = (('ignore', 'domain'),)
+
+    def _get_domain(self):
+        return self.domain.domain
+
+    src_domain = property(_get_domain)
+
+
+def _remove_prefix(domain):
+    domain_split = domain.split('.')
+    # categorize domains matchmaking of words after skiping 'de','org','com'...
+    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+    if domain_split[0] in common_prefixes:
+        return _remove_prefix('.'.join(domain_split[1:]))
+    else:
+        return domain

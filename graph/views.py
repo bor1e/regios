@@ -30,12 +30,11 @@ def index(request, domain=None):
     except ObjectDoesNotExist:
         domain = Domains.objects.filter(domain__icontains=domain).first()
 
-    non_filtered_ext = set(remove_prefix(obj.external_domain)
+    non_filtered_ext = set(obj.external_domain
                            for obj in domain.filtered_externals)
     logger.debug(non_filtered_ext)
     displaying = [obj.domain for obj in Domains.objects.all()
-                  if remove_prefix(obj.domain) in non_filtered_ext
-                  and obj.fullscan]
+                  if obj.domain in non_filtered_ext and obj.fullscan]
 
     logger.debug(displaying)
 
@@ -85,39 +84,36 @@ def init_graph(request, domain=None):
     # check = set(key for key, item in domains_counter.items())
     check = set()
     for d in remaining:
-        d_domain_cleaned = remove_prefix(d.domain)
-        if d_domain_cleaned not in check:
-            check.add(d_domain_cleaned)
+        # d_domain_cleaned = _remove_prefix(d.domain)
+        if d.domain not in check:
+            check.add(d.domain)
             node = {
-                'id': d_domain_cleaned,
+                'id': d.domain,
                 # size depends on externals sites pointing to that one.
                 # 'size': domains_counter[d_domain_cleaned] * 10 \
-                'size': domains_counter[d_domain_cleaned] \
-                if domains_counter[d_domain_cleaned]\
+                'size': domains_counter[d.domain] \
+                if domains_counter[d.domain]\
                 else 5,
-                'label': d_domain_cleaned
+                'label': d.domain
             }
             nodes.append(node)
         for e in d.externals.all():
             if e.external_domain not in remaining.values_list('domain',
                                                               flat=True):
                 continue
-            e_domain_cleaned = remove_prefix(e.external_domain)
-
             # can be seperated if we want a bidrictional graph
             # creating a structure in the dicts:
-            if node['id'] < e_domain_cleaned or parallel_edges:
-                edge_id = node['id'] + '_' + e_domain_cleaned
+            if node['id'] < e.external_domain or parallel_edges:
+                edge_id = node['id'] + '_' + e.external_domain
             else:
-                edge_id = e_domain_cleaned + '_' + node['id']
+                edge_id = e.external_domain + '_' + node['id']
             # TODO for parallel_edges inside graph
-            edge_id = node['id'] + '_' + e_domain_cleaned
+            edge_id = node['id'] + '_' + e.external_domain
 
             if edge_id not in edges_counter:
                 edges_counter.append(edge_id)
-                target_domain = remove_prefix(Domains.objects.
-                                              get(domain=e.external_domain).
-                                              domain)
+                target_domain = Domains.objects.get(domain=e.external_domain)\
+                                               .domain
                 edge = {
                     # TODO to be unique if we want to have different directions
                     'id': edge_id,  # + '_' + j
@@ -196,16 +192,15 @@ def api(request, domain=None):
 
 
 def initialize_domains(domains):
-    domains_list = [remove_prefix(d.domain) for d in domains]
+    domains_list = [d.domain for d in domains]
     domains_size = {}
     for d in domains_list:
         domains_size[d] = 0
 
     # in this case the counter of domains checks all the db for given domain
     for e in Externals.objects.all():
-        e_domain_cleaned = remove_prefix(e.external_domain)
-        if e_domain_cleaned in domains_size:
-            domains_size[e_domain_cleaned] += 1
+        if e.external_domain in domains_size:
+            domains_size[e.external_domain] += 1
 
     '''
     # in this case the counter of domains linked to is only based on the
@@ -220,12 +215,12 @@ def initialize_domains(domains):
     return domains_size
 
 
-def remove_prefix(domain):
+def _remove_prefix(domain):
     domain_split = domain.split('.')
     # categorize domains matchmaking of words after skiping 'de','org','com'...
     common_prefixes = ['www', 'er', 'en', 'fr', 'de']
     if domain_split[0] in common_prefixes:
-        return remove_prefix('.'.join(domain_split[1:]))
+        return _remove_prefix('.'.join(domain_split[1:]))
     else:
         return domain
 

@@ -10,8 +10,6 @@ urlpatterns = [
          views.manual_add_to_blacklist, name='manual_filter'),
     path('<src_domain>/<external_domain>',
          views.add_to_blacklist, name='filter'),
-    path('<domain>/<local_ignore>',
+    path('<domain>/<local_ignore>/local',
          views.add_to_localfilter, name='add_to_localfilter'),
-    path('remove/<local_ignore>',
-         views.remove_from_localfilter, name='remove_from_localfilter')
 ]

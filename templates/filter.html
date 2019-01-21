@@ -41,12 +41,12 @@
             </tr>
         </thead>
         <tbody>
-            {% for f in filtered %}
+            {% for ignored, src_domain in filtered.items %}
             <tr>
-                <td>{{f.ignore}}</td>
-                <td>{{f.src_domain}}</td>
+                <td>{{ignored}}</td>
+                <td>{{src_domain}}</td>
                 <td>
-                     <form method="POST" action="{% url 'remove_filter' ignore=f.ignore %}">
+                     <form method="POST" action="{% url 'remove_filter' ignore=ignored %}">
                 {% csrf_token %}
                  <button id="start" class="button is-danger is-outlined" type="submit">Remove from filter</button>
                  </form>
