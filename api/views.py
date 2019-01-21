@@ -16,6 +16,20 @@ logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
+def check_infoscan(request):
+    domain = request.POST.get('domain')
+    obj = Domains.objects.get(domain=domain)
+    externals_list = [e.external_domain for e in obj.filtered_externals.all()]
+    domains_list = [d.domain for d in Domains.objects.all()]
+    for i in externals_list:
+        if i not in domains_list:
+            logger.info('{} is not infoscanned.'.format(i))
+            return JsonResponse({'data': True})
+
+    return JsonResponse({'data': False})
+
+
+@csrf_exempt
 def infoscan(request):
     domain = request.POST.get('domain')
     obj = Domains.objects.get(domain=domain)
@@ -30,7 +44,11 @@ def infoscan(request):
     for i in to_scan:
         logger.debug('creating domain: %s' % i.external_domain)
         external_domain_name = _remove_prefix(i.external_domain)
-        if Domains.objects.filter(domain__in=external_domain_name).exists():
+        if external_domain_name == 'd-hip.de':
+            logger.debug('ALERT')
+        if Domains.objects.filter(domain__icontains=external_domain_name).exists():
+            if external_domain_name == 'd-hip.de':
+                logger.debug('ALERT2')
             continue
         Domains.objects.create(domain=external_domain_name,
                                url=i.url, level=obj.level + 1,

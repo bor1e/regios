@@ -32,7 +32,13 @@ def check(request):
         domain = Domains.objects.filter(domain__icontains=domain_name).first()
         return redirect('display', domain=domain)
 
-    domain = Domains.objects.create(domain=domain_name, url=url)
+    if request.POST.get('level') and request.POST.get('level') != 0:
+        level = request.POST.get('level')
+        src_domain = request.POST.get('src_domain')
+        domain = Domains.objects.create(domain=domain_name, url=url,
+                                        level=level, src_domain=src_domain)
+    else:
+        domain = Domains.objects.create(domain=domain_name, url=url)
 
     return render(request, 'display.html', {'domain': domain})
 
@@ -63,6 +69,9 @@ def refresh(request, domain):
     d = Domains.objects.filter(domain=domain).first()
     response = redirect('check')
     response.set_cookie('url', d.url)
+    response.set_cookie('level', d.level)
+    response.set_cookie('src_domain', d.src_domain)
+
     # logger.debug('dir - response: %s' % dir(response))
     # logger.debug('__dict__ - response: %s' % response.__dict__)
 

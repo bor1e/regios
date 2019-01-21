@@ -67,7 +67,7 @@
             {% csrf_token %}
             <div class="field is-grouped">
                 <div class="control">
-                    <button id="start" class="button is-primary" type="button"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+                    <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
                 </div>
                 <p class="control">
                     <input class="input" id="zip_from" type="number" placeholder="Range from ZIP">
@@ -85,68 +85,71 @@
                     </div>
                 </div>
             </div>
-            <table id="externals" class="display">
-                <thead>
-                    <tr>
-                        <th>Select</th>
-                        <th>External Domains</th>
-                        <th>External Urls</th>
-                        <th>ZIP</th>
-                        <th>Name</th>
-                        <th>Filter local/global</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for external in domain.filtered_externals %}
-                    <tr>
-                        <td>
-                            <label class="checkbox">
-                                {% if external.fullscan %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
-                                {% else %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
-                                {% endif %}
-                            </label>
-                        </td>
-                        <td id="external_domain">{{external.domain}}</td>
-                        <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
-                        <td id="zip">
-                            <div id="displayEditable">{{external.info.zip}}</div>
-                            <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
-                                    {% csrf_token %}
-                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
-                                    <input type="submit" hidden />
-                                </form>
-                            </div>
-                        </td>
-                        <td id="name_id_{{ forloop.counter }}">
-                            <div id="displayEditable">{{external.info.name}}</div>
-                            <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
-                                    {% csrf_token %}
-                                    <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
-                                    <div id="submitButton" hidden>
-                                        <button class="button" type="submit">Save</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="field is-grouped">
+        </form>
+        <table id="externals" class="display">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>External Domains</th>
+                    <th>External Urls</th>
+                    <th>ZIP</th>
+                    <th>Name</th>
+                    <th>Filter local/global</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for external in domain.filtered_externals %}
+                <tr>
+                    <td>
+                        <label class="checkbox">
+                            {% if external.fullscan %}
+                            <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
+                            {% else %}
+                            <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                            {% endif %}
+                        </label>
+                    </td>
+                    <td id="external_domain">{{external.domain}}</td>
+                    <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
+                    <td id="zip">
+                        <div id="displayEditable">{{external.info.zip}}</div>
+                        <div id="openEdit" hidden>
+                            <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
+                                {% csrf_token %}
+                                <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
+                                <input type="submit" hidden />
+                            </form>
+                        </div>
+                    </td>
+                    <td id="name_id_{{ forloop.counter }}">
+                        <div id="displayEditable">{{external.info.name}}</div>
+                        <div id="openEdit" hidden>
+                            <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
+                                {% csrf_token %}
+                                <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
+                                <div id="submitButton" hidden>
+                                    <button class="button" type="submit">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
                                 <div class="control">
-                                    <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
-                                    <div class="control">
-                                        <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
-                                    </div>
-                                    <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
+                                    <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
+                                </div>
+                                <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
                     <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <button id="start" class="button is-primary" type="button"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
+            {% csrf_token %}
+            <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
         </form>
         <!--table id="locals" class="display">
         <thead>
@@ -217,6 +220,39 @@ function startScraping(spider, domain, url, display_id, job) {
             })();
         });
 }
+
+function runinfoscan(domain) {
+    $.post("/api/infoscan/", { 'domain': domain }, function(data) {
+        var interval = 1500;
+        console.log('data: ' + data);
+        (function doUpdate() {
+            $.get("/api/scrapy_jobs_status/", { 'domain': domain, 'timer': data.time },
+                    function(new_data) {
+                        console.log('new_data: ' + new_data);
+                        if (new_data.remaining > 0)
+                            $('#remaining').html('<div class="control is-loading">' +
+                                '<input class="input" type="text" value="Remaining to scrap ' + new_data.remaining + ' elapsed: ' + new_data.elapsed + '" readonly></div>');
+                        else {
+                            console.log(new_data);
+                            $('#remaining').html(new_data.status);
+                            console.log('time needed: ' + new_data.elapsed)
+
+                        }
+                    })
+                .done(function() {
+                    var status = $('#remaining').text()
+                    if (status == 'finished') {
+                        location.reload(true);
+                    } else {
+                        console.log('not finished... ');
+                        setTimeout(doUpdate, interval);
+                    }
+                });
+        })();
+    });
+    return;
+
+}
 $(document).ready(function() {
     var table = $('#externals').DataTable({
         "order": [
@@ -265,46 +301,22 @@ $(document).ready(function() {
         var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
         $('[id=groupCheckBox]').text(countCheckedCheckboxes);
     });
-    var externals_count = parseInt($("#externals_count").text()) > 0;
-    if (externals_count)
-        return;
-    if (externals_count == 0) {
 
-    }
     var isFinished = $("#status").text() == 'finished';
     var domain = $("#domain").text();
-    if (isFinished && externals_count != 0) {
-        // start crawling
-        $.post("/api/infoscan/", { 'domain': domain }, function(data) {
-            var interval = 1500;
-            console.log('data: ' + data);
-            (function doUpdate() {
-                $.get("/api/scrapy_jobs_status/", { 'domain': domain, 'timer': data.time },
-                        function(new_data) {
-                            console.log('new_data: ' + new_data);
-                            if (new_data.remaining > 0)
-                                $('#remaining').html('<div class="control is-loading">' +
-                                    '<input class="input" type="text" value="Remaining to scrap ' + new_data.remaining + ' elapsed: ' + new_data.elapsed + '" readonly></div>');
-                            else {
-                                console.log(new_data);
-                                $('#remaining').html(new_data.status);
-                                console.log('time needed: ' + new_data.elapsed)
+    var infoscan = false;
+    if (isFinished) {
+        $.post("/api/check-infoscan/", { 'domain': domain }, function(data) {
+            infoscan = data.data;
+            console.log('check-infoscan: ' + data.data);
 
-                            }
-                        })
-                    .done(function() {
-                        var status = $('#remaining').text()
-                        if (status == 'finished') {
-                            location.reload(true);
-                        } else {
-                            console.log('not finished... ');
-                            setTimeout(doUpdate, interval);
-                        }
-                    });
-            })();
+        }).done(function() {
+            if (infoscan)
+                runinfoscan(domain);
+            console.log('infoscan would be run: ' + infoscan)
         });
-        return;
     }
+
     var url = $("#url").val();
     var domain = $("#domain").text();
     return startScraping('botspider', domain, url, '#status', 'None');
@@ -315,14 +327,14 @@ $("#refresh").click(function() {
     var domain = $("#domain").text();
     return startScraping('botspider', domain, url, '#status', 'None');
 });
-$("#infoscan").click(function() {
+/*$("#infoscan").click(function() {
     $("#externals > tbody > tr").each(function() {
         domain = $(this).find("#external_domain").text();
         url = $(this).find("#external_url").text();
         display_id = '#status_id_' + $(this).find("#id").text();
         return startScraping('infospider', domain, url, display_id, 'InfoScan');
     });
-});
+});*/
 /*
 $('#externals tbody').on( 'click', 'tr td:nth-of-type(4)', function (event){    
     var zip = $(event.target).text();

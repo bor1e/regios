@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def add_to_blacklist(request, src_domain, external_domain):
+    external_domain = _remove_www_at_front(external_domain)
     if not BlackList.objects.filter(ignore=external_domain).exists():
         logger.debug("%s added to ignore list." % external_domain)
         BlackList.objects.create(src_domain=src_domain, ignore=external_domain)
@@ -60,6 +61,7 @@ def display_filter(request, src_domain=None):
 
 def manual_add_to_blacklist(request):
     ignore = request.POST.get('ignore')
+    ignore = _remove_www_at_front(ignore)
     if not BlackList.objects.filter(ignore=ignore).exists():
         logger.debug("%s added to ignore list." % ignore)
         BlackList.objects.create(src_domain='MANUALLY_ADDED',
@@ -87,3 +89,9 @@ def _get_data(filtered, obj):
         if i.ignore not in filtered:
             filtered[i.ignore] = i.src_domain
     return filtered
+
+
+def _remove_www_at_front(external_domain):
+    arr = external_domain.split('.')
+    if arr[0] == 'www':
+        return ''.join(arr[1:])
