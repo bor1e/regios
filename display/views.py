@@ -87,7 +87,7 @@ def display(request, domain):
         return redirect('start')
 
     try:
-        domain = Domains.objects.filter(domain__icontains=domain).first()
+        domain = Domains.objects.get(domain=domain)
     except ObjectDoesNotExist:
         logger.debug('not found : %s' % domain)
         domain = Domains.objects.filter(domain__icontains=domain).first()

@@ -223,29 +223,31 @@ function startScraping(spider, domain, url, display_id, job) {
 
 function runinfoscan(domain) {
     $.post("/api/infoscan/", { 'domain': domain }, function(data) {
-        var interval = 1500;
-        console.log('data: ' + data);
+        var interval = 5000;
+        console.log('data: ')
+        console.log(data);
         (function doUpdate() {
             $.get("/api/scrapy_jobs_status/", { 'domain': domain, 'timer': data.time },
                     function(new_data) {
-                        console.log('new_data: ' + new_data);
+                        console.log('received new_data: ')
+                         console.log(new_data);
                         if (new_data.remaining > 0)
                             $('#remaining').html('<div class="control is-loading">' +
                                 '<input class="input" type="text" value="Remaining to scrap ' + new_data.remaining + ' elapsed: ' + new_data.elapsed + '" readonly></div>');
                         else {
-                            console.log(new_data);
                             $('#remaining').html(new_data.status);
-                            console.log('time needed: ' + new_data.elapsed)
+                            console.log('time needed: ' + new_data.elapsed);
 
                         }
                     })
                 .done(function() {
-                    var status = $('#remaining').text()
+                    var status = $('#remaining').text();
                     if (status == 'finished') {
-                        location.reload(true);
+                        //location.reload(true);
+                        setTimeout(alert('done'), interval*2);
                     } else {
                         console.log('not finished... ');
-                        setTimeout(doUpdate, interval);
+                        //setTimeout(doUpdate, interval);
                     }
                 });
         })();

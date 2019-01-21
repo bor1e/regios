@@ -216,9 +216,18 @@ function addElems(nodes, edges) {
             color: (nodes[i].id != compare_domain) ? '#ec5148' : source_node
         });
     }
-    var i, len = edges.length;
+    var i, len = edges.length, edge_id, exists;
     // console.log('adding nodes');
     for (i = 0; i < len; i++) {
+        edge_id = edges[i].id.split('_')
+        edge_id = edge_id[1] + '_' + edge_id[0]
+        exists = false;
+        for (j = 0; j < len; j++) {
+            if (edges[j].id == edge_id) {
+                exists = true;
+                break;
+            }
+        }
         g.edges.push({
             id: edges[i].id,
             // label: edges[i].label,
@@ -226,7 +235,7 @@ function addElems(nodes, edges) {
             target: edges[i].target,
             size: edges[i].size,
             count: edges[i].count,
-            type: 'curvedArrow',
+            type: (exists) ? 'curvedArrow' : 'arrow',
             color: (edges[i].size > 3) ? ((edges[i].size > 6) ? very_high_ref : high_ref) : '#666',
         });
         //  nodes[i].color = nodes[i].center ? '#333' : '#666';
@@ -415,12 +424,21 @@ s.bind('doubleClickNode', function(e) {
             }
         }
 
-        var edges = data.data.edges;
+        var edges = data.data.edges, edge_id, exists;
         var i, len = edges.length;
         for (i = 0; i < len; i++) {
             if (s.graph.existsEdgeId(edges[i].id)) {
                 continue;
-            } else
+            } else {
+                edge_id = edges[i].id.split('_')
+                edge_id = edge_id[1] + '_' + edge_id[0]
+                exists = false;
+                for (j = 0; j < len; j++) {
+                    if (edges[j].id == edge_id) {
+                        exists = true;
+                        break;
+                    }
+                }
                 //s.graph.addEdge({
                 g.edges.push({
                     id: edges[i].id,
@@ -429,10 +447,10 @@ s.bind('doubleClickNode', function(e) {
                     target: edges[i].target,
                     size: edges[i].size,
                     count: edges[i].count,
-                    type: 'curvedArrow',
+                    type: (exists) ? 'curvedArrow' : 'arrow',
                     color: (edges[i].size > 3) ? ((edges[i].size > 6) ? very_high_ref : high_ref) : '#666'
                 });
-
+            }
         }
     }).done(function() {
         refreshGraph(g);

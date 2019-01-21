@@ -41,8 +41,12 @@ def display_filter(request, src_domain=None):
 
     # if not BlackList.objects.filter(src_domain=src_domain).exists():
     else:
-        domain = Domains.objects.filter(domain__icontains=src_domain)\
-            .first()
+        try:
+            domain = Domains.objects.get(domain=src_domain)
+        except ObjectDoesNotExist:
+            domain = Domains.objects.filter(domain__icontains=src_domain)\
+                .first()
+
         externals_list = [e.external_domain for e in domain.externals.all()]
         filtered = _get_data({}, LocalIgnore.objects.filter(domain=domain))
 

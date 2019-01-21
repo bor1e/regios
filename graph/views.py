@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 def index(request, domain=None):
-    # TODO: display complete graph based on Domain
     if not domain:
         externals = [e.url for e in Externals.objects.all()
                      if e.external_domain in BlackList.objects

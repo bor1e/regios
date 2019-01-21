@@ -30,9 +30,9 @@ class Domains(models.Model):
         return self.domain
 
     def _filtered(self):
-        logger.debug('external for {}'.format(self.domain))
+        # logger.debug('external for {}'.format(self.domain))
         externals = Externals.objects.filter(domain=self)
-        logger.debug(externals.values_list('url', flat=True))
+        # logger.debug(externals.values_list('url', flat=True))
         local_ignored = LocalIgnore.objects.filter(domain=self).\
             values_list('ignore', flat=True)
         on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)

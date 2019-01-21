@@ -3,6 +3,7 @@ from start.models import Domains  # , BlackList
 from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
 # import json
 import time
 from datetime import datetime, timedelta
@@ -20,9 +21,8 @@ def check_infoscan(request):
     domain = request.POST.get('domain')
     obj = Domains.objects.get(domain=domain)
     externals_list = [e.external_domain for e in obj.filtered_externals.all()]
-    domains_list = [d.domain for d in Domains.objects.all()]
     for i in externals_list:
-        if i not in domains_list:
+        if not Domains.objects.filter(domain__icontains=i):
             logger.info('{} is not infoscanned.'.format(i))
             return JsonResponse({'data': True})
 
@@ -42,14 +42,13 @@ def infoscan(request):
     logger.debug('jobs: %s' % pre_num)
     now = time.time()
     for i in to_scan:
-        logger.debug('creating domain: %s' % i.external_domain)
         external_domain_name = _remove_prefix(i.external_domain)
-        if external_domain_name == 'd-hip.de':
-            logger.debug('ALERT')
-        if Domains.objects.filter(domain__icontains=external_domain_name).exists():
-            if external_domain_name == 'd-hip.de':
-                logger.debug('ALERT2')
+        # for infoscan it is enough if subdomain was already once scaned
+        if Domains.objects.filter(domain__icontains=external_domain_name)\
+           .exists():
+            remaining -= 1
             continue
+        logger.debug('creating domain: %s' % i.external_domain)
         Domains.objects.create(domain=external_domain_name,
                                url=i.url, level=obj.level + 1,
                                src_domain=obj.domain)
@@ -63,6 +62,8 @@ def infoscan(request):
     logger.debug('started jobs: %s' % (post_num - pre_num))
     if (post_num - pre_num) != remaining:
         logger.error('something went wrong by starting info scan')
+
+    logger.info('processing {} remainig domains.'.format(remaining))
 
     return JsonResponse({'remaining': remaining, 'time': now})
 
@@ -184,18 +185,17 @@ def post(request):
     spider = request.POST.dict()
     logger.debug('received spider params: %s', spider)
     domain_name = _remove_prefix(spider['domain'].strip())
-    domain = Domains.objects.filter(domain__icontains=domain_name)
     url = ''
-    if not domain.exists():
+    try:
+        domain = Domains.objects.get(domain=domain_name)
+        url = domain.url
+        logger.debug('found domain: {} status: {}'.
+                     format(domain_name, domain.status))
+    except ObjectDoesNotExist:
         domain = Domains.objects.create(domain=domain_name,
                                         url=spider['url'])
         url = spider['url']
         logger.debug('created domain: {}'.format(domain_name))
-    else:
-        logger.debug('found domain: {} status: {}'.
-                     format(domain_name, domain.first().status))
-        domain = domain.first()
-        url = domain.url
 
     if domain.status == 'finished' and getattr(spider, 'job', '') == 'None' \
        or domain.fullscan:
@@ -218,7 +218,7 @@ def post(request):
 def _remove_prefix(domain):
     domain_split = domain.split('.')
     # categorize domains matchmaking of words after skiping 'de','org','com'...
-    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
+    common_prefixes = ['www', 'en', 'fr', 'de']
     if domain_split[0] in common_prefixes:
         return _remove_prefix('.'.join(domain_split[1:]))
     else:
