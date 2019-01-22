@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from .models import BlackList
 from start.models import Domains, LocalIgnore
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
 
 import logging
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ def add_to_localfilter(request, domain, local_ignore):
     return redirect('display', domain=domain)
 
 
+@login_required
 def display_filter(request, src_domain=None):
     if not src_domain:
         filtered = _get_data({}, BlackList.objects.all())

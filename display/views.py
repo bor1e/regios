@@ -6,12 +6,14 @@ from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect  # , reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
 
 import time
 import logging
 logger = logging.getLogger(__name__)
 
 
+@login_required
 def check(request):
     """ Check if the passed paramter named 'url' exists in DB,
     if not, start the spider, otherwise display result
@@ -79,6 +81,7 @@ def refresh(request, domain):
     return response
 
 
+@login_required
 def display(request, domain):
     # domain was given over manually
     logger.debug('received : %s' % domain)
