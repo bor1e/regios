@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from filter.models import BlackList
 from start.models import Domains, Externals
@@ -28,6 +28,9 @@ def index(request, domain=None):
         domain = Domains.objects.get(domain=domain)
     except ObjectDoesNotExist:
         domain = Domains.objects.filter(domain__icontains=domain).first()
+
+    if not domain:
+        return redirect('/')
 
     non_filtered_ext = set(obj.external_domain
                            for obj in domain.filtered_externals)
