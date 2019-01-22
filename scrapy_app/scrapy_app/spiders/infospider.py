@@ -153,11 +153,11 @@ class InfoSpider(CrawlSpider):
             e_v = name['e. V.']
             # TODO Problem: choosing the shorter version, see prev
             verein = ev if len(ev) < len(e_v) else e_v
-            name['name'] = verein
+            name['name'] = verein.strip()
 
         for key in keywords:
             if key in name and not evs:
-                name['name'] += name[key]
+                name['name'] += name[key].strip()
 
         self.logger.debug('name: %s ' % name)
 

@@ -243,11 +243,11 @@ function runinfoscan(domain) {
                 .done(function() {
                     var status = $('#remaining').text();
                     if (status == 'finished') {
-                        //location.reload(true);
-                        setTimeout(alert('done'), interval*2);
+                        location.reload(true);
+                        //setTimeout(alert('done'), interval*2);
                     } else {
                         console.log('not finished... ');
-                        //setTimeout(doUpdate, interval);
+                        setTimeout(doUpdate, interval);
                     }
                 });
         })();

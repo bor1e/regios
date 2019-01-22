@@ -89,7 +89,7 @@ class Info(models.Model):
         return data
 
     def __str__(self):
-        return self.name
+        return self.domain.domain
 
 
 class Externals(models.Model):

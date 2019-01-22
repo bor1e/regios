@@ -112,17 +112,17 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-#    'filters': {
-#        'debug_false': {
-#            '()': 'django.utils.log.RequireDebugFalse',
-#        },
-#        'debug_true': {
-#            '()': 'django.utils.log.RequireDebugTrue',
-#        },
-#    },
+    #    'filters': {
+    #        'debug_false': {
+    #            '()': 'django.utils.log.RequireDebugFalse',
+    #        },
+    #        'debug_true': {
+    #            '()': 'django.utils.log.RequireDebugTrue',
+    #        },
+    #    },
     'formatters': {
         'verbose': {
-#            'format': '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
+            #            'format': '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
             'format': '%(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
@@ -130,26 +130,26 @@ LOGGING = {
     'handlers': {
         'console': {
             'level': 'DEBUG',
- #           'filters': ['debug_true'],
+            #           'filters': ['debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
- #           'stream': sys.stdout,
+            #           'stream': sys.stdout,
         },
- #       'null': {
- #           'class': 'logging.NullHandler'
- #           #'formatter': 'verbose'
- #       },
+        #       'null': {
+        #           'class': 'logging.NullHandler'
+        #           #'formatter': 'verbose'
+        #       },
     },
- #   'loggers': {
- #       'django': {
- #           'handlers': ['null'],
- ##           'level': 'DEBUG'
- ##           'propagate': True,
- #       },
- #       'py.warnings': {
- #           'handlers': ['console'],
- #       }
- #   },
+    #   'loggers': {
+    #       'django': {
+    #           'handlers': ['null'],
+    # 'level': 'DEBUG'
+    # 'propagate': True,
+    #       },
+    #       'py.warnings': {
+    #           'handlers': ['console'],
+    #       }
+    #   },
     'root': {
         'handlers': ['console'],
         'level': 'DEBUG'
@@ -174,9 +174,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (
-      os.path.join(BASE_DIR, 'static/'),
-  #                  os.path.join(STATIC_ROOT, 'css/'),
-  #                  os.path.join(STATIC_ROOT, 'js/'),
-                  )
+    os.path.join(BASE_DIR, 'static/'),
+    #                  os.path.join(STATIC_ROOT, 'css/'),
+    #                  os.path.join(STATIC_ROOT, 'js/'),
+)
