@@ -63,6 +63,7 @@
 {% block content%}
 <section class="section">
     <div class="container">
+        <!-- USING FORMS IS DEPRECATED NEED TO BE CORRECTED ERROR-->
         <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
             {% csrf_token %}
             <div class="field is-grouped">
