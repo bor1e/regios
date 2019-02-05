@@ -59,6 +59,8 @@ def _remove_prefix(domain):
 def externals_selected(request, domain):
     # domain = Domains.objects.get(domain=domain)
     selected = request.POST.getlist('selected')
+    logger.debug(request.POST)
+    logger.info('received {} selected list of domains'.format(selected))
     now = time.time()
     return render(request, 'external_selected.html', {'selected': selected,
                                                       'timer': now})

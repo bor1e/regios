@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 import os
-import sys
+# import sys
 
 # DJANGO INTEGRATION
 
@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'api',
     'display',
     'filter',
-    'graph',
+    'graph'
 ]
 
 MIDDLEWARE = [

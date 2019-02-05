@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def add_to_blacklist(request, src_domain, external_domain):
+    logger.info('adding {} to blacklist from {}'.format(external_domain,
+                                                        src_domain))
     external_domain = _remove_www_at_front(external_domain)
     if not BlackList.objects.filter(ignore=external_domain).exists():
         logger.debug("%s added to ignore list." % external_domain)
@@ -101,3 +103,5 @@ def _remove_www_at_front(external_domain):
     arr = external_domain.split('.')
     if arr[0] == 'www':
         return ''.join(arr[1:])
+    else:
+        return external_domain
