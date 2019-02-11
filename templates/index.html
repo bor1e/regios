@@ -18,7 +18,11 @@
                         </div>
                     </div>
                     <div class="control">
+                        {% if url %}
+                        <input class="input" name="url" type="url" value="{{url}}" required>                     
+                        {% else %}
                         <input class="input" name="url" type="url" required>
+                        {% endif %}
                         <p class="help">eine URL eingeben</p>
                     </div>
                     <div id="continue" class="control">
@@ -67,43 +71,12 @@
 {% block javascript %}
 <script>
 $(document).ready(function() {
-    $('#domains').DataTable();
-});
-/*
-    $("#start").click(function(){
-        var url = $(".input").val()
-      //alert($("#domain").val())
-        $.post("/api/crawl/", {url: url, function: 'start'}, function(data) {
-            if (!data.status) {
-                $("#continue").html("<a class='button is-primary' href='/domain="+data.domain+"'>Display Results from DB</a>");
-            }
-            else {
-              var interval = 1500;
-              (function getStatus() {
-                $.get("/api/crawl/", {task_id: data['task_id'], unique_id: data['unique_id']}, function(new_data){
-                        if (new_data.status) {
-                          $("#start").addClass("is-loading");
-                        }
-                        else {
-                            //finished porcess
-                            console.log(new_data.data);
-                          $("#start").remove();//Class("is-loading").html("<a href='/domain="+new_data.data.domain+"'>Display Results</a>");
-                          $("#continue").html("<a class='button is-primary' href='/domain="+new_data.data.domain+"'>Display Results</a>");
-
-                        }
-                })
-                .done(function(){
-                //console.log($("button:contains(Display)"))
-                  if ($('#continue').text()!='Display Results') {
-                    console.log('not finished... ');
-                    setTimeout(getStatus, interval);
-                  }
-                });
-              })();
-            }
-        });
-        return false;
+    $('#domains').DataTable({
+        "order": [
+            [0, 'asc']
+        ],
+        "pageLength": 100,
     });
-    */
+});
 </script>
 {% endblock %}

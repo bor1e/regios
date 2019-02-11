@@ -59,7 +59,8 @@ def display_filter(request, src_domain=None):
                                  .filter(ignore__in=externals_list))
         logger.info('filtered objects: {}'.format(filtered))
         if len(filtered) > 0:
-            return render(request, 'filter.html', {'filtered': filtered})
+            return render(request, 'filter.html', {'filtered': filtered,
+                                                   'domain': domain})
         else:
             return HttpResponse('no items for domain: %s' % src_domain)
 

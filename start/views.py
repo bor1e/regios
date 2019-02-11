@@ -10,9 +10,11 @@ logger = logging.getLogger(__name__)
 @login_required
 def index(request):
     # TODO! check if session has errors
+
+    url = request.COOKIES['url'] if request.COOKIES['url'] else None
     ds = Domains.objects.all().filter(fullscan=True)
 
-    return render(request, 'index.html', {'domains': ds})
+    return render(request, 'index.html', {'url': url, 'domains': ds})
 
 
 def edit_zip(request, domain, external):

@@ -86,268 +86,72 @@
                     </div>
                 </div>
             </div>
-        </form>
-        <table id="externals" class="display">
-            <thead>
-                <tr>
-                    <th>Select</th>
-                    <th>External Domains</th>
-                    <th>External Urls</th>
-                    <th>ZIP</th>
-                    <th>Name</th>
-                    <th>Filter local/global</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for external in domain.filtered_externals %}
-                <tr>
-                    <td>
-                        <label class="checkbox">
-                            {% if external.fullscan %}
-                            <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
-                            {% else %}
-                            <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
-                            {% endif %}
-                        </label>
-                    </td>
-                    <td id="external_domain">{{external.domain}}</td>
-                    <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
-                    <td id="zip">
-                        <div id="displayEditable">{{external.info.zip}}</div>
-                        <div id="openEdit" hidden>
-                            <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
-                                {% csrf_token %}
-                                <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
-                                <input type="submit" hidden />
-                            </form>
-                        </div>
-                    </td>
-                    <td id="name_id_{{ forloop.counter }}">
-                        <div id="displayEditable">{{external.info.name}}</div>
-                        <div id="openEdit" hidden>
-                            <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
-                                {% csrf_token %}
-                                <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
-                                <div id="submitButton" hidden>
-                                    <button class="button" type="submit">Save</button>
-                                </div>
-                            </form>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="field is-grouped">
-                            <div class="control">
-                                <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
+            <table id="externals" class="display">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>External Domains</th>
+                        <th>External Urls</th>
+                        <th>ZIP</th>
+                        <th>Name</th>
+                        <th>Filter local/global</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for external in domain.filtered_externals %}
+                    <tr>
+                        <td>
+                            <label class="checkbox">
+                                {% if external.fullscan %}
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
+                                {% else %}
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                                {% endif %}
+                            </label>
+                        </td>
+                        <td id="external_domain">{{external.domain}}</td>
+                        <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
+                        <td id="zip">
+                            <div id="displayEditable">{{external.info.zip}}</div>
+                            <div id="openEdit" hidden>
+                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
+                                    {% csrf_token %}
+                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
+                                    <input type="submit" hidden />
+                                </form>
+                            </div>
+                        </td>
+                        <td id="name_id_{{ forloop.counter }}">
+                            <div id="displayEditable">{{external.info.name}}</div>
+                            <div id="openEdit" hidden>
+                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
+                                    {% csrf_token %}
+                                    <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
+                                    <div id="submitButton" hidden>
+                                        <button class="button" type="submit">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="field is-grouped">
                                 <div class="control">
-                                    <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
+                                    <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
+                                    <div class="control">
+                                        <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
+                                    </div>
                                 </div>
-                                <!--button class="button is-success is-outlined" type="button" onclick="startScraping('infospider','{{external.domain}}','{{ external.url }}','#status_id_{{ forloop.counter }}', 'refresh')">Run InfoScan</button>
-                    <input type="hidden" id="status_id_{{ forloop.counter }}" value="{{domain.url}}"-->
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
-            {% csrf_token %}
-            <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </form>
-        <!--table id="locals" class="display">
-        <thead>
-            <tr>
-                <th>Locals Urls</th>
-                <th>Options</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for local in domain.locals.all %}
-            <tr>
-                <td><a href="{{local.url}}" target="_blank">{{local.url|truncatechars_html:120}}</a></td>
-                <td>Options</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table-->
     </div>
 </section>
 {% endblock %}
 {% block javascript %}
-<script>
-function startScraping(spider, domain, url, display_id, job) {
-    var start_spider = {
-        domain: domain,
-        url: url,
-        name: spider,
-        keywords: $("#domain").text(),
-        display_id: display_id,
-        job: job
-    }
-    //simple spider checking only Impressum, Title, Keywords
-    $.post("/api/post/", start_spider,
-        function(data) {
-            console.log(data);
-            if (data.info) {
-                console.log('here we go: ' + start_spider.domain)
-                $(start_spider.display_id).html('data exists in DB');
-                return;
-            }
-            console.log('starting spider for: ' + start_spider.domain)
-            var interval = 1500;
-            (function doUpdate() {
-                $.get("/api/get/", { task_id: data['task_id'], domain: start_spider.domain },
-                        function(new_data) {
-                            if (new_data.status)
-                                $(start_spider.display_id).html('<div class="control is-loading">' +
-                                    '<input class="input" type="text" value="' + new_data.status +
-                                    '" readonly></div>');
-                            else {
-                                console.log(new_data);
-                                $(start_spider.display_id).html(new_data.data.status);
-                            }
-                        })
-                    .done(function() {
-                        var status = $(start_spider.display_id).text()
-                        if (status == 'finished' && start_spider.job == 'None') {
-                            console.log(start_spider.display_id)
-                            location.reload(true);
-                        } else if (status == 'finished' && start_spider.job == 'refresh') {
-                            console.log('finished domain: ' + start_spider.domain);
-                            location.reload(true);
-                        } else {
-                            console.log('not finished... ');
-                            setTimeout(doUpdate, interval);
-                        }
-                    });
-            })();
-        });
-}
-
-function runinfoscan(domain) {
-    $.post("/api/infoscan/", { 'domain': domain }, function(data) {
-        var interval = 5000;
-        console.log('data: ')
-        console.log(data);
-        (function doUpdate() {
-            $.get("/api/scrapy_jobs_status/", { 'domain': domain, 'timer': data.time },
-                    function(new_data) {
-                        console.log('received new_data: ')
-                         console.log(new_data);
-                        if (new_data.remaining > 0)
-                            $('#remaining').html('<div class="control is-loading">' +
-                                '<input class="input" type="text" value="Remaining to scrap ' + new_data.remaining + ' elapsed: ' + new_data.elapsed + '" readonly></div>');
-                        else {
-                            $('#remaining').html(new_data.status);
-                            console.log('time needed: ' + new_data.elapsed);
-
-                        }
-                    })
-                .done(function() {
-                    var status = $('#remaining').text();
-                    if (status == 'finished') {
-                        location.reload(true);
-                        //setTimeout(alert('done'), interval*2);
-                    } else {
-                        console.log('not finished... ');
-                        setTimeout(doUpdate, interval);
-                    }
-                });
-        })();
-    });
-    return;
-
-}
-$(document).ready(function() {
-    var table = $('#externals').DataTable({
-        "order": [
-            [3, 'asc']
-        ],
-        "pageLength": 100,
-    });
-    $('#externals tbody').on('click', 'tr td:nth-of-type(4), td:nth-of-type(5)', function() {
-        $(this).find('#openEdit').removeAttr("hidden");
-        $(this).find('#displayEditable').hide();
-
-        $(this).find('#edit').removeAttr("disabled");
-        $(this).find('#submitButton').removeAttr("hidden");
-    });
-    /*
-    $('#externals tbody').on('click', 'tr ', function() {
-        $(this).find('#edit').removeAttr("disabled");
-    });*/
-    var $checkboxes = table
-        .rows()
-        .nodes()
-        .to$() // Convert to a jQuery object
-        .find('input[type="checkbox"].groupCheckBox');
-    $("#checkAll").click(function() {
-        $checkboxes.not(this).prop('checked', this.checked);
-        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
-        $('[id=groupCheckBox]').text(countCheckedCheckboxes);
-    });
-    $checkboxes.change(function() {
-        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
-        $('[id=groupCheckBox]').text(countCheckedCheckboxes);
-    });
-    $('#select_range').click(function() {
-        var zip_from = parseInt($('#zip_from').val());
-        var zip_to = parseInt($('#zip_to').val());
-        var $rows = table
-            .rows()
-            .nodes()
-            .to$();
-        $rows.each(function() {
-            var zip = parseInt($(this).find('#zip').text());
-            if (zip >= zip_from && zip <= zip_to) {
-                $(this).find('input[type="checkbox"].groupCheckBox').prop("checked", true);
-            }
-        });
-        var countCheckedCheckboxes = $checkboxes.filter(':checked').length;
-        $('[id=groupCheckBox]').text(countCheckedCheckboxes);
-    });
-
-    var isFinished = $("#status").text() == 'finished';
-    var domain = $("#domain").text();
-    var infoscan = false;
-    if (isFinished) {
-        $.post("/api/check-infoscan/", { 'domain': domain }, function(data) {
-            infoscan = data.data;
-            console.log('check-infoscan: ' + data.data);
-
-        }).done(function() {
-            if (infoscan)
-                runinfoscan(domain);
-            console.log('infoscan would be run: ' + infoscan)
-        });
-    }
-
-    var url = $("#url").val();
-    var domain = $("#domain").text();
-    return startScraping('botspider', domain, url, '#status', 'None');
-
-});
-$("#refresh").click(function() {
-    var url = $("#url").val();
-    var domain = $("#domain").text();
-    return startScraping('botspider', domain, url, '#status', 'None');
-});
-/*$("#infoscan").click(function() {
-    $("#externals > tbody > tr").each(function() {
-        domain = $(this).find("#external_domain").text();
-        url = $(this).find("#external_url").text();
-        display_id = '#status_id_' + $(this).find("#id").text();
-        return startScraping('infospider', domain, url, display_id, 'InfoScan');
-    });
-});*/
-/*
-$('#externals tbody').on( 'click', 'tr td:nth-of-type(4)', function (event){    
-    var zip = $(event.target).text();
-    console.log(this);
-    var external_domain = $(this).closest('tr').find('#external_domain').text()
-    var input = '<form method="POST" action="/'+external_domain+'/zip">' +
-                 '<input class="input" name="zip" val="'+ zip +
-                 '" required><input type="submit" hidden/></form>';
-    console.log(input);
-    $(this).html(input);
-});*/
-</script>
+{% load static %}
+<script src="{% static '/js/regios-display.js' %}"></script>
 {% endblock %}
