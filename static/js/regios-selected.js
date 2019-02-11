@@ -1,25 +1,41 @@
 $(document).ready(function() {
-    $('#externals').DataTable({
-        "order": [
-            [0, 'desc']
-        ],
+    var domain_array = window.location.href.split('/')
+    var domain = domain_array[domain_array.length-2]
+    var url = window.location.protocol + '//' + window.location.host + '/graph/' + domain;
+    $("a[href='/graph/FINDDOMAIN']").attr("href", url)
+
+    var table = $('#externals').DataTable({
         "pageLength": 100,
     });
     var isFinished = $("#statusExternalScan").text() == 'finished';
     if (isFinished)
         return;
-    $("#externals > tbody > tr").each(function() {
-        var domain = $(this).find("#domain").text();
-        var job_id = $(this).find("#job_id").val();
+
+    var $rows = table
+        .rows()
+        .nodes()
+        .to$();
+    $rows.each(function() {
+        var domain = $.trim($(this).find("#domain").text());
         var self = this;
-        var interval = 1500;
-        (function doUpdate() {
-            $.get("/api/get/", { task_id: job_id, domain: domain },
-                    function(data) {
-                        console.log(data);
+        var payload = { domain: domain, name: 'externalspider', keywords: ''};
+        $.post("/api/post/", payload, function(data) {
+            console.log(data);
+            if (data.info) {
+                console.log(domain);
+                $(self).find('td').eq(1).html('data exists in DB');
+                return;
+            }
+            // var job_id = $(this).find("#job_id").val();
+            $(self).find("#job_id").val(data['task_id']);
+
+            var payload = { task_id: data['task_id'], domain: domain };
+            var interval = 1500;
+            (function doUpdate() {
+                $.get("/api/get/", payload, function(data) {
+                        console.log('received data: ' + data);
                         if (data.status) {
                             if (data.status == 'not found/canceled') {
-
                                 $(self).find('#status').html('canceled/not found');
                             } else {
                                 $(self).find('#status').html('<div class="control is-loading">' +
@@ -29,18 +45,20 @@ $(document).ready(function() {
                         } else {
                             $(self).find('#status').html(data.data.status);
                             $(self).find('#duration').html(data.data.duration)
+                            $(self).find('#externals').html(data.data.externals)
                         }
                     })
-                .done(function() {
-                    var status = $(self).find('#status').text()
-                    if (status == 'finished' || status == 'canceled/not found') {
-                        console.log(domain + ' finished!')
-                    } else {
-                        console.log('not finished... ');
-                        setTimeout(doUpdate, interval);
-                    }
-                });
-        })();
+                    .done(function() {
+                        var status = $(self).find('#status').text()
+                        if (status == 'finished' || status == 'canceled/not found') {
+                            console.log(domain + ' finished!')
+                        } else {
+                            console.log(domain + ' not finished... ');
+                            setTimeout(doUpdate, interval);
+                        }
+                    });
+            })();
+        });
     });
     var timer = $('#timer').val();
     var interval = 3500;
@@ -58,7 +76,9 @@ $(document).ready(function() {
     })();
 });
 
-function cancelJob(job_id, domain) {
+function cancelJob(elem, domain) {
+    var job_id = $(elem).parents('tr').find('#job_id').val();
+    console.log(job_id);
     $.get("/api/cancel_job/" + job_id, {}, function(data) {
         console.log(data)
         $('.' + domain).find('td').eq(1).text('cancled while in state: <b>' + data.state + '</b>');

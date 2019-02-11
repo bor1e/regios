@@ -68,38 +68,6 @@ def infoscan(request):
     return JsonResponse({'remaining': remaining, 'time': now})
 
 
-'''
-# TODO probably I will need to extract this method into a single started, in
-# order to be independet of the request.
-# TODO should not render a website in api, rather return a JsonResponse
-@csrf_exempt
-def selected(request):
-    selected = request.POST.getlist('selected')
-        zip_from = request.POST.get('zip_from')
-    zip_to = request.POST.get('zip_to')
-    keywords = request.POST.get('keywords').strip().split(';')
-    domains = Domains.objects.filter(info__zip__gte=zip_from).\
-        exclude('info__zip__lte=zip_to')
-
-    selected_domains = Domains.objects.filter(domain__in=selected)
-    existing_domains = [d.pk for d in selected_domains if d.externals.exists()]
-    domains = selected_domains.exclude(pk__in=existing_domains)
-    jobs = {}
-    now = time.time()
-    for domain in domains:
-        job_id = scrapyd.schedule('default', 'externalspider',
-                                  url=domain.url,
-                                  domain=domain.domain,
-                                  keywords=[])
-        jobs[domain.domain] = job_id
-    # logger.debug('jobs: %s' % jobs)
-    # TODO should render a website in api, rather a JsonResponse
-    # return JsonResponse({'jobs': jobs})
-    return render(request, 'selected.html', {'jobs': jobs,
-                                             'timer': now})
-    '''
-
-
 def cancel_job(request, job_id):
     state = scrapyd.cancel('default', job_id)
     logger.debug('cancled while in state: %s' % state)

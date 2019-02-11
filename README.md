@@ -12,3 +12,4 @@
 - check the todos inside the code
 - pandas on db
 - time required for fullscan update
+- display strange behaviour (e.g. zero external links ) as black nodes in sigma graph
