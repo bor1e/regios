@@ -13,3 +13,4 @@
 - pandas on db
 - ~~time required for fullscan update~~
 - display strange behaviour (e.g. zero external links ) as black nodes in sigma graph
+- try to get links from javascript `process_value` https://docs.scrapy.org/en/latest/topics/link-extractors.html
