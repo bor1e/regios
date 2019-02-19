@@ -2,12 +2,15 @@
 
 ## installing regios
 1. clone this repo with `git clone https://github.com/bor1e/regios.git`
-2. `pip install -r requirements.txt`
-3. creating superuser `python3 manage.py createsuperuser`
+2. `cd regios`
+3. `pip install -r requirements.txt`
+4. creating superuser `python3 manage.py createsuperuser`
 
 ## starting regios
-1. inside the regios folder move to the `scrapy_app` folder and run `scrapyd` which starts the scrapy server on 'localhost:6800'
-2. go back to the regios folder and run: `python3 manage.py runserver`
+1. first start the the scrapy server on `localhost:6800` with:
+`cd scrapy_app/ && scrapyd`
+2. go back to the regios folder and start the Django Server: 
+`cd .. && python3 manage.py runserver`
 
 ## TODO
 - check if scrapyd is running (simple post for list)
