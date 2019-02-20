@@ -14,29 +14,27 @@ import sys
 # DJANGO INTEGRATION
 
 sys.path.append(os.path.dirname(os.path.abspath('.')))
-# Do not forget the change iCrawler part based on your project name
 os.environ['DJANGO_SETTINGS_MODULE'] = 'regios.settings'
 
 # This is required only if Django Version > 1.8
 import django
 django.setup()
 
-BOT_NAME = 'scrapy_app'
+BOT_NAME = 'regios'
 
 SPIDER_MODULES = ['scrapy_app.spiders']
 NEWSPIDER_MODULE = 'scrapy_app.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41'
+USER_AGENT = 'Regios/1.0 (https://github.com/bor1e/regios) Scrapy/1.5+'
 
 # Obey robots.txt rules
-# ROBOTSTXT_OBEY = True
-ROBOTSTXT_OBEY = False
-
+ROBOTSTXT_OBEY = True
+# ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 16
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay

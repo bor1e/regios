@@ -7,10 +7,12 @@
 4. creating superuser `python3 manage.py createsuperuser`
 
 ## starting regios
-1. first start the the scrapy server on `localhost:6800` with:
+1. first start the the scrapy server on `localhost:19860` with:
 `cd scrapy_app/ && scrapyd`
 2. go back to the regios folder and start the Django Server: 
 `cd .. && python3 manage.py runserver`
+
+If you wnat to change the port of `scrapyd`than you need to update the `http_port`value in `scrapy_app/scrapy.cfg` __and__ `api/views.py`
 
 ## TODO
 - check if scrapyd is running (simple post for list)

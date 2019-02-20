@@ -1,11 +1,11 @@
 *.pyc
 *.sublime*
 *~
+*.db
 __pycache__
-myvenv
 db.sqlite3
 .DS_Store
 /home/migrations/
-scrapy_app/logs/
-scrapy_app/twistd.pid
-scrapy_app/dbs/
+/scrapy_app/logs/
+/scrapy_app/twistd.pid
+/scrapy_app/dbs/

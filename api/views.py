@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import logging
 from scrapyd_api import ScrapydAPI
 # connect scrapyd service
-localhost = 'http://localhost:6800'
+localhost = 'http://localhost:19860'
 scrapyd = ScrapydAPI(localhost)
 
 logger = logging.getLogger(__name__)
