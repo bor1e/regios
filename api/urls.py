@@ -7,6 +7,7 @@ urlpatterns = [
     path('post/', views.post, name='post'),
     path('get/', views.get, name='get'),
     path('check-infoscan/', views.check_infoscan, name='check_infoscan'),
+    path('scrapyd/', views.check_scrapy_running, name='check_scrapy_running'),
     path('infoscan/', views.infoscan, name='infoscan'),
     path('scrapy_jobs_status/', views.scrapy_jobs_status,
          name='scrapy_jobs_status'),
