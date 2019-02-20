@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def index(request):
     # TODO! check if session has errors
 
-    url = request.COOKIES['url'] if request.COOKIES['url'] else None
+    url = request.COOKIES.get('url', None)
     ds = Domains.objects.all().filter(fullscan=True)
 
     return render(request, 'index.html', {'url': url, 'domains': ds})
