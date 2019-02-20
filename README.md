@@ -24,3 +24,4 @@
 - display strange behaviour (e.g. zero external links ) as black nodes in sigma graph
 - try to get links from javascript `process_value` https://docs.scrapy.org/en/latest/topics/link-extractors.html
 - analyse structure of website with most external links using [urllib](https://docs.python.org/3/howto/urllib2.html) for textanalyse / site classification
+- selenium acceptance tests?!
