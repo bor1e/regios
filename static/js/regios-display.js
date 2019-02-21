@@ -82,7 +82,7 @@ function startScraping(spider, domain, url, display_id, job) {
         function(data) {
             console.log(data);
             if (data.info) {
-                console.log('infe received for: ' + start_spider.domain)
+                console.log('info received for: ' + start_spider.domain)
                 $(start_spider.display_id).html('data exists in DB');
                 return;
             }

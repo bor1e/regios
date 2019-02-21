@@ -22,6 +22,14 @@
 <script src="{% static '/js/datatables.min.js' %}"></script>
 {% block csrf %}
 <script>
+$.get("/api/scrapyd/", function( data ) {
+    console.log('Scrapy running properly');
+    if (data.data.status != 'ok')
+        alert('Problem with Scrapyd. Please check that everything is running properly.');
+})
+.fail(function() {
+    alert('Problem with Scrapyd. Please check that everything is running properly.');
+});
 $(function() {
     function getCookie(name) {
         var cookieValue = null;

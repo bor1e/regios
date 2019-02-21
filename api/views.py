@@ -9,12 +9,23 @@ import time
 from datetime import datetime, timedelta
 import logging
 from scrapyd_api import ScrapydAPI
+import requests
 # connect scrapyd service
-localhost = 'http://localhost:6800'
+localhost = 'http://localhost:19860'
 scrapyd = ScrapydAPI(localhost)
 
 logger = logging.getLogger(__name__)
 
+@csrf_exempt
+def check_scrapy_running(request):
+    # See [https://scrapyd.readthedocs.io/en/latest/api.html]
+    # curl http://localhost:6800/daemonstatus.json
+    try:
+        data = requests.get(localhost + '/daemonstatus.json').json()
+    except Exception:
+        return JsonResponse({'data': 'error'}, status=503)
+
+    return JsonResponse({'data': data})
 
 @csrf_exempt
 def check_infoscan(request):
