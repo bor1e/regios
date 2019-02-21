@@ -31,10 +31,6 @@ def check(request):
     # TODO: if the sites exists already in the db but not fullscan error occurs
     if Domains.objects.filter(domain__icontains=domain_name).exists():
         domain = Domains.objects.filter(domain__icontains=domain_name).first()
-        if not domain.has_related_info():
-            logger.debug('domain {} has no information, starting refresh'
-                         .format(domain.domain))
-            return refresh(request, domain)
         return redirect('display', domain=domain)
 
     if request.POST.get('level') and request.POST.get('level') != 0:
@@ -103,8 +99,18 @@ def display(request, domain):
 
         return redirect('display', domain=domain)
 
-    data = _get_data(domain)
+    if domain.has_related_info():
+        data = _get_data(domain)
+    else:
+        # placeholder if page reloaded in the meantime, because.
+        # till finished call
+        time.sleep(5)
+        if domain.has_related_info():
+            data = _get_data(domain)
+        else:
+            data = _get_placeholder_while_dataloading(domain)
 
+    # data = _get_data(domain)
     return render(request, 'display.html', {'domain': data})
 
 
@@ -137,6 +143,24 @@ def _get_data(domain):
     }
     return data
 
+
+def _get_placeholder_while_dataloading(domain):
+    data = {
+        'domain': domain.domain,
+        'url': domain.url,
+        'duration': 0,
+        'status': domain.status,
+        'name': '??',
+        'title': '??',
+        'zip': 0,
+        'filtered': None,
+        'other': '??',
+        'locals': None,
+        'unique_externals': '??',
+        'filtered_externals': None,
+        'last_update': domain.updated_at
+    }
+    return data
     '''
     explaining the counter of filtered domains based on medical-valley-emn.de:
     d = Domains.object.get(domain='www.medical-valley-emn.de')

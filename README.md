@@ -15,7 +15,8 @@
 If you wnat to change the port of `scrapyd`than you need to update the `http_port`value in `scrapy_app/scrapy.cfg` __and__ `api/views.py`
 
 ## TODO
-- check if scrapyd is running (simple post for list)
+- ~~check if scrapyd is running (simple post for list)~~
+- ISSUE on page relaod while botspider running > Domain in DB but no info > zip and similar details cannot be displayed because of RelatedObjectError < handled with dummy data so far. Needs further check up...
 - block in layout for errors
 - ~~get the url if set in session inside start input~~
 - ~~filter return back to display~~
