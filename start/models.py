@@ -53,6 +53,14 @@ class Domains(models.Model):
                     Domains.objects.all().values_list('domain', flat=True)]
         return externals.exclude(pk__in=existing)
 
+    def has_related_info(self):
+        has_info = False
+        try:
+            has_info = (self.info is not None)
+        except Info.DoesNotExist:
+            pass
+        return has_info
+
     # externals which are NOT on BlackList or Locally_Ignored
     filtered_externals = property(_filtered)
     to_scan = property(_to_scan)

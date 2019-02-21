@@ -24,14 +24,17 @@ def check(request):
         logger.debug('check received wrong request method.')
         # TODO set error for session
         return redirect('start')
-
-    url = request.POST.get('url') if request.POST.get('url') else \
-        request.COOKIES['url']
+    # w1.fau.de
+    url = request.POST.get('url', request.COOKIES['url'])
 
     domain_name = _remove_prefix(urlparse(url).netloc)
     # TODO: if the sites exists already in the db but not fullscan error occurs
     if Domains.objects.filter(domain__icontains=domain_name).exists():
         domain = Domains.objects.filter(domain__icontains=domain_name).first()
+        if not domain.has_related_info():
+            logger.debug('domain {} has no information, starting refresh'
+                         .format(domain.domain))
+            return refresh(request, domain)
         return redirect('display', domain=domain)
 
     if request.POST.get('level') and request.POST.get('level') != 0:
