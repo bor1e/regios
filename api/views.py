@@ -11,7 +11,7 @@ import logging
 from scrapyd_api import ScrapydAPI
 import requests
 # connect scrapyd service
-localhost = 'http://localhost:19860'
+localhost = 'http://localhost:6800'
 scrapyd = ScrapydAPI(localhost)
 
 logger = logging.getLogger(__name__)
