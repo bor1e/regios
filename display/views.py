@@ -24,7 +24,7 @@ def check(request):
         logger.debug('check received wrong request method.')
         # TODO set error for session
         return redirect('start')
-    # w1.fau.de
+
     url = request.POST.get('url', request.COOKIES['url'])
 
     domain_name = _remove_prefix(urlparse(url).netloc)

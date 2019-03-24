@@ -21,10 +21,15 @@ If you wnat to change the port of `scrapyd`than you need to update the `http_por
 - ~~get the url if set in session inside start input~~
 - ~~filter return back to display~~
 - check the todos inside the code
+- scrap meta tags
+- by infoscan try to run for simple url without targeting specific webpage
 - pandas on db
+- update scrapy?
+- what about second level reference. If level 0 is referencing level 1 which in turn references level 2 which in turn references children of level 0, siblings of level 1?
+- after fullscan of selected, list all found potential partners (infoscan an all external_links of combined selected) and run next level selected. Then display results.
 - include `kontakt`-sites for zip code findings
 - ~~time required for fullscan update~~
 - display strange behaviour (e.g. zero external links ) as black nodes in sigma graph
-- try to get links from javascript `process_value` https://docs.scrapy.org/en/latest/topics/link-extractors.html
+- try to get links from javascript `process_value` via [scrapy docs](https://docs.scrapy.org/en/latest/topics/link-extractors.html)
 - analyse structure of website with most external links using [urllib](https://docs.python.org/3/howto/urllib2.html) for textanalyse / site classification
 - selenium acceptance tests?!

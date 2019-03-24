@@ -29,6 +29,9 @@ class BotSpider(CrawlSpider):
         self.allowed_domains = [self.domain]
         if self.domain[0:4] == 'www.':
             self.allowed_domains = [self.domain, self.domain[4:]]
+        else:
+            self.allowed_domains = [self.domain, 'www.' + self.domain]
+
         self.pipelines = set([
             # 'impressum',
             # 'title',
@@ -182,11 +185,8 @@ class BotSpider(CrawlSpider):
                 else:
                     altname = elements[i - 2]
                 zipcode = elem[2]
-                self.logger.debug('alternative_name: %s'
-                                  % altname)
+                # self.logger.debug('alternative_name: %s'
+                #                  % altname)
                 break
-            else:
-                self.logger.debug('elem: %s'
-                                  % docelem)
 
         return zipcode, altname
