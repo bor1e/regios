@@ -24,7 +24,7 @@ If you wnat to change the port of `scrapyd`than you need to update the `http_por
 - scrap meta tags
 - by infoscan try to run for simple url without targeting specific webpage
 - pandas on db
-- update scrapy?
+- update scrapy to 1.6.0?
 - what about second level reference. If level 0 is referencing level 1 which in turn references level 2 which in turn references children of level 0, siblings of level 1?
 - after fullscan of selected, list all found potential partners (infoscan an all external_links of combined selected) and run next level selected. Then display results.
 - include `kontakt`-sites for zip code findings
