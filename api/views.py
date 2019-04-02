@@ -1,5 +1,5 @@
 # from django.shortcuts import render, redirect, reverse
-from start.models import Domains  # , BlackList
+from start.models import Domains, Spiders  # , BlackList
 from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +16,7 @@ scrapyd = ScrapydAPI(localhost)
 
 logger = logging.getLogger(__name__)
 
+
 @csrf_exempt
 def check_scrapy_running(request):
     # See [https://scrapyd.readthedocs.io/en/latest/api.html]
@@ -26,6 +27,7 @@ def check_scrapy_running(request):
         return JsonResponse({'data': 'error'}, status=503)
 
     return JsonResponse({'data': data})
+
 
 @csrf_exempt
 def check_infoscan(request):
@@ -157,6 +159,60 @@ def get(request):
 
     # !TODO error handling
     return HttpResponse('ERROR')
+
+
+def start_info_spider(request):
+    pass
+
+
+def domain_job_status(request):
+    domain = request.POST.dict()['domain'].strip()
+    spider = request.POST.dict()['spider'].strip()
+
+    try:
+        obj = Domains.objects.get(domain=domain)
+        job_id = obj.spiders.get(name=spider).job_id
+    except ObjectDoesNotExist:
+        msg = 'Domain {} does not exist!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    status = scrapyd.job_status('default', job_id)
+    return JsonResponse({'domain': obj.domain,
+                         'spider': spider,
+                         'status': status
+                         })
+
+
+def start_external_crawl(request):
+    domain = request.POST.dict()['domain'].strip()
+    try:
+        obj = Domains.objects.get(domain=domain)
+        url = obj.url
+        logger.debug('found domain: {} status: {}'.
+                     format(domain, obj.status))
+    except ObjectDoesNotExist:
+        msg = 'Domain {} does not exist!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    if obj.externals.count() > 0 or obj.spiders.count() > 0:
+        msg = 'Domain {} has already externals!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    # ENHANCEMENT: keywords could be an
+    # attribute of network/domain => obj.keyword
+    obj.status = 'external_started'
+    obj.save()
+    job_id = scrapyd.schedule('default', 'externalspider',
+                              url=url, domain=obj.domain,
+                              keywords=[])
+    Spiders.objects.create(domain=obj, job_id=job_id, name='external')
+    return JsonResponse({'domain': obj.domain,
+                         'job_id': job_id,
+                         'status': obj.status
+                         })
 
 
 @csrf_exempt

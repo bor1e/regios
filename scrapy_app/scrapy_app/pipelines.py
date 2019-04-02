@@ -87,18 +87,21 @@ class ItemPipeline(object):
                 logger.debug('info created: %s ' % i)
 
         elif 'external' in attr:
-            logger.debug('\nEXTERNALSPIDER\n')
 
             objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
             Locals.objects.bulk_create(objs_l)
 
             objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
             Externals.objects.bulk_create(objs_e)
-            logger.debug('ex: locals created: %s' % len(self.locals_url))
-            logger.debug('ex: externals created: %s' % len(self.external_urls))
 
-            d.fullscan = True
+            d.status = 'external_finished'
             d.save()
+            '''
+            spider = d.spider(name='external')
+            spider.start = stats.collect.start
+            spider.finish = stats.collect.finish
+            spider.save()
+            '''
         else:
             return
 
@@ -127,5 +130,5 @@ class ItemPipeline(object):
         if 'info' in getattr(spider, 'pipelines', []):
             spider.close_spider = True
 
-        logger.debug('clsoing spider: %s' % spider.__dict__)
+        # logger.debug('closing spider: %s' % spider.__dict__)
         return item

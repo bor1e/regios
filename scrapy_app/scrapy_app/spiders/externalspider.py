@@ -38,6 +38,5 @@ class ExternalSpider(CrawlSpider):
 
         for link in external_urls:
             item['external_urls'].add(link.url)
-        self.logger.debug('external_urls found: %s' % len(external_urls))
 
         return item

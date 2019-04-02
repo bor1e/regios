@@ -23,6 +23,7 @@ urlpatterns = [
     path('', include('start.urls')),
     path('display/', include('display.urls')),
     path('filter/', include('filter.urls')),
+    path('actor/', include('actor.urls')),
     path('api/', include('api.urls', namespace='api')),
     # path('domain=<domain>', views.domain, name='domain'),
     # path('start_external_crawling=<domain>', views.external_crawling,

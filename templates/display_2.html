@@ -1,0 +1,34 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-info">
+    {% include "./messages.html" %}
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Waiting for crawling to finish for <span id="domain">{{domain.domain}}</span></h1>
+            <h2 class="subtitle">Current Status: <span id="status">{{domain.status}}</span></h2>
+            {% if domain.status == "external_started" %}
+            <!-- TODO -->
+            <!-- display current job_status -->
+            <p>display current job <span id="job_status">status</span></p>
+            <!-- option to cancel current job -->
+            {% elif domain.status == "external_finished" %}
+            <p>Found unique externals {{domain.unique_external_domains|length}} of {{domain.externals.count}} total externals</p>
+            <p>Found filtered unique externals {{domain.filter_unique_externals|length}} => excluding filtered externals</p>
+            <p>Found to infoscan {{domain.to_info_scan|length}} => excluding those already info_scanned</p>
+            <p>Found to externalscan {{domain.to_external_scan|length}} => excluding those already external_scanned</p>
+
+            {% elif domain.status == "info_started" %}
+            <!-- TODO -->
+            <!-- display current job_status -->
+            <p>display current job <span id="job_status">status</span></p>
+            <!-- display externals to scan after filter -->
+            <!-- option to cancel current job -->
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block javascript %}
+{% load static %}
+<script src="{% static '/js/display-progress.js' %}"></script>
+{% endblock %}
