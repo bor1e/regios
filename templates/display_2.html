@@ -1,32 +1,67 @@
 {% extends "./layout.html" %}
 {% block head %}
-<section class="hero is-info">
+<section class="hero is-primary">
     {% include "./messages.html" %}
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Crawling <span id="domain">{{domain.domain}}</span></h1>
+            <h2 class="subtitle">Current Status: <span id="status">{{domain.status}}</span></h2>
+        </div>
+    </div>
+</section>
+{% if domain.status == "external_started" %}
+<section class="hero is-link">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Current Status:&nbsp;<span id="job_status_external">status</span></h1>
+            <h2 class="subtitle"><span id="spider">External</span> scan <span id="process">running</span>:&nbsp;<time>00:00:00</time></h2>
+            <div class="content">
+                <button class="button is-danger is-outlined" type="button" value="{{domain.externalspider.job_id}}">Cancel Scan</button>
+                <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
+            </div>
+        </div>
+</section>
+{% endif %}
+{% if not domain.status == "created" and not domain.status == "external_started" %}
+<section class="hero is-link">
     <div class="hero-body">
         <div class="container">
             <h1 class="title">Waiting for crawling to finish for <span id="domain">{{domain.domain}}</span></h1>
             <h2 class="subtitle">Current Status: <span id="status">{{domain.status}}</span></h2>
-            {% if domain.status == "external_started" %}
+            <p>test: <div class="is-medium is-loading"></div>
+            </p>
+            <progress class="progress is-medium is-dark" max="100">45%</progress>
             <!-- TODO -->
             <!-- display current job_status -->
-            <p>display current job <span id="job_status">status</span></p>
+            <p>display current job <span id="job_status_external">status</span></p>
             <!-- option to cancel current job -->
-            {% elif domain.status == "external_finished" %}
             <p>Found unique externals {{domain.unique_external_domains|length}} of {{domain.externals.count}} total externals</p>
             <p>Found filtered unique externals {{domain.filter_unique_externals|length}} => excluding filtered externals</p>
             <p>Found to infoscan {{domain.to_info_scan|length}} => excluding those already info_scanned</p>
             <p>Found to externalscan {{domain.to_external_scan|length}} => excluding those already external_scanned</p>
-
-            {% elif domain.status == "info_started" %}
-            <!-- TODO -->
-            <!-- display current job_status -->
-            <p>display current job <span id="job_status">status</span></p>
-            <!-- display externals to scan after filter -->
-            <!-- option to cancel current job -->
-            {% endif %}
         </div>
     </div>
 </section>
+{% endif %}
+{%if domain.status == "info_started" %}
+<section class="hero is-success">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Primary title
+            </h1>
+            <h2 class="subtitle">
+                <!-- TODO -->
+                <!-- display current job_status -->
+                <p>display current job <span id="job_status_info">status</span></p>
+                <progress class="progress is-large is-primary" max="100">15%</progress>
+                <!-- display externals to scan after filter -->
+                <!-- option to cancel current job -->
+            </h2>
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}
 {% block javascript %}
 {% load static %}

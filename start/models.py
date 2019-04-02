@@ -24,6 +24,12 @@ class Domains(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.fullscan:
+            if self.infoscan and self.externalscan:
+                self.fullscan = True
+        super(Domains, self).save(*args, **kwargs)
+
     def __str__(self):
         return self.domain
 
@@ -95,6 +101,22 @@ class Domains(models.Model):
         except Info.DoesNotExist:
             pass
         return has_info
+
+    def has_external_spider(self):
+        result = False
+        try:
+            result = (self.externalspider is not None)
+        except ExternalSpider.DoesNotExist:
+            pass
+        return result
+
+    def has_info_spider(self):
+        result = False
+        try:
+            result = (self.infospider is not None)
+        except InfoSpider.DoesNotExist:
+            pass
+        return result
 
     # externals which are NOT on BlackList or Locally_Ignored
     filtered_externals = property(_filtered)
@@ -209,28 +231,34 @@ class LocalIgnore(models.Model):
     src_domain = property(_get_domain)
 
 
-class Spiders(models.Model):
-    name = models.TextField(max_length=80)
+class ExternalSpider(models.Model):
     job_id = models.CharField(max_length=80)
-
-    # pot = models.BooleanField(default=False)
-    # related_name e.g. domain.externals.count()
-    # selected = models.BooleanField(null=True, default=False)
-    domain = models.ForeignKey(
+    domain = models.OneToOneField(
         Domains,
         on_delete=models.CASCADE,
-        related_name='spiders'
+        related_name='externalspider'
     )
     duration = models.DurationField(default=timedelta(), null=True)
     started = models.DateTimeField(null=True)
     finished = models.DateTimeField(null=True)
 
     def __str__(self):
-        return self.name + ' of ' + self.domain.domain
+        return'externalspider of ' + self.domain.domain
 
-    class Meta:
-        unique_together = (('name', 'domain'),)
-        ordering = ('domain',)
+
+class InfoSpider(models.Model):
+    job_id = models.CharField(max_length=80)
+    domain = models.OneToOneField(
+        Domains,
+        on_delete=models.CASCADE,
+        related_name='infospider'
+    )
+    duration = models.DurationField(default=timedelta(), null=True)
+    started = models.DateTimeField(null=True)
+    finished = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return'infospider of ' + self.domain.domain
 
 
 def _remove_prefix(domain):

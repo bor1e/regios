@@ -63,7 +63,6 @@ class ItemPipeline(object):
                 d.save()
 
         elif 'info' in attr:
-            logger.debug('\nINFOSPIDER\n')
             try:
                 obj = Info.objects.get(domain=d)
             except ObjectDoesNotExist:
@@ -85,7 +84,9 @@ class ItemPipeline(object):
                     domain=d,
                 )
                 logger.debug('info created: %s ' % i)
-
+                d.status = 'info_finished'
+                d.infoscan = True
+                d.save()
         elif 'external' in attr:
 
             objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
@@ -95,6 +96,7 @@ class ItemPipeline(object):
             Externals.objects.bulk_create(objs_e)
 
             d.status = 'external_finished'
+            d.externalscan = True
             d.save()
             '''
             spider = d.spider(name='external')

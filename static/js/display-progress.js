@@ -1,47 +1,95 @@
 $(document).ready(function() {
     var domain = $("#domain").text();
     var status = $("#status").text();
+        var time = document.getElementsByTagName('time')[0],
+            seconds = 0,
+            minutes = 0,
+            hours = 0,
+            t;
+
+    $(".button").click(function() {
+        clearTimeout(t);
+        var job_id = $(this).val();
+        var spider = $('#spider').text().toLowerCase();
+        $.get("/api/cancel_job/" + job_id, {}, function(data) {
+            $('#job_status_' + spider).html('canceled while in state: ' + data.state);
+            $('#process').html('canceled after running for');
+        });
+        // alert( "Handler for .click() called with job_id: " + job_id );
+    });
+
+        function add() {
+            seconds++;
+            if (seconds >= 60) {
+                seconds = 0;
+                minutes++;
+                if (minutes >= 60) {
+                    minutes = 0;
+                    hours++;
+                }
+            }
+
+            time.textContent = (hours ? (hours > 9 ? hours : "0" + hours) : "00") + ":" + (minutes ? (minutes > 9 ? minutes : "0" + minutes) : "00") + ":" + (seconds > 9 ? seconds : "0" + seconds);
+
+            startTimer();
+        }
+
+        function startTimer() {
+            t = setTimeout(add, 1000);
+        };
+    
+    
+
+    function getStatusOfSpiderForDomain(spider) {
+
+        (function getStatus() {
+            $.post("/api/domain_spider_status/", { domain: domain, spider: spider })
+                .done(function(data) {
+                    if (data.status != 'finished') {
+                        $('#job_status_' + spider).html(data.status);
+                        setTimeout(getStatus, 1000);
+                    } else {
+                        $('#job_status_' + spider).html(data.status);
+                        //   location.reload();
+                    }
+                })
+                .fail(function(error) {
+                    alert("error occured while checking job status");
+                });
+        })();
+    }
     switch (status) {
         case 'created':
-            // console.log('here we go!');
-            // start_external_spider
             $.post("/api/start_external_crawl/", { domain: domain })
-            .done(function(data1) {
-                console.log('data1:')
-                console.log(data1)
-            })
-            .fail(function(data2) {
-                console.log('data2:')
-                console.log(data2)
-                alert("error occured while starting external scan");
-            });
-            // get job_id [optional kill job]
-            // get status of job
+                .done(function(data) {
+                    if (data.status == 'external_started') {
+                        location.reload();
+                    }
+                })
+                .fail(function(data) {
+                    alert("error occured while starting external scan");
+                });
             break;
         case 'external_started':
-            $.post("/api/domain_job_status/", { domain: domain, spider: 'external' })
-            .done(function(data4) {
-                console.log('data4:')
-                console.log(data4)
-            })
-            .fail(function(data5) {
-                console.log('data5:')
-                console.log(data5)
-                alert("error occured while asking job status");
-            });
+            startTimer();
+            getStatusOfSpiderForDomain('external');
             break;
         case 'external_finished':
+            $.post("/api/start_info_crawl/", { domain: domain })
+                .done(function(data) {
+                    if (data.status == 'info_started') {
+                        location.reload();
+                    }
+                })
+                .fail(function(data) {
+                    alert("error occured while starting external scan");
+                });
             break;
         case 'info_started':
-            // wait info finish
+            getStatusOfSpiderForDomain('info');
             break;
-        case 'info_finished':
-            // wait info finish
-            break;
-        case 'finished':
-            // wait info finish
         default:
-            // reload_page()
+            //location.reload();
             break;
     }
 
