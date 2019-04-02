@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 class Domains(models.Model):
     domain = models.TextField(max_length=200, unique=True)
     url = models.URLField()
-    status = models.CharField(default='created', max_length=10)
     # parent, child, grandchild ...
     level = models.SmallIntegerField(default=0)
+    src_domain = models.TextField(max_length=200, null=True)
+    # crawl info
     fullscan = models.BooleanField(null=True, default=False)
-    # TODO maybe get it via Spiders class .. if two spider exists etc.
+    status = models.CharField(default='created', max_length=10)
     infoscan = models.BooleanField(null=True, default=False)
     externalscan = models.BooleanField(null=True, default=False)
-    src_domain = models.TextField(max_length=200, null=True)
     duration = models.DurationField(default=timedelta(), null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -238,6 +238,8 @@ class ExternalSpider(models.Model):
         on_delete=models.CASCADE,
         related_name='externalspider'
     )
+    to_scan = models.SmallIntegerField(default=0, null=True)
+
     duration = models.DurationField(default=timedelta(), null=True)
     started = models.DateTimeField(null=True)
     finished = models.DateTimeField(null=True)
@@ -253,6 +255,8 @@ class InfoSpider(models.Model):
         on_delete=models.CASCADE,
         related_name='infospider'
     )
+    to_scan = models.SmallIntegerField(default=0, null=True)
+
     duration = models.DurationField(default=timedelta(), null=True)
     started = models.DateTimeField(null=True)
     finished = models.DateTimeField(null=True)

@@ -33,7 +33,7 @@ def check(request):
         obj = Domains.objects.filter(domain__icontains=domain_name).first()
         msg = 'Domain: {} exists in DB.'.format(obj.domain)
         messages.info(request, msg)
-        return redirect('display', domain=obj)
+        return redirect('display', domain=obj.domain)
 
     # this this parameters are set in the refresh function below!
     if request.POST.get('level') and request.POST.get('level') != 0:
@@ -48,7 +48,7 @@ def check(request):
         msg = 'Domain: {} was created.'.format(obj.domain)
         messages.info(request, msg)
 
-    return render(request, 'display_2.html', {'domain': obj})
+    return redirect('display', domain=obj.domain)
 
 
 def _get_domain_without_prefix_from_url(url):
@@ -109,7 +109,28 @@ def display(request, domain):
     if domain.fullscan:
         return render(request, 'display.html', {'domain': domain})
     else:
-        return render(request, 'display_2.html', {'domain': domain})
+        return redirect('progress', domain=domain)
+
+
+def progress(request, domain):
+    if not Domains.objects.filter(domain__icontains=domain).exists():
+        request.session['domain'] = domain
+        messages.error(request, 'Domain to display does not exist!')
+        return redirect('start')
+
+    try:
+        obj = Domains.objects.get(domain=domain)
+        if obj.fullscan:
+            return redirect('display', domain=domain)
+    except ObjectDoesNotExist:
+        replaced_domain = Domains.objects.filter(
+            domain__icontains=domain).first()
+        logger.debug('Domain: {} replaced by {}}'.format(domain,
+                                                         replaced_domain))
+        return redirect('display', domain=replaced_domain)
+
+    return render(request, 'progress.html', {'domain': obj})
+
 
     '''
     @deprecated 

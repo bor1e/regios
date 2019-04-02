@@ -4,6 +4,8 @@ from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib import messages
+
 # import json
 import time
 from datetime import datetime, timedelta
@@ -82,8 +84,30 @@ def infoscan(request):
 
 
 def cancel_job(request, job_id):
+    domain = request.GET.get('domain', None)
+    spider = request.GET.get('spider', None)
+    if not (domain or spider):
+        msg = 'No domain/spider information for job cancel'
+        messages.warning(request, msg)
+        state = scrapyd.cancel('default', job_id)
+        return JsonResponse({'state': state})
+
+    # domain must exist, since passed on via backend, no user entrypoint
+    obj = Domains.objects.get(domain=domain)
+    if spider == 'external':
+        if obj.has_external_spider():
+            obj.externalspider.delete()
+        obj.externalscan = False
+        if obj.status == 'external_started':
+            obj.status = 'created'
+    elif spider == 'info':
+        if obj.has_info_spider():
+            obj.infospider.delete()
+        obj.infoscan = False
+        if obj.status == 'info_started':
+            obj.status = 'created'
+    obj.save()
     state = scrapyd.cancel('default', job_id)
-    logger.debug('cancled while in state: %s' % state)
     return JsonResponse({'state': state})
 
 
@@ -185,7 +209,8 @@ def start_info_crawl(request):
     job_id = scrapyd.schedule('default', 'infospider',
                               url=url, domain=obj.domain,
                               keywords=[])
-    InfoSpider.objects.create(domain=obj, job_id=job_id)
+    InfoSpider.objects.create(domain=obj, job_id=job_id,
+                              to_scan=len(obj.to_info_scan))
     return JsonResponse({'domain': obj.domain,
                          'job_id': job_id,
                          'status': obj.status
@@ -231,7 +256,7 @@ def start_external_crawl(request):
         return JsonResponse({'error': msg})
 
     if obj.externals.count() > 0 or obj.has_external_spider():
-        msg = 'Domain {} has already externals!'.format(domain)
+        msg = 'Domain {} has already externals! Please refresh.'.format(domain)
         logger.info(msg)
         return JsonResponse({'error': msg})
 
@@ -242,7 +267,8 @@ def start_external_crawl(request):
     job_id = scrapyd.schedule('default', 'externalspider',
                               url=url, domain=obj.domain,
                               keywords=[])
-    ExternalSpider.objects.create(domain=obj, job_id=job_id)
+    ExternalSpider.objects.create(domain=obj, job_id=job_id,
+                                  to_scan=len(obj.to_external_scan))
     return JsonResponse({'domain': obj.domain,
                          'job_id': job_id,
                          'status': obj.status
@@ -280,7 +306,7 @@ def post(request):
 
     return JsonResponse({'domain': spider['domain'],
                          'task_id': task_id,
-                         'status': 'started'
+                         'status': 'started1'
                          })
 
 
