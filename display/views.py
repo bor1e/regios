@@ -18,14 +18,12 @@ def check(request):
     """ Check if the passed paramter named 'url' exists in DB,
     if not, start the spider, otherwise display result
     for the url. """
-    logger.debug(request.COOKIES)
-
-    if not (request.method == 'POST' or request.COOKIES['url']):
+    # logger.debug(request.COOKIES)
+    url = request.POST.get('url', request.COOKIES.get('url', None))
+    if not url:
         logger.debug('check received wrong request method.')
         # TODO set error for session
         return redirect('start')
-
-    url = request.POST.get('url', request.COOKIES['url'])
 
     domain_name = _remove_prefix(urlparse(url).netloc)
     # TODO: if the sites exists already in the db but not fullscan error occurs
