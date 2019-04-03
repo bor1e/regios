@@ -1,7 +1,7 @@
 from start.models import Domains
+from utils.helpers import get_domain_from_url
 # from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
-from urllib.parse import urlparse
 # from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect  # , reverse
@@ -27,7 +27,7 @@ def check(request):
         messages.error(request, 'URL is missing!')
         return redirect('start')
 
-    domain_name = _get_domain_without_prefix_from_url(url)
+    domain_name = get_domain_from_url(url)
 
     if Domains.objects.filter(domain__icontains=domain_name).exists():
         obj = Domains.objects.filter(domain__icontains=domain_name).first()
@@ -49,19 +49,6 @@ def check(request):
         messages.info(request, msg)
 
     return redirect('display', domain=obj.domain)
-
-
-def _get_domain_without_prefix_from_url(url):
-    complete_domain = urlparse(url).netloc
-    domain_split = complete_domain.split('.')
-    common_prefixes = ['www', 'en', 'fr', 'de', 'er', ]
-
-    while domain_split[0] in common_prefixes:
-        domain_split = domain_split[1:]
-
-    domain = '.'.join(domain_split)
-    return domain
-
 
 @csrf_exempt
 def externals_selected(request, domain):
@@ -91,7 +78,6 @@ def refresh(request, domain):
 @login_required
 def display(request, domain):
     # domain was given over manually
-
     if not Domains.objects.filter(domain__icontains=domain).exists():
         request.session['domain'] = domain
         messages.error(request, 'Domain to display does not exist!')
@@ -102,13 +88,15 @@ def display(request, domain):
     except ObjectDoesNotExist:
         replaced_domain = Domains.objects.filter(
             domain__icontains=domain).first()
-        logger.debug('Domain: {} replaced by {}}'.format(domain,
-                                                         replaced_domain))
+        logger.debug('Domain: {} replaced by {}'.format(domain,
+                                                        replaced_domain))
         return redirect('display', domain=replaced_domain)
 
     if domain.fullscan:
+        logger.debug('displaying {} '.format(domain))
         return render(request, 'display.html', {'domain': domain})
     else:
+        logger.debug('progressing {} - status: '.format(domain, domain.status))
         return redirect('progress', domain=domain)
 
 
@@ -125,10 +113,11 @@ def progress(request, domain):
     except ObjectDoesNotExist:
         replaced_domain = Domains.objects.filter(
             domain__icontains=domain).first()
-        logger.debug('Domain: {} replaced by {}}'.format(domain,
-                                                         replaced_domain))
+        logger.debug('Domain: {} replaced by {}'.format(domain,
+                                                        replaced_domain))
         return redirect('display', domain=replaced_domain)
 
+    logger.debug('Domain: {} progressing ... '.format(domain))
     return render(request, 'progress.html', {'domain': obj})
 
 

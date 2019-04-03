@@ -63,6 +63,7 @@ $(document).ready(function() {
                 .done(function(data) {
                     if (data.status == 'external_started') {
                         location.reload();
+                        console.log('external_started')
                     }
                 })
                 .fail(function(data) {
@@ -83,13 +84,14 @@ $(document).ready(function() {
                 .fail(function(data) {
                     alert("error occured while starting external scan");
                 });
+
             break;
         case 'info_started':
             startTimer();
             getStatusOfSpiderForDomain('info');
             break;
         default:
-            // location.reload();
+            location.reload();
             break;
     }
 

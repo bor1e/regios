@@ -1,8 +1,9 @@
 from django.db import models
 import json
-from urllib.parse import urlparse
 from filter.models import BlackList
 from django.db.models import Q
+
+from utils.helpers import get_domain_from_url
 
 from datetime import timedelta
 import logging
@@ -131,31 +132,19 @@ class Domains(models.Model):
 
 
 class Info(models.Model):
-    name = models.CharField(max_length=100)
-    title = models.CharField(max_length=100, null=True)
-    zip = models.SmallIntegerField(null=True)
-    impressum_url = models.URLField()
-    # kind = models.CharField(null=True) // e.v. GmbH etc.
-    # all other information
-    other = models.TextField(null=True)
-    # related_name e.g. domain.info.count()
     domain = models.OneToOneField(
         Domains,
         on_delete=models.CASCADE,
         related_name='info'
     )
+    tip = models.CharField(max_length=100, default='no suggestions', null=True)
+    title = models.CharField(max_length=100, null=True)
+    desc = models.CharField(max_length=160, null=True)
+    keywords = models.TextField(max_length=200, null=True)
+    imprint = models.URLField(null=True)
+    zip = models.SmallIntegerField(null=True)
 
-    # !TODO
-    @property
-    def to_dict(self):
-        data = {
-            # 'domain': json.loads(self.domain),
-            'name': json.loads(self.name),
-            'title': json.loads(self.title),
-            'zip': json.loads(self.zp),
-            'other': json.loads(self.other),
-        }
-        return data
+    misc = models.TextField(null=True)
 
     def __str__(self):
         return self.domain.domain
@@ -174,10 +163,10 @@ class Externals(models.Model):
 
     # @property
     def _get_domain(self):
-        return _remove_prefix(urlparse(self.url).netloc)
+        return get_domain_from_url(self.url)
 
     def _info(self):
-        domain = urlparse(self.url).netloc
+        domain = get_domain_from_url(self.url)
         if Domains.objects.filter(domain=domain).exists():
             return Domains.objects.get(domain=domain).info
         return
@@ -232,44 +221,40 @@ class LocalIgnore(models.Model):
 
 
 class ExternalSpider(models.Model):
-    job_id = models.CharField(max_length=80)
     domain = models.OneToOneField(
         Domains,
         on_delete=models.CASCADE,
         related_name='externalspider'
     )
+    job_id = models.CharField(max_length=80)
     to_scan = models.SmallIntegerField(default=0, null=True)
 
     duration = models.DurationField(default=timedelta(), null=True)
     started = models.DateTimeField(null=True)
     finished = models.DateTimeField(null=True)
+    robots_forbidden = models.SmallIntegerField(default=0, null=True)
+    request_count = models.SmallIntegerField(default=0, null=True)
+    log_error_count = models.SmallIntegerField(default=0, null=True)
 
     def __str__(self):
         return'externalspider of ' + self.domain.domain
 
 
 class InfoSpider(models.Model):
-    job_id = models.CharField(max_length=80)
     domain = models.OneToOneField(
         Domains,
         on_delete=models.CASCADE,
         related_name='infospider'
     )
+    job_id = models.CharField(max_length=80)
     to_scan = models.SmallIntegerField(default=0, null=True)
 
     duration = models.DurationField(default=timedelta(), null=True)
     started = models.DateTimeField(null=True)
     finished = models.DateTimeField(null=True)
+    robots_forbidden = models.SmallIntegerField(default=0, null=True)
+    request_count = models.SmallIntegerField(default=0, null=True)
+    log_error_count = models.SmallIntegerField(default=0, null=True)
 
     def __str__(self):
         return'infospider of ' + self.domain.domain
-
-
-def _remove_prefix(domain):
-    domain_split = domain.split('.')
-    # categorize domains matchmaking of words after skiping 'de','org','com'...
-    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
-    if domain_split[0] in common_prefixes:
-        return _remove_prefix('.'.join(domain_split[1:]))
-    else:
-        return domain

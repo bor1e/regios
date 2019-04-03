@@ -1,136 +1,186 @@
-from start.models import Domains, Info, Externals, Locals
-# import json
-# from urllib.parse import urlparse
+from scrapy import signals
+from start.models import Domains, Info, Externals, Locals, ExternalSpider, \
+    InfoSpider
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError
+
+from utils.helpers import get_domain_from_url
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 class ItemPipeline(object):
-    def __init__(self, domain, url, stats, *args, **kwargs):
-        self.domain = domain
-        self.url = url
+
+    def __init__(self, started_by_domain, crawler, stats, *args, **kwargs):
+        self.started_by_domain = started_by_domain
         self.stats = stats
-        self.name = 'dummy'
-        self.zip = '0'
-        self.title = ''
-        self.impressum_url = '-----'
+        self.spider = crawler.spider.name
         self.locals_url = set()
         self.external_urls = set()
+        crawler.signals.connect(self.save_crawl_stats, signals.spider_closed)
 
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
-            domain=crawler.spider.domain,
-            url=crawler.spider.url,
+            started_by_domain=crawler.spider.started_by_domain,
             stats=crawler.stats,
+            crawler=crawler
         )
 
     def close_spider(self, spider):
-        attr = getattr(spider, 'pipelines', [])
-        d, x = Domains.objects.get_or_create(domain=self.domain, url=self.url)
-        # logger.debug('closing spider for domain: %s created: %s' % (d, x))
-        # logger.debug(self.stats.get_stats()['log_count/ERROR'])
-
-        if 'fullscan' in attr:
-            logger.debug('\nBOTSPIDER\n')
-            try:
-                objs_l = (Locals(domain=d, url=i)
-                          for i in self.locals_url)
-                objs_e = (Externals(domain=d, url=i)
-                          for i in self.external_urls)
-
-                Locals.objects.bulk_create(objs_l)
-                Externals.objects.bulk_create(objs_e)
-
-                logger.debug('bot: locals %s' % len(self.locals_url))
-                logger.debug('bot: externals %s' % len(self.external_urls))
-                i = Info.objects.create(
-                    name=self.name,
-                    impressum_url=self.impressum_url,
-                    zip=self.zip,
-                    title=self.title if self.title else 'None!',
-                    domain=d,
-                )
-                logger.debug('info created: %s ' % i)
-
-            except IntegrityError:
-                pass
-            finally:
-                d.fullscan = True
-                d.save()
-
-        elif 'info' in attr:
-            try:
-                obj = Info.objects.get(domain=d)
-            except ObjectDoesNotExist:
-                obj = None
-
-            if obj:
-                logger.debug('updating information of: %s ' % obj)
-                obj.name = self.name
-                obj.impressum_url = self.impressum_url
-                obj.zip = self.zip
-                obj.title = self.title.pop() if self.title else 'None!'
-                obj.save()
-            else:
-                i = Info.objects.create(
-                    name=self.name,
-                    impressum_url=self.impressum_url,
-                    zip=self.zip,
-                    title=self.title if self.title else 'None!',
-                    domain=d,
-                )
-                logger.debug('info created: %s ' % i)
-                d.status = 'info_finished'
-                d.infoscan = True
-                d.save()
-        elif 'external' in attr:
-
-            objs_l = (Locals(domain=d, url=i) for i in self.locals_url)
+        # saving domain related general info
+        if self.spider == 'externalspider':
+            src = Domains.objects.get(domain=self.started_by_domain)
+            objs_l = (Locals(domain=src, url=i) for i in self.locals_url)
             Locals.objects.bulk_create(objs_l)
 
-            objs_e = (Externals(domain=d, url=i) for i in self.external_urls)
+            objs_e = (Externals(domain=src, url=i) for i in self.external_urls)
             Externals.objects.bulk_create(objs_e)
 
-            d.status = 'external_finished'
-            d.externalscan = True
-            d.save()
-            '''
-            spider = d.spider(name='external')
-            spider.start = stats.collect.start
-            spider.finish = stats.collect.finish
-            spider.save()
-            '''
-        else:
-            return
+            src.status = 'external_finished'
+            src.externalscan = True
+            src.save()
+        if self.spider == 'infospider':
+            src = Domains.objects.get(domain=self.started_by_domain)
+            src.status = 'info_finished'
+            src.infoscan = True
+            src.save()
+
+        logger.debug('debugging: {}'.format(spider.name))
+        pass
+
+    def save_crawl_stats(self):
+        data = {}
+        data['start'] = self.stats.get_stats()['start_time']
+        data['end'] = self.stats.get_stats()['finish_time']
+        data['duration'] = data['end'] - data['start']
+        if 'robots_forbidden' in self.stats.get_stats():
+            data['robots_forbidden'] = \
+                self.stats.get_stats()['robotstxt/forbidden']
+        data['request_count'] = \
+            self.stats.get_stats()['downloader/request_count']
+        if 'log_error_count' in self.stats.get_stats():
+            data['log_error_count'] = \
+                self.stats.get_stats()['log_count/ERROR']
+
+        src = Domains.objects.get(domain=self.started_by_domain)
+        spider = None
+        if self.spider == 'infospider':
+            spider = InfoSpider.objects.get(domain=src)
+        elif self.spider == 'externalspider':
+            spider = ExternalSpider.objects.get(domain=src)
+
+        spider.start = data['start']
+        spider.end = data['end']
+        spider.duration = data['duration']
+        if 'robots_forbidden' in data:
+            spider.robots_forbidden = data['robots_forbidden']
+        spider.request_count = data['request_count']
+        if 'log_error_count' in data:
+            spider.log_error_count = data['log_error_count']
+
+        '''
+        for k, v in spider.__dict__.items():
+            if k in data:
+                spider.k = v
+        '''
+        spider.save()
+        logger.info('{} has received data: {}'.format(self.spider, data))
 
     def process_item(self, item, spider):
-        logger.debug('spider: %s' % spider.__dict__)
+        # check!
+        if spider.name == 'infospider':
+            self._process_info_spider(item)
+        elif spider.name == 'externalspider':
+            self._process_external_spider(item)
 
-        if 'name' in item and not item['name'] == '':
-            self.name = item['name']
-        if 'zip' in item:
-            self.zip = item['zip']
-        if 'alternative_name' in item and not item['alternative_name'] == '':
-            if self.name == 'dummy':
-                self.name = item['alternative_name']
+        return item
+
+    def _process_info_spider(self, item):
+        src = Domains.objects.get(domain=self.started_by_domain)
+        url = item['url']
+        crawled_domain = get_domain_from_url(url)
+
+        try:
+            domain = Domains.objects.get(domain=crawled_domain)
+        except ObjectDoesNotExist:
+            domain = Domains.objects.create(domain=crawled_domain,
+                                            url=url,
+                                            src_domain=src.domain,
+                                            level=src.level + 1
+                                            )
+        data = {}
+        data['tip'] = item['tip'] if 'tip' in item else None
+        data['title'] = self._select_title(item)
+        data['desc'] = self._select_description(item)
+        data['keywords'] = self._select_keywords(item)
+        data['imprint'] = item['imprint'] if 'imprint' in item else None
+        data['zip'] = item['zip'] if 'zip' in item else None
+        data['misc'] = self._select_name(item)
+
+        try:
+            info = Info.objects.get(domain=domain)
+            logger.info('{} INFO FOUND'.format(domain.domain))
+        except ObjectDoesNotExist:
+            info = Info.objects.create(domain=domain)
+            logger.info('{} INFO CREATED'.format(domain.domain))
+
+        info.tip = data['tip'] if 'tip' in data else None
+        info.title = data['title'] if 'title' in data else None
+        info.desc = data['desc'] if 'desc' in data else None
+        info.keywords = data['keywords'] if 'keywords' in data else None
+        info.imprint = data['imprint'] if 'imprint' in data else None
+        info.zip = data['zip'] if 'zip' in data else None
+        info.misc = data['misc'] if 'misc' in data else None
+
+        info.save()
+
+        domain.status = 'info_finished'
+        domain.infoscan = True
+        domain.save()
+
+    def _select_description(self, item):
+        if 'meta_description' in item:
+            return item['meta_description'][:160]
+        elif 'meta_og_description' in item:
+            return item['meta_og_description'][:160]
+        else:
+            return None
+
+    def _select_keywords(self, item):
+        if 'meta_keywords' in item:
+            return item['meta_keywords']
+        elif 'meta_og_keywords' in item:
+            return item['meta_og_keywords']
+        else:
+            return None
+
+    def _select_title(self, item):
+        # favor og title because it is more accurate
+        if 'meta_og_title' in item:
+            return item['meta_og_title']
+        elif 'title' in item:
+            return item['title']
+        elif 'meta_title' in item:
+            return item['meta_title']
+        else:
+            return None
+
+    def _select_name(self, item):
+        name = None
+        if 'name' in item:
+            name = item['name']
+        if 'alternative_name' in item:
+            if name:
+                name += ' ' + item['alternative_name']
             else:
-                self.name += '\n[alt: ' + item['alternative_name'] + ' ]'
-        if 'impressum_url' in item:
-            self.impressum_url = item['impressum_url']
-        if 'title' in item:
-            self.title = item['title']
+                name = item['alternative_name']
+        return name
+
+    def _process_external_spider(self, item):
         if 'locals_url' in item:
             self.locals_url.add(item['locals_url'])
         if 'external_urls' in item:
             for url in item['external_urls']:
                 self.external_urls.add(url)
-        # closing the spider manually for specific info scan
-        if 'info' in getattr(spider, 'pipelines', []):
-            spider.close_spider = True
-
-        # logger.debug('closing spider: %s' % spider.__dict__)
-        return item
+        pass
