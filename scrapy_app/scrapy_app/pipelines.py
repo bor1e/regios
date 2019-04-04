@@ -56,10 +56,10 @@ class ItemPipeline(object):
         data['finish'] = stats['finish_time']
         data['duration'] = data['finish'] - data['start']
         data['reason'] = stats['finish_reason']
-        if 'robots_forbidden' in stats:
+        if 'robotstxt/forbidden' in stats:
             data['robots_forbidden'] = stats['robotstxt/forbidden']
         data['request_count'] = stats['downloader/request_count']
-        if 'log_error_count' in stats:
+        if 'log_count/ERROR' in stats:
             data['log_error_count'] = stats['log_count/ERROR']
 
         src = Domains.objects.get(domain=self.started_by_domain)

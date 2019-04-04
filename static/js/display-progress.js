@@ -75,15 +75,15 @@ $(document).ready(function() {
             getStatusOfSpiderForDomain('external');
             break;
         case 'external_finished':
-            $.post("/api/start_info_crawl/", { domain: domain })
-                .done(function(data) {
-                    if (data.status == 'info_started') {
-                        location.reload();
-                    }
-                })
-                .fail(function(data) {
-                    alert("error occured while starting external scan");
-                });
+            // $.post("/api/start_info_crawl/", { domain: domain })
+            //     .done(function(data) {
+            //         if (data.status == 'info_started') {
+            //             location.reload();
+            //         }
+            //     })
+            //     .fail(function(data) {
+            //         alert("error occured while starting external scan");
+            //     });
 
             break;
         case 'info_started':

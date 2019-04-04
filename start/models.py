@@ -4,6 +4,11 @@ from django.db.models import Q
 
 from utils.helpers import get_domain_from_url
 
+from scrapyd_api import ScrapydAPI
+# connect scrapyd service
+localhost = 'http://localhost:6800'
+scrapyd = ScrapydAPI(localhost)
+
 from datetime import timedelta
 import logging
 logger = logging.getLogger(__name__)
@@ -28,6 +33,15 @@ class Domains(models.Model):
             if self.infoscan and self.externalscan:
                 self.fullscan = True
                 self.status = 'finished'
+            elif self.externalscan and not self.has_info_spider():
+                job_id = scrapyd.schedule('default', 'infospider',
+                                          started_by_domain=self.domain,
+                                          keywords=[])
+                InfoSpider.objects.create(domain=self,
+                                          job_id=job_id,
+                                          to_scan=len(self._to_info_scan()))
+                self.status = 'info_started'
+
         # if self.infoscan:
         #     self.status = 'info_finished'
         # elif self.externalscan:
@@ -36,6 +50,9 @@ class Domains(models.Model):
 
     def __str__(self):
         return self.domain
+
+    def _fullscan(self):
+        return self.infoscan and self.externalscan
 
     def _filtered(self):
         # logger.debug('external for {}'.format(self.domain))
@@ -91,11 +108,15 @@ class Domains(models.Model):
 
     def _to_info_scan(self):
         externals = self._filter_unique_externals()
+        # TODO create values list beforehand and not within!
         not_scanned = [domain for domain in externals
                        if domain not in
                        Domains.objects.filter(Q(infoscan=True) |
                                               Q(fullscan=True))
                        .values_list('domain', flat=True)]
+        db_domains = Domains.objects.all().values_list('domain', flat=True)
+        not_scanned = [domain for domain in externals
+                       if domain not in db_domains]
         return not_scanned
 
     def has_related_info(self):
@@ -123,6 +144,7 @@ class Domains(models.Model):
         return result
 
     # externals which are NOT on BlackList or Locally_Ignored
+    # fullscan = property(_fullscan)
     filtered_externals = property(_filtered)
     to_scan = property(_to_scan)
     unique_external_domains = property(_unique_external_domains)
