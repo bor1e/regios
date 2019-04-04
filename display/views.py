@@ -50,6 +50,7 @@ def check(request):
 
     return redirect('display', domain=obj.domain)
 
+
 @csrf_exempt
 def externals_selected(request, domain):
     # domain = Domains.objects.get(domain=domain)

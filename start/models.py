@@ -1,5 +1,4 @@
 from django.db import models
-import json
 from filter.models import BlackList
 from django.db.models import Q
 
@@ -21,7 +20,6 @@ class Domains(models.Model):
     status = models.CharField(default='created', max_length=10)
     infoscan = models.BooleanField(null=True, default=False)
     externalscan = models.BooleanField(null=True, default=False)
-    duration = models.DurationField(default=timedelta(), null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -29,6 +27,11 @@ class Domains(models.Model):
         if not self.fullscan:
             if self.infoscan and self.externalscan:
                 self.fullscan = True
+                self.status = 'finished'
+        # if self.infoscan:
+        #     self.status = 'info_finished'
+        # elif self.externalscan:
+        #     self.status = 'external_finished'
         super(Domains, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -137,13 +140,14 @@ class Info(models.Model):
         on_delete=models.CASCADE,
         related_name='info'
     )
+
     tip = models.CharField(max_length=100, default='no suggestions', null=True)
     title = models.CharField(max_length=100, null=True)
     desc = models.CharField(max_length=160, null=True)
     keywords = models.TextField(max_length=200, null=True)
     imprint = models.URLField(null=True)
     zip = models.SmallIntegerField(null=True)
-
+    name = models.TextField(max_length=200, null=True)
     misc = models.TextField(null=True)
 
     def __str__(self):
@@ -226,12 +230,14 @@ class ExternalSpider(models.Model):
         on_delete=models.CASCADE,
         related_name='externalspider'
     )
-    job_id = models.CharField(max_length=80)
+    job_id = models.CharField(max_length=80, default='default')
     to_scan = models.SmallIntegerField(default=0, null=True)
 
+    reason = models.TextField(null=True, max_length=80)
+    start = models.DateTimeField(null=True)
+    finish = models.DateTimeField(null=True)
     duration = models.DurationField(default=timedelta(), null=True)
-    started = models.DateTimeField(null=True)
-    finished = models.DateTimeField(null=True)
+
     robots_forbidden = models.SmallIntegerField(default=0, null=True)
     request_count = models.SmallIntegerField(default=0, null=True)
     log_error_count = models.SmallIntegerField(default=0, null=True)
@@ -246,15 +252,20 @@ class InfoSpider(models.Model):
         on_delete=models.CASCADE,
         related_name='infospider'
     )
-    job_id = models.CharField(max_length=80)
+    job_id = models.CharField(max_length=80, default='default')
     to_scan = models.SmallIntegerField(default=0, null=True)
 
+    reason = models.TextField(null=True, max_length=80)
+    start = models.DateTimeField(null=True)
+    finish = models.DateTimeField(null=True)
     duration = models.DurationField(default=timedelta(), null=True)
-    started = models.DateTimeField(null=True)
-    finished = models.DateTimeField(null=True)
+
     robots_forbidden = models.SmallIntegerField(default=0, null=True)
     request_count = models.SmallIntegerField(default=0, null=True)
     log_error_count = models.SmallIntegerField(default=0, null=True)
 
     def __str__(self):
         return'infospider of ' + self.domain.domain
+
+    # class Meta:
+    #     unique_together = (('unique_id', 'domain'),)

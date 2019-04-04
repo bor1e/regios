@@ -31,6 +31,7 @@ class ItemPipeline(object):
         # saving domain related general info
         if self.spider == 'externalspider':
             src = Domains.objects.get(domain=self.started_by_domain)
+
             objs_l = (Locals(domain=src, url=i) for i in self.locals_url)
             Locals.objects.bulk_create(objs_l)
 
@@ -45,23 +46,21 @@ class ItemPipeline(object):
             src.status = 'info_finished'
             src.infoscan = True
             src.save()
-
         logger.debug('debugging: {}'.format(spider.name))
         pass
 
-    def save_crawl_stats(self):
+    def save_crawl_stats(self, spider, reason):
+        stats = self.stats.get_stats()
         data = {}
-        data['start'] = self.stats.get_stats()['start_time']
-        data['end'] = self.stats.get_stats()['finish_time']
-        data['duration'] = data['end'] - data['start']
-        if 'robots_forbidden' in self.stats.get_stats():
-            data['robots_forbidden'] = \
-                self.stats.get_stats()['robotstxt/forbidden']
-        data['request_count'] = \
-            self.stats.get_stats()['downloader/request_count']
-        if 'log_error_count' in self.stats.get_stats():
-            data['log_error_count'] = \
-                self.stats.get_stats()['log_count/ERROR']
+        data['start'] = stats['start_time']
+        data['finish'] = stats['finish_time']
+        data['duration'] = data['finish'] - data['start']
+        data['reason'] = stats['finish_reason']
+        if 'robots_forbidden' in stats:
+            data['robots_forbidden'] = stats['robotstxt/forbidden']
+        data['request_count'] = stats['downloader/request_count']
+        if 'log_error_count' in stats:
+            data['log_error_count'] = stats['log_count/ERROR']
 
         src = Domains.objects.get(domain=self.started_by_domain)
         spider = None
@@ -70,45 +69,28 @@ class ItemPipeline(object):
         elif self.spider == 'externalspider':
             spider = ExternalSpider.objects.get(domain=src)
 
-        spider.start = data['start']
-        spider.end = data['end']
-        spider.duration = data['duration']
-        if 'robots_forbidden' in data:
-            spider.robots_forbidden = data['robots_forbidden']
-        spider.request_count = data['request_count']
-        if 'log_error_count' in data:
-            spider.log_error_count = data['log_error_count']
-
-        '''
-        for k, v in spider.__dict__.items():
-            if k in data:
-                spider.k = v
-        '''
+        spider.__dict__.update(**data)
         spider.save()
         logger.info('{} has received data: {}'.format(self.spider, data))
 
     def process_item(self, item, spider):
         # check!
-        if spider.name == 'infospider':
-            self._process_info_spider(item)
-        elif spider.name == 'externalspider':
+        if spider.name == 'externalspider':
             self._process_external_spider(item)
+        elif spider.name == 'infospider':
+            self._process_info_spider(item)
 
         return item
 
-    def _process_info_spider(self, item):
-        src = Domains.objects.get(domain=self.started_by_domain)
-        url = item['url']
-        crawled_domain = get_domain_from_url(url)
+    def _process_external_spider(self, item):
+        if 'locals_url' in item:
+            self.locals_url.add(item['locals_url'])
+        if 'external_urls' in item:
+            for url in item['external_urls']:
+                self.external_urls.add(url)
+        pass
 
-        try:
-            domain = Domains.objects.get(domain=crawled_domain)
-        except ObjectDoesNotExist:
-            domain = Domains.objects.create(domain=crawled_domain,
-                                            url=url,
-                                            src_domain=src.domain,
-                                            level=src.level + 1
-                                            )
+    def _process_info_spider(self, item):
         data = {}
         data['tip'] = item['tip'] if 'tip' in item else None
         data['title'] = self._select_title(item)
@@ -116,7 +98,19 @@ class ItemPipeline(object):
         data['keywords'] = self._select_keywords(item)
         data['imprint'] = item['imprint'] if 'imprint' in item else None
         data['zip'] = item['zip'] if 'zip' in item else None
-        data['misc'] = self._select_name(item)
+        data['name'] = self._select_name(item)
+        data['misc'] = item[item['tip']] if 'tip' in item else None
+
+        src = Domains.objects.get(domain=self.started_by_domain)
+        url = item['url']
+        crawled_domain = get_domain_from_url(url)
+        try:
+            domain = Domains.objects.get(domain=crawled_domain)
+        except ObjectDoesNotExist:
+            domain = Domains.objects.create(domain=crawled_domain,
+                                            url=url,
+                                            src_domain=src.domain,
+                                            level=src.level + 1)
 
         try:
             info = Info.objects.get(domain=domain)
@@ -125,19 +119,12 @@ class ItemPipeline(object):
             info = Info.objects.create(domain=domain)
             logger.info('{} INFO CREATED'.format(domain.domain))
 
-        info.tip = data['tip'] if 'tip' in data else None
-        info.title = data['title'] if 'title' in data else None
-        info.desc = data['desc'] if 'desc' in data else None
-        info.keywords = data['keywords'] if 'keywords' in data else None
-        info.imprint = data['imprint'] if 'imprint' in data else None
-        info.zip = data['zip'] if 'zip' in data else None
-        info.misc = data['misc'] if 'misc' in data else None
-
+        info.__dict__.update(**data)
         info.save()
 
-        domain.status = 'info_finished'
-        domain.infoscan = True
-        domain.save()
+        # if self.started_by_domain != crawled_domain:
+        #     domain.infoscan = True
+        #     domain.save()
 
     def _select_description(self, item):
         if 'meta_description' in item:
@@ -170,17 +157,27 @@ class ItemPipeline(object):
         name = None
         if 'name' in item:
             name = item['name']
-        if 'alternative_name' in item:
-            if name:
-                name += ' ' + item['alternative_name']
-            else:
-                name = item['alternative_name']
+        elif 'alternative_name' in item:
+            name = item['alternative_name']
         return name
 
-    def _process_external_spider(self, item):
-        if 'locals_url' in item:
-            self.locals_url.add(item['locals_url'])
-        if 'external_urls' in item:
-            for url in item['external_urls']:
-                self.external_urls.add(url)
-        pass
+        '''
+        spider.start = data['start']
+        spider.finish = data['finish']
+        spider.duration = data['duration']
+        spider.reason = data['reason']
+        if 'robots_forbidden' in data:
+            spider.robots_forbidden = data['robots_forbidden']
+        spider.request_count = data['request_count']
+        if 'log_error_count' in data:
+            spider.log_error_count = data['log_error_count']
+        '''
+        '''
+        info.tip = data['tip'] if 'tip' in data else None
+        info.title = data['title'] if 'title' in data else None
+        info.desc = data['desc'] if 'desc' in data else None
+        info.keywords = data['keywords'] if 'keywords' in data else None
+        info.imprint = data['imprint'] if 'imprint' in data else None
+        info.zip = data['zip'] if 'zip' in data else None
+        info.misc = data['misc'] if 'misc' in data else None
+        '''

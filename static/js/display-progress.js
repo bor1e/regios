@@ -46,7 +46,7 @@ $(document).ready(function() {
                 .done(function(data) {
                     if (data.status != 'finished') {
                         $('#job_status_' + spider).html(data.status);
-                        setTimeout(getStatus, 1000);
+                        setTimeout(getStatus, 2000);
                     } else {
                         $('#job_status_' + spider).html(data.status);
                         location.reload();
@@ -62,8 +62,8 @@ $(document).ready(function() {
             $.post("/api/start_external_crawl/", { domain: domain })
                 .done(function(data) {
                     if (data.status == 'external_started') {
-                        location.reload();
                         console.log('external_started')
+                        location.reload();
                     }
                 })
                 .fail(function(data) {
@@ -89,6 +89,18 @@ $(document).ready(function() {
         case 'info_started':
             startTimer();
             getStatusOfSpiderForDomain('info');
+            break;
+        case 'info_finished':
+            $.post("/api/start_external_crawl/", { domain: domain })
+                .done(function(data) {
+                    if (data.status == 'external_started') {
+                        location.reload();
+                        console.log('external_started')
+                    }
+                })
+                .fail(function(data) {
+                    alert("error occured while starting external scan");
+                });
             break;
         default:
             location.reload();

@@ -22,7 +22,9 @@ class InfoSpider(CrawlSpider):
     def __init__(self, *args, **kwargs):
         self.started_by_domain = kwargs.get('started_by_domain')
         self.allowed_domains = Domains.objects \
-            .get(domain=self.started_by_domain).to_info_scan
+            .get(domain=self.started_by_domain) \
+            .to_info_scan
+        self.allowed_domains.append(self.started_by_domain)
         # self.allowed_domains = ['cps-hub-nrw.de']
         self.start_urls = ['http://' + x for x in self.allowed_domains]
         self.keywords = kwargs.get('keywords')
@@ -30,7 +32,7 @@ class InfoSpider(CrawlSpider):
 
     def closed(self, reason):
         '''
-        self.logger.debug('ToPandas: \n\n%s', self.to_pandas())
+        self.logger.debug('ToPandas:\n%s', self.to_pandas())
         url = 'http://localhost:8000/scrapy-greets-django'
         try:
             urllib.request.urlopen(url)
@@ -62,7 +64,7 @@ class InfoSpider(CrawlSpider):
         for url in self.start_urls:
             yield scrapy.Request(url, callback=self.parse_urls,
                                  errback=self.errback_urls,
-                                 dont_filter=True)
+                                 dont_filter=True, meta={'dont_retry': True})
 
     def parse_urls(self, response):
         item = {}
@@ -80,6 +82,7 @@ class InfoSpider(CrawlSpider):
             item[k] = self._clean_title(v)
 
         item['url'] = response.url
+
         # get description
         item['meta_description'] = response.xpath(
             "//meta[@name='description']/@content").get()
@@ -315,7 +318,7 @@ class InfoSpider(CrawlSpider):
         domains = list()
         keywords = ['title', 'meta_og_title', 'meta_title', 'meta_description',
                     'meta_og_description', 'meta_keywords', 'meta_og_keywords',
-                    'imprint', 'zip', 'alternative_name', 'name', 'tip']
+                    'imprint', 'name', 'zip', 'alternative_name', 'tip']
         mylist = [[] for _ in range(len(keywords))]
         for key, value in self.domains.items():
             domains.append(key)
