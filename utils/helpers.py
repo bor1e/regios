@@ -1,9 +1,7 @@
 from urllib.parse import urlparse
-from scrapyd_api import ScrapydAPI
 
 # connect scrapyd service
 localhost = 'http://localhost:6800'
-scrapyd = ScrapydAPI(localhost)
 
 
 def get_domain_from_url(url):
