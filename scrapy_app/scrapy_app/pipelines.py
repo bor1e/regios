@@ -46,7 +46,8 @@ class ItemPipeline(object):
             src.status = 'info_finished'
             src.infoscan = True
             src.save()
-        logger.debug('debugging: {}'.format(spider.name))
+        logger.debug('closing: {} with status of domain: '.format(spider.name,
+                                                                  src.status))
         pass
 
     def save_crawl_stats(self, spider, reason):
@@ -72,6 +73,7 @@ class ItemPipeline(object):
         spider.__dict__.update(**data)
         spider.save()
         logger.info('{} has saved data: {}'.format(self.spider, data))
+        pass
 
     def process_item(self, item, spider):
         # check!
@@ -103,7 +105,7 @@ class ItemPipeline(object):
 
         src = Domains.objects.get(domain=self.started_by_domain)
         url = item['url']
-        crawled_domain = get_domain_from_url(url)
+        crawled_domain = item['domain']
         try:
             domain = Domains.objects.get(domain=crawled_domain)
         except ObjectDoesNotExist:
@@ -114,7 +116,7 @@ class ItemPipeline(object):
 
         try:
             info = Info.objects.get(domain=domain)
-            logger.info('{} INFO FOUND'.format(domain.domain))
+            logger.info('{} info FOUND and NOT updated'.format(domain.domain))
         except ObjectDoesNotExist:
             info = Info.objects.create(domain=domain)
             logger.info('{} INFO CREATED'.format(domain.domain))

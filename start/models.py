@@ -5,13 +5,13 @@ from django.db.models import Q
 from utils.helpers import get_domain_from_url
 
 from scrapyd_api import ScrapydAPI
-# connect scrapyd service
-localhost = 'http://localhost:6800'
-scrapyd = ScrapydAPI(localhost)
 
 from datetime import timedelta
 import logging
 logger = logging.getLogger(__name__)
+# connect scrapyd service
+localhost = 'http://localhost:6800'
+scrapyd = ScrapydAPI(localhost)
 
 
 class Domains(models.Model):
@@ -256,7 +256,7 @@ class ExternalSpider(models.Model):
     to_scan = models.SmallIntegerField(default=0, null=True)
 
     reason = models.TextField(null=True, max_length=80)
-    start = models.DateTimeField(null=True)
+    start = models.DateTimeField(auto_now_add=True, null=True)
     finish = models.DateTimeField(null=True)
     duration = models.DurationField(default=timedelta(), null=True)
 
@@ -278,7 +278,7 @@ class InfoSpider(models.Model):
     to_scan = models.SmallIntegerField(default=0, null=True)
 
     reason = models.TextField(null=True, max_length=80)
-    start = models.DateTimeField(null=True)
+    start = models.DateTimeField(auto_now_add=True)
     finish = models.DateTimeField(null=True)
     duration = models.DurationField(default=timedelta(), null=True)
 

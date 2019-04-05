@@ -21,10 +21,10 @@ class InfoSpider(CrawlSpider):
 
     def __init__(self, *args, **kwargs):
         self.started_by_domain = kwargs.get('started_by_domain')
-        self.allowed_domains = Domains.objects \
-            .get(domain=self.started_by_domain) \
-            .to_info_scan
-        self.allowed_domains.append(self.started_by_domain)
+        self.allowed_domains = [self.started_by_domain]
+        to_info_scan = Domains.objects.get(domain=self.started_by_domain) \
+                              .to_info_scan
+        self.allowed_domains.extend(to_info_scan)
         # self.allowed_domains = ['cps-hub-nrw.de']
         self.start_urls = ['http://' + x for x in self.allowed_domains]
         self.keywords = kwargs.get('keywords')
@@ -52,7 +52,8 @@ class InfoSpider(CrawlSpider):
             url = 'http://www.' + \
                 get_domain_from_url(request.url)
             request = scrapy.Request(url,
-                                     callback=self.parse_urls)
+                                     callback=self.parse_urls,
+                                     meta={'dont_retry': True, 'domain': url})
             return request
         if failure.check(HttpError):
             # these exceptions come from HttpError spider middleware
@@ -64,7 +65,8 @@ class InfoSpider(CrawlSpider):
         for url in self.start_urls:
             yield scrapy.Request(url, callback=self.parse_urls,
                                  errback=self.errback_urls,
-                                 dont_filter=True, meta={'dont_retry': True})
+                                 dont_filter=True,
+                                 meta={'dont_retry': True, 'domain': url})
 
     def parse_urls(self, response):
         item = {}
@@ -80,7 +82,8 @@ class InfoSpider(CrawlSpider):
             if not v:
                 continue
             item[k] = self._clean_title(v)
-
+        req_url = 'http://' + response.request._meta['download_slot']
+        item['domain'] = get_domain_from_url(req_url)
         item['url'] = response.url
 
         # get description
@@ -124,7 +127,7 @@ class InfoSpider(CrawlSpider):
             request.meta['item'] = item
             return request
         else:
-            domain = get_domain_from_url(response.url)
+            domain = item['domain']
             item['tip'] = self._recommend_name(item)
             self.domains[domain] = self._clean(item)
             return self.domains[domain]
@@ -137,7 +140,7 @@ class InfoSpider(CrawlSpider):
         item['alternative_name'] = altname
         item['tip'] = self._recommend_name(item)
 
-        domain = get_domain_from_url(response.url)
+        domain = item['domain']
         self.domains[domain] = self._clean(item)
         return self.domains[domain]
 
