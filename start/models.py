@@ -165,7 +165,7 @@ class Info(models.Model):
 
     tip = models.CharField(max_length=100, default='no suggestions', null=True)
     title = models.CharField(max_length=100, null=True)
-    desc = models.CharField(max_length=160, null=True)
+    desc = models.TextField(max_length=250, null=True)
     keywords = models.TextField(max_length=200, null=True)
     imprint = models.URLField(null=True)
     zip = models.SmallIntegerField(null=True)

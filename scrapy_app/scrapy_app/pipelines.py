@@ -130,9 +130,9 @@ class ItemPipeline(object):
 
     def _select_description(self, item):
         if 'meta_description' in item:
-            return item['meta_description'][:160]
+            return item['meta_description'][:250]
         elif 'meta_og_description' in item:
-            return item['meta_og_description'][:160]
+            return item['meta_og_description'][:250]
         else:
             return None
 
