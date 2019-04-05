@@ -1,4 +1,4 @@
-from start.models import Domains
+from start.models import Domains, ExternalSpider
 from utils.helpers import get_domain_from_url
 # from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
@@ -8,10 +8,15 @@ from django.shortcuts import render, redirect  # , reverse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from scrapyd_api import ScrapydAPI
 
 import time
 import logging
 logger = logging.getLogger(__name__)
+
+# connect scrapyd service
+localhost = 'http://localhost:6800'
+scrapyd = ScrapydAPI(localhost)
 
 
 @login_required
@@ -118,12 +123,29 @@ def progress(request, domain):
                                                         replaced_domain))
         return redirect('display', domain=replaced_domain)
 
-    logger.debug('Domain: {} progressing ... '.format(domain))
+    if obj.has_external_spider():
+        msg = 'Domain: {} progressing ... started externalspider {}' \
+            .format(obj.domain, obj.externalspider)
+        logger.info(msg)
+        return render(request, 'progress.html', {'domain': obj})
+
+    obj.status = 'external_started'
+    obj.save()
+    job_id = scrapyd.schedule('default', 'externalspider',
+                              started_by_domain=domain,
+                              keywords=[])
+
+    spider = ExternalSpider.objects.create(domain=obj,
+                                           job_id=job_id,
+                                           to_scan=len(obj.to_external_scan))
+    msg = 'Domain: {} progressing ... started externalspider {}' \
+        .format(domain, spider)
+    logger.info(msg)
     return render(request, 'progress.html', {'domain': obj})
 
 
     '''
-    @deprecated 
+    @ deprecated 
     if domain.has_related_info():
         data = _get_data(domain)
     else:

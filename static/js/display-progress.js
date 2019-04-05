@@ -59,16 +59,16 @@ $(document).ready(function() {
     }
     switch (status) {
         case 'created':
-            $.post("/api/start_external_crawl/", { domain: domain })
-                .done(function(data) {
-                    if (data.status == 'external_started') {
-                        console.log('external_started')
-                        location.reload();
-                    }
-                })
-                .fail(function(data) {
-                    alert("error occured while starting external scan");
-                });
+            // $.post("/api/start_external_crawl/", { domain: domain })
+            //     .done(function(data) {
+            //         if (data.status == 'external_started') {
+            //             console.log('external_started')
+            //             location.reload();
+            //         }
+            //     })
+            //     .fail(function(data) {
+            //         alert("error occured while starting external scan");
+            //     });
             break;
         case 'external_started':
             startTimer();

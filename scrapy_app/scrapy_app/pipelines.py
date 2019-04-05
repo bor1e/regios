@@ -71,7 +71,7 @@ class ItemPipeline(object):
 
         spider.__dict__.update(**data)
         spider.save()
-        logger.info('{} has received data: {}'.format(self.spider, data))
+        logger.info('{} has saved data: {}'.format(self.spider, data))
 
     def process_item(self, item, spider):
         # check!
