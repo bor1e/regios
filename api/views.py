@@ -1,20 +1,24 @@
 # from django.shortcuts import render, redirect, reverse
-from start.models import Domains  # , BlackList
+from start.models import Domains, ExternalSpider, InfoSpider  # , BlackList
 from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib import messages
+
 # import json
 import time
 from datetime import datetime, timedelta
 import logging
 from scrapyd_api import ScrapydAPI
 import requests
+
 # connect scrapyd service
 localhost = 'http://localhost:6800'
 scrapyd = ScrapydAPI(localhost)
 
 logger = logging.getLogger(__name__)
+
 
 @csrf_exempt
 def check_scrapy_running(request):
@@ -26,6 +30,7 @@ def check_scrapy_running(request):
         return JsonResponse({'data': 'error'}, status=503)
 
     return JsonResponse({'data': data})
+
 
 @csrf_exempt
 def check_infoscan(request):
@@ -53,19 +58,16 @@ def infoscan(request):
     logger.debug('jobs: %s' % pre_num)
     now = time.time()
     for i in to_scan:
-        external_domain_name = _remove_prefix(i.external_domain)
         # for infoscan it is enough if subdomain was already once scaned
-        if Domains.objects.filter(domain__icontains=external_domain_name)\
+        if Domains.objects.filter(domain__icontains=i.external_domain)\
            .exists():
             remaining -= 1
             continue
         logger.debug('creating domain: %s' % i.external_domain)
-        Domains.objects.create(domain=external_domain_name,
+        Domains.objects.create(domain=i.external_domain,
                                url=i.url, level=obj.level + 1,
                                src_domain=obj.domain)
-        scrapyd.schedule('default', 'infospider',
-                         url=i.url, domain=i.external_domain,
-                         keywords=[])
+        _start_spider(i.external_domain, 'infospider', [])
 
     post_jobs = scrapyd.list_jobs('default')
     post_num = len(post_jobs['pending']) + \
@@ -80,8 +82,33 @@ def infoscan(request):
 
 
 def cancel_job(request, job_id):
+    domain = request.GET.get('domain', None)
+    spider = request.GET.get('spider', None)
+    if not (domain or spider):
+        msg = 'No domain/spider information for job cancel'
+        messages.warning(request, msg)
+        logger.warning(msg)
+        state = scrapyd.cancel('default', job_id)
+        return JsonResponse({'state': state})
+
+    '''
+    # domain must exist, since passed on via backend, no user entrypoint
+    obj = Domains.objects.get(domain=domain)
+    if spider == 'external':
+        if obj.has_external_spider():
+            obj.externalspider.delete()
+        obj.externalscan = False
+        if obj.status == 'external_started':
+            obj.status = 'created'
+    elif spider == 'info':
+        if obj.has_info_spider():
+            obj.infospider.delete()
+        obj.infoscan = False
+        if obj.status == 'info_started':
+            obj.status = 'created'
+    obj.save()
+    '''
     state = scrapyd.cancel('default', job_id)
-    logger.debug('cancled while in state: %s' % state)
     return JsonResponse({'state': state})
 
 
@@ -159,11 +186,96 @@ def get(request):
     return HttpResponse('ERROR')
 
 
+# this is called while waiting for finish of spider external / info
+def domain_spider_status(request):
+    domain = request.POST.dict()['domain'].strip()
+    spider = request.POST.dict()['spider'].strip()
+
+    try:
+        obj = Domains.objects.get(domain=domain)
+        job_id = None
+        if spider == 'external':
+            job_id = obj.externalspider.job_id
+        elif spider == 'info':
+            job_id = obj.infospider.job_id
+    except ObjectDoesNotExist:
+        msg = 'Domain {} | Spider {} does not exist!'.format(domain, spider)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    status = scrapyd.job_status('default', job_id)
+    if not status:
+        status = 'not_found'
+    logger.info('domain: {}, spider: {}, status: {}'.format(obj.domain,
+                                                            spider, status))
+    return JsonResponse({'domain': obj.domain,
+                         'spider': spider,
+                         'status': status
+                         })
+
+
+def start_info_crawl(request):
+    domain = request.POST.dict()['domain'].strip()
+    try:
+        obj = Domains.objects.get(domain=domain)
+        logger.debug('found domain: {} status: {}'.
+                     format(domain, obj.status))
+    except ObjectDoesNotExist:
+        msg = 'Domain {} does not exist!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    if len(obj.to_info_scan) == 0:
+        msg = 'No info scan for Domain: {} to do!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    # ENHANCEMENT: keywords could be an
+    # attribute of network/domain => obj.keyword
+    obj.status = 'info_started'
+    obj.save()
+    job_id = _start_spider(obj.domain, 'infospider', [])
+
+    return JsonResponse({'domain': obj.domain,
+                         'job_id': job_id,
+                         'status': obj.status
+                         })
+
+
+def start_external_crawl(request):
+    domain = request.POST.dict()['domain'].strip()
+    try:
+        obj = Domains.objects.get(domain=domain)
+        logger.debug('found domain: {} status: {}'.
+                     format(domain, obj.status))
+    except ObjectDoesNotExist:
+        msg = 'Domain {} does not exist!'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    if obj.has_external_spider():
+        logger.debug('spider: {}'.format(obj.externalspider.unique_id))
+        msg = 'Domain {} has already externals! Please refresh.'.format(domain)
+        logger.info(msg)
+        return JsonResponse({'error': msg})
+
+    # ENHANCEMENT: keywords could be an
+    # attribute of network/domain => obj.keyword
+    obj.status = 'external_started'
+    obj.save()
+    job_id = _start_spider(obj.domain, 'externalspider', [])
+
+    return JsonResponse({'domain': obj.domain,
+                         'job_id': job_id,
+                         'status': obj.status
+                         })
+
+
 @csrf_exempt
 def post(request):
     spider = request.POST.dict()
     logger.debug('received spider params: %s', spider)
-    domain_name = _remove_prefix(spider['domain'].strip())
+    domain_name = spider['domain'].strip()
     url = ''
     try:
         domain = Domains.objects.get(domain=domain_name)
@@ -184,21 +296,28 @@ def post(request):
         }
         return JsonResponse({'info': info})
 
-    task_id = scrapyd.schedule('default', spider['name'],
-                               url=url, domain=spider['domain'],
-                               keywords=spider['keywords'])
-
+    # task_id = scrapyd.schedule('default', spider['name'],
+    #                            url=url, domain=spider['domain'],
+    #                            keywords=spider['keywords'])
+    task_id = _start_spider(spider['domain'], spider['name'],
+                            spider['keywords'])
     return JsonResponse({'domain': spider['domain'],
                          'task_id': task_id,
-                         'status': 'started'
+                         'status': 'started1'
                          })
 
 
-def _remove_prefix(domain):
-    domain_split = domain.split('.')
-    # categorize domains matchmaking of words after skiping 'de','org','com'...
-    common_prefixes = ['www', 'en', 'fr', 'de']
-    if domain_split[0] in common_prefixes:
-        return _remove_prefix('.'.join(domain_split[1:]))
-    else:
-        return domain
+def _start_spider(domain, spider, keywords):
+    job_id = scrapyd.schedule('default', spider,
+                              started_by_domain=domain,
+                              keywords=keywords)
+    obj = Domains.objects.get(domain=domain)
+    if spider == 'externalspider':
+        ExternalSpider.objects.create(domain=obj,
+                                      job_id=job_id,
+                                      to_scan=len(obj.to_external_scan))
+    elif spider == 'infospider':
+        InfoSpider.objects.create(domain=obj,
+                                  job_id=job_id,
+                                  to_scan=len(obj.to_info_scan))
+    return job_id

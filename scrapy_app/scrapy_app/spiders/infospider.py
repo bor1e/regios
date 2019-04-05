@@ -1,107 +1,194 @@
-# -*- coding: utf-8 -*-
-'''
-InfoSpider extracted from Botspider
-Finds the title of index/home directory and ZIP Code, and name from impressum
-'''
 import scrapy
+from scrapy.spiders import CrawlSpider  # , Rule
 from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
-from scrapy.exceptions import CloseSpider
+from utils.helpers import get_domain_from_url
+from start.models import Domains
+from difflib import SequenceMatcher
+# from scrapy import signals
+from twisted.internet.error import DNSLookupError
+from scrapy.spidermiddlewares.httperror import HttpError
+# import pandas as pd
 import re
+# import urllib.request
+
+
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 
 class InfoSpider(CrawlSpider):
     name = 'infospider'
 
     def __init__(self, *args, **kwargs):
-        self.url = kwargs.get('url')
-        self.domain = kwargs.get('domain')
+        self.started_by_domain = kwargs.get('started_by_domain')
+        self.allowed_domains = [self.started_by_domain]
+        to_info_scan = Domains.objects.get(domain=self.started_by_domain) \
+                              .to_info_scan
+        self.allowed_domains.extend(to_info_scan)
+        # self.allowed_domains = ['cps-hub-nrw.de']
+        self.start_urls = ['http://' + x for x in self.allowed_domains]
         self.keywords = kwargs.get('keywords')
-        # self.domains_in_db = kwargs.get('domains_in_db')
-        self.start_urls = [self.url]
-        self.close_spider = False
-        self.allowed_domains = [self.domain]
-        if self.domain[0:4] == 'www.':
-            self.allowed_domains = [self.domain, self.domain[4:]]
-        self.pipelines = set([
-            'info',
-        ])
-        self.logger.info('received keywords %s for domain: %s'
-                         % (self.keywords, self.domain))
+        self.domains = {}
 
-        InfoSpider.rules = [
-            # Rule(LinkExtractor(unique=True, allow=(
-            #   r'/(?i)(home|index|start|index\.html)')),
-            #   callback='parse_title'),
-            Rule(LinkExtractor(allow=(
-                 '/(?i)(impressum|legalnotices|imprint|' +
-                 'about|legaldisclosure|corporate-info|terms-of-service)')),
-                 callback='parse_impressum'),  # impressum rule
-        ]
-        super(InfoSpider, self).__init__(*args, **kwargs)
-
-    def parse(self, response):
-        if self.close_spider:
-            raise CloseSpider('Impressum was found!')
-        if response.status in range(402, 405):
-            self.logger.debug('!!404: %s' % response.url)
-
+    def closed(self, reason):
         '''
-        # check for keywords:
-        for key in self.keywords:
-            element = response.xpath('//*[contains(text(), ' + key + ')]').\
-                extract()
-            if element:
-                # key len(element) times found in response.url!
-        for domain in self.domains_in_db:
-            element = response.xpath('//a[contains(@href, ' + domain + ')]').\
-                extract()
-            if element:
-                # domain len(element) times found in response.url!
+        self.logger.debug('ToPandas:\n%s', self.to_pandas())
+        url = 'http://localhost:8000/scrapy-greets-django'
+        try:
+            urllib.request.urlopen(url)
+        except urllib.error.HTTPError:
+            pass
+        # self.logger.info('Localhost called!')
         '''
+        pass
 
-        self.logger.debug('response: %s' % response.url)
-        impressum = LinkExtractor(unique=True, allow=(
-            '/(?i)impressum|legalnotices|legaldisclosure|' +
-            'imprint|corporate-info|terms-of-service|about')).\
-            extract_links(response)
-        if impressum:
-            self.logger.debug('impressum list: %s' % impressum)
-            return scrapy.Request(impressum[0].url,
-                                  callback=self.parse_impressum,
-                                  dont_filter=True)
-        return None
+    def errback_urls(self, failure):
+        # log all failures
+        # self.logger.error(repr(failure))
+        if failure.check(DNSLookupError):
+            # this is the original request
+            request = failure.request
+            # self.logger.error('DNSLookupError on %s', request.url)
+            url = 'http://www.' + \
+                get_domain_from_url(request.url)
+            request = scrapy.Request(url,
+                                     callback=self.parse_urls,
+                                     meta={'dont_retry': True, 'domain': url})
+            return request
+        if failure.check(HttpError):
+            # these exceptions come from HttpError spider middleware
+            # you can get the non-200 response
+            response = failure.value.response
+            self.logger.error('HttpError on %s', response.url)
 
-    '''
-    def parse_title(self, response):
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(url, callback=self.parse_urls,
+                                 errback=self.errback_urls,
+                                 dont_filter=True,
+                                 meta={'dont_retry': True, 'domain': url})
+
+    def parse_urls(self, response):
         item = {}
-        item['title'] = response.xpath('//title/text()').extract_first()
-        item['urls_checked'] = response.url
-        self.logger.debug('title found %s' % item)
-        return item
+        # get title
+        item['title'] = response.xpath('//title/text()').get()
+        item['meta_title'] = response.xpath(
+            "//meta[@name='title']/@content").get()
+        item['meta_og_title'] = response.xpath(
+            "//meta[@property='og:title']/@content").get()
 
-    '''
+        # clean title from startseite, home etc.
+        for k, v in item.items():
+            if not v:
+                continue
+            item[k] = self._clean_title(v)
+        req_url = 'http://' + response.request._meta['download_slot']
+        item['domain'] = get_domain_from_url(req_url)
+        item['url'] = response.url
+
+        # get description
+        item['meta_description'] = response.xpath(
+            "//meta[@name='description']/@content").get()
+        item['meta_og_description'] = response.xpath(
+            "//meta[@property='og:description']/@content").get()
+
+        # get keywords
+        item['meta_keywords'] = response.xpath(
+            "//meta[@name='keywords']/@content").get()
+        item['meta_og_keywords'] = response.xpath(
+            "//meta[@property='og:keywords']/@content").get()
+
+        # get imprint for finding potential zip and name of company
+        imprint_keywords = ['impressum', 'imprint', 'legalnotices',
+                            'privacy', 'privacy', 'policy',
+                            'legaldisclosure', 'corporate-info',
+                            'terms-of-service', 'contact', 'kontakt',
+                            'about']
+        imprint_link_extractor = LinkExtractor(allow=(
+            '/(?i)(' + '|'.join(imprint_keywords) + ')'),
+            unique=True).extract_links(response)
+        urls_with_imprint_keyword = [i.url for i in imprint_link_extractor]
+
+        if len(urls_with_imprint_keyword) > 1:
+            for key in imprint_keywords:
+                for url in urls_with_imprint_keyword:
+                    if key in url:
+                        item['imprint'] = url
+                        request = scrapy.Request(item['imprint'],
+                                                 callback=self.parse_impressum,
+                                                 errback=self.errback_urls)
+                        request.meta['item'] = item
+                        return request
+        elif len(urls_with_imprint_keyword) == 1:
+            item['imprint'] = urls_with_imprint_keyword[0]
+            request = scrapy.Request(item['imprint'],
+                                     callback=self.parse_impressum,
+                                     errback=self.errback_urls)
+            request.meta['item'] = item
+            return request
+        else:
+            domain = item['domain']
+            item['tip'] = self._recommend_name(item)
+            self.domains[domain] = self._clean(item)
+            return self.domains[domain]
 
     def parse_impressum(self, response):
-        item = {}
-        item['title'] = self._get_title(response)
+        item = response.meta['item']
         item['name'] = self._get_name(response)
         zipcode, altname = self._get_zip(response)
         item['zip'] = zipcode
         item['alternative_name'] = altname
-        item['impressum_url'] = response.url
-        self.logger.debug('item: %s ' % item)
+        item['tip'] = self._recommend_name(item)
 
-        return item
+        domain = item['domain']
+        self.domains[domain] = self._clean(item)
+        return self.domains[domain]
 
-    def _get_title(self, response):
-        docelement = response.xpath('//title/text()').extract_first()
-        re_title = re.compile('impressum', re.IGNORECASE)
-        title = re_title.sub('', docelement).replace('|', ' ').\
-            replace('-', ' ').strip()
-        formated_title = re.sub(' +', ' ', title).strip()
-        self.logger.debug('title: %s ' % formated_title)
-        return formated_title
+    def _clean(self, item):
+        i = {}
+        for k, v in item.items():
+            if not v:
+                continue
+            i[k] = v
+            if v and not isinstance(v, int):
+                i[k] = v.strip()
+        return i
+
+    def _recommend_name(self, item):
+        domain = get_domain_from_url(item['url'])
+        words = re.split(r'\W+', domain)
+        common_top_level_domain = ['com', 'org', 'de', 'eu', 'net', 'fr', ]
+        for w in words:
+            if w in common_top_level_domain:
+                words.remove(w)
+        match = {}
+
+        tags = ['title', 'meta_og_title', 'meta_title', 'name',
+                'alternative_name']
+        for tag in tags:
+            if tag not in item or not item[tag]:
+                continue
+            compare = item[tag].split(' ')
+
+            for w in words:
+                for c in compare:
+                    ratio = similar(w, c.lower())
+                    if ratio > 0.7:
+                        match[tag] = {'ratio': ratio,
+                                      'w_domain': w,
+                                      'w_tag': c}
+
+        tmp = 0
+        recommend = ''
+        for key, values in match.items():
+            if float(values['ratio']) > tmp:
+                tmp = values['ratio']
+                recommend = key
+            elif values['ratio'] == tmp and tmp != 0.0:
+                recommend = key if len(item[key]) < len(item[recommend]) \
+                    else recommend
+
+        return recommend
 
     def _get_name(self, response):
         keywords = ['e.V.', 'e. V.', 'GmbH', 'mbH', 'GbR', 'Gesellschaft',
@@ -153,13 +240,13 @@ class InfoSpider(CrawlSpider):
             e_v = name['e. V.']
             # TODO Problem: choosing the shorter version, see prev
             verein = ev if len(ev) < len(e_v) else e_v
-            name['name'] = verein.strip()
+            name['name'] = verein
 
         for key in keywords:
             if key in name and not evs:
-                name['name'] += name[key].strip()
+                name['name'] += name[key]
 
-        self.logger.debug('name: %s ' % name)
+        # self.logger.debug('name: %s ' % name)
 
         return name['name']
 
@@ -170,9 +257,10 @@ class InfoSpider(CrawlSpider):
             elements = response.xpath('//' + elem + '/text()').extract()
             zipcode, altname = self._search_for_zip(elements)
             if zipcode:
+                altname = altname if altname else None
                 return zipcode, altname
 
-        return (0, '')
+        return None, None
 
     def _search_for_zip(self, elements):
         zipcode = 0
@@ -192,8 +280,8 @@ class InfoSpider(CrawlSpider):
                     altname = elements[i - 2]
                 zipcode = elem[0] if len(elem[0]) == 5 \
                     else int(''.join(elem[0][2:]))
-                self.logger.debug('alternative_name: %s'
-                                  % altname)
+                # self.logger.debug('alternative_name: %s'
+                #                   % altname)
 
                 break
             # case: D_-_12345 (_: whitespace) => elem = ['D','-','12345']
@@ -205,11 +293,55 @@ class InfoSpider(CrawlSpider):
                 else:
                     altname = elements[i - 2]
                 zipcode = elem[2]
-                self.logger.debug('alternative_name: %s'
-                                  % altname)
+                # self.logger.debug('alternative_name: %s'
+                #                  % altname)
                 break
-            else:
-                self.logger.debug('elem: %s'
-                                  % docelem)
 
+        altname = altname.strip()
         return zipcode, altname
+
+    def _clean_title(self, title):
+        delims = "[\\-\\|\\–]"
+        title.strip()
+        title_keys = [key.strip() for key in re.split(delims, title) if key]
+        ignore_words = ['startseite', 'start', 'home']
+        ignore_words_pattern = r'(' + '|'.join(ignore_words) + ')'
+        construct_title = list()
+        # self.logger.info('title_keys %s', title_keys)
+        for key in title_keys:
+            cleaned_key = re.sub(ignore_words_pattern, '', key,
+                                 flags=re.IGNORECASE)
+            if not cleaned_key:
+                continue
+            construct_title.append(cleaned_key)
+        clean_title = ' '.join(construct_title)
+        return clean_title
+
+    def to_pandas(self):
+        domains = list()
+        keywords = ['title', 'meta_og_title', 'meta_title', 'meta_description',
+                    'meta_og_description', 'meta_keywords', 'meta_og_keywords',
+                    'imprint', 'name', 'zip', 'alternative_name', 'tip']
+        mylist = [[] for _ in range(len(keywords))]
+        for key, value in self.domains.items():
+            domains.append(key)
+            for i, k in enumerate(keywords):
+                if k in value and value[k]:
+                    if not isinstance(value[k], int):
+                        mylist[i].append(value[k][:20])
+                    else:
+                        mylist[i].append(value[k])
+                else:
+                    mylist[i].append(None)
+
+        d = {}
+        d['domains'] = domains
+        for i, k in enumerate(keywords):
+            d[k] = mylist[i]
+
+        length_of_elems = len(domains)
+        for n, i in enumerate(mylist):
+            if len(mylist[n]) != length_of_elems:
+                self.logger.error('wrong: %s', keywords[n])
+
+        return d

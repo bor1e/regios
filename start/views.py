@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 @login_required
 def index(request):
     # TODO! check if session has errors
+    # check out: https://docs.djangoproject.com/en/2.1/ref/contrib/messages/
 
     url = request.COOKIES.get('url', None)
     ds = Domains.objects.all().filter(fullscan=True)

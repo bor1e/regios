@@ -1,16 +1,22 @@
-from start.models import Domains
+from start.models import Domains, ExternalSpider
+from utils.helpers import get_domain_from_url
 # from filter.models import BlackList
 # from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect,
-from urllib.parse import urlparse
 # from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect  # , reverse
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from scrapyd_api import ScrapydAPI
 
 import time
 import logging
 logger = logging.getLogger(__name__)
+
+# connect scrapyd service
+localhost = 'http://localhost:6800'
+scrapyd = ScrapydAPI(localhost)
 
 
 @login_required
@@ -18,38 +24,36 @@ def check(request):
     """ Check if the passed paramter named 'url' exists in DB,
     if not, start the spider, otherwise display result
     for the url. """
-    # logger.debug(request.COOKIES)
+
     url = request.POST.get('url', request.COOKIES.get('url', None))
+
     if not url:
         logger.debug('check received wrong request method.')
-        # TODO set error for session
+        messages.error(request, 'URL is missing!')
         return redirect('start')
 
-    domain_name = _remove_prefix(urlparse(url).netloc)
-    # TODO: if the sites exists already in the db but not fullscan error occurs
-    if Domains.objects.filter(domain__icontains=domain_name).exists():
-        domain = Domains.objects.filter(domain__icontains=domain_name).first()
-        return redirect('display', domain=domain)
+    domain_name = get_domain_from_url(url)
 
+    if Domains.objects.filter(domain__icontains=domain_name).exists():
+        obj = Domains.objects.filter(domain__icontains=domain_name).first()
+        msg = 'Domain: {} exists in DB.'.format(obj.domain)
+        messages.info(request, msg)
+        return redirect('display', domain=obj.domain)
+
+    # this this parameters are set in the refresh function below!
     if request.POST.get('level') and request.POST.get('level') != 0:
         level = request.POST.get('level')
         src_domain = request.POST.get('src_domain')
-        domain = Domains.objects.create(domain=domain_name, url=url,
-                                        level=level, src_domain=src_domain)
+        obj = Domains.objects.create(domain=domain_name, url=url,
+                                     level=level, src_domain=src_domain)
+        msg = 'Domain: {} was refreshed.'.format(obj.domain)
+        messages.info(request, msg)
     else:
-        domain = Domains.objects.create(domain=domain_name, url=url)
+        obj = Domains.objects.create(domain=domain_name, url=url)
+        msg = 'Domain: {} was created.'.format(obj.domain)
+        messages.info(request, msg)
 
-    return render(request, 'display.html', {'domain': domain})
-
-
-def _remove_prefix(domain):
-    domain_split = domain.split('.')
-    # categorize domains matchmaking of words after skiping 'de','org','com'...
-    common_prefixes = ['www', 'er', 'en', 'fr', 'de']
-    if domain_split[0] in common_prefixes:
-        return _remove_prefix('.'.join(domain_split[1:]))
-    else:
-        return domain
+    return redirect('display', domain=obj.domain)
 
 
 @csrf_exempt
@@ -73,9 +77,6 @@ def refresh(request, domain):
     response.set_cookie('level', d.level)
     response.set_cookie('src_domain', d.src_domain)
 
-    # logger.debug('dir - response: %s' % dir(response))
-    # logger.debug('__dict__ - response: %s' % response.__dict__)
-
     d.delete()
     return response
 
@@ -83,20 +84,68 @@ def refresh(request, domain):
 @login_required
 def display(request, domain):
     # domain was given over manually
-    logger.debug('received : %s' % domain)
     if not Domains.objects.filter(domain__icontains=domain).exists():
         request.session['domain'] = domain
+        messages.error(request, 'Domain to display does not exist!')
         return redirect('start')
 
     try:
         domain = Domains.objects.get(domain=domain)
     except ObjectDoesNotExist:
-        logger.debug('not found : %s' % domain)
-        domain = Domains.objects.filter(domain__icontains=domain).first()
-        logger.debug('replaced : %s' % domain)
+        replaced_domain = Domains.objects.filter(
+            domain__icontains=domain).first()
+        logger.debug('Domain: {} replaced by {}'.format(domain,
+                                                        replaced_domain))
+        return redirect('display', domain=replaced_domain)
 
-        return redirect('display', domain=domain)
+    if domain.fullscan:
+        logger.debug('displaying {} '.format(domain))
+        return render(request, 'display.html', {'domain': domain})
+    else:
+        logger.debug('progressing {} - status: '.format(domain, domain.status))
+        return redirect('progress', domain=domain)
 
+
+def progress(request, domain):
+    if not Domains.objects.filter(domain__icontains=domain).exists():
+        request.session['domain'] = domain
+        messages.error(request, 'Domain to display does not exist!')
+        return redirect('start')
+
+    try:
+        obj = Domains.objects.get(domain=domain)
+        if obj.fullscan:
+            return redirect('display', domain=domain)
+    except ObjectDoesNotExist:
+        replaced_domain = Domains.objects.filter(
+            domain__icontains=domain).first()
+        logger.debug('Domain: {} replaced by {}'.format(domain,
+                                                        replaced_domain))
+        return redirect('display', domain=replaced_domain)
+
+    if obj.has_external_spider():
+        msg = 'Domain: {} progressing ... started externalspider {}' \
+            .format(obj.domain, obj.externalspider)
+        logger.info(msg)
+        return render(request, 'progress.html', {'domain': obj})
+
+    obj.status = 'external_started'
+    obj.save()
+    job_id = scrapyd.schedule('default', 'externalspider',
+                              started_by_domain=domain,
+                              keywords=[])
+
+    spider = ExternalSpider.objects.create(domain=obj,
+                                           job_id=job_id,
+                                           to_scan=len(obj.to_external_scan))
+    msg = 'Domain: {} progressing ... started externalspider {}' \
+        .format(domain, spider)
+    logger.info(msg)
+    return render(request, 'progress.html', {'domain': obj})
+
+
+    '''
+    @ deprecated 
     if domain.has_related_info():
         data = _get_data(domain)
     else:
@@ -107,9 +156,8 @@ def display(request, domain):
             data = _get_data(domain)
         else:
             data = _get_placeholder_while_dataloading(domain)
-
+    '''
     # data = _get_data(domain)
-    return render(request, 'display.html', {'domain': data})
 
 
 def _get_data(domain):

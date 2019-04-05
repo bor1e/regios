@@ -1,0 +1,84 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-primary">
+    {% include "./messages.html" %}
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Crawling <span id="domain">{{domain.domain}}</span></h1>
+            <h2 class="subtitle">Current Status: <span id="status">{{domain.status}}</span></h2>
+        </div>
+    </div>
+</section>
+{% if domain.status == "external_started" %}
+<section class="hero is-link">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Current Status:&nbsp;<span id="job_status_external">status</span></h1>
+            <h2 class="subtitle"><span id="spider">External</span> scan <span id="process">running</span>:&nbsp;<time>00:00:00</time></h2>
+            <div class="content">
+                <button id="cancel" class="button is-danger is-outlined" type="button" value="{{domain.externalspider.job_id}}">Cancel Scan</button>
+                <a id="home" class="button is-primary is-inverted" href="/">Home</a>
+            </div>
+        </div>
+</section>
+{% endif %}
+{% if not domain.status == "created" and not domain.status == "external_started" %}
+<section class="hero is-link">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Results of External Scan</h1>
+            <nav class="level">
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">external references</p>
+                        <p class="title">{{domain.externals.count}}</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">unique externals</p>
+                        <p class="title">{{domain.unique_external_domains|length}}</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">filter unique</p>
+                        <p class="title">{{domain.filter_unique_externals|length}}</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">run info scans for</p>
+                        <p class="title">{{domain.to_info_scan|length}}</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">run external scans for</p>
+                        <p class="title">{{domain.to_external_scan|length}}</p>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+</section>
+{% endif %}
+{%if domain.status == "info_started" %}
+<section class="hero is-success">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">{{domain.to_info_scan|length}} domains are being scanned - current status:&nbsp;<span id="job_status_info"></span></h1>
+            <h2 class="subtitle"><span id="spider">Info</span> scan <span id="process">running</span>:&nbsp;<time>00:00:00</time></h2>
+            <div class="content">
+                <button id="cancel" class="button is-danger is-outlined" type="button" value="{{domain.infospider.job_id}}">Cancel Scan</button>
+                <a id="home" class="button is-primary is-inverted" href="/">Home</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block javascript %}
+{% load static %}
+<script src="{% static '/js/display-progress.js' %}"></script>
+{% endblock %}
