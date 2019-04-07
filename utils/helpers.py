@@ -13,3 +13,17 @@ def get_domain_from_url(url):
 
     domain = '.'.join(domain_split)
     return domain
+
+
+def clean_url(url):
+    _https = url[:5]
+    https = (_https == 'https')
+    _www = urlparse(url).netloc.split('.')[0]
+    www = (_www == 'www')
+    domain = get_domain_from_url(url)
+    clean_url = 'https://' if https else 'http://'
+    if www:
+        clean_url += 'www.' + domain + '/'
+    else:
+        clean_url += domain + '/'
+    return clean_url

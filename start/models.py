@@ -2,7 +2,7 @@ from django.db import models
 from filter.models import BlackList
 from django.db.models import Q
 
-from utils.helpers import get_domain_from_url
+from utils.helpers import get_domain_from_url, clean_url
 
 from scrapyd_api import ScrapydAPI
 
@@ -109,15 +109,28 @@ class Domains(models.Model):
     def _to_info_scan(self):
         externals = self._filter_unique_externals()
         # TODO create values list beforehand and not within!
-        not_scanned = [domain for domain in externals
-                       if domain not in
-                       Domains.objects.filter(Q(infoscan=True) |
-                                              Q(fullscan=True))
-                       .values_list('domain', flat=True)]
+        # not_scanned = [domain for domain in externals
+        #                if domain not in
+        #                Domains.objects.filter(Q(infoscan=True) |
+        #                                       Q(fullscan=True))
+        #                .values_list('domain', flat=True)]
         db_domains = Domains.objects.all().values_list('domain', flat=True)
         not_scanned = [domain for domain in externals
                        if domain not in db_domains]
+        if not self.has_related_info():
+            not_scanned.append(self.domain)
         return not_scanned
+
+    def _to_info_scan_urls(self):
+        externals = Externals.objects.filter(domain=self)
+        domains = self._to_info_scan()
+        urls = [clean_url(x.url) for x in externals
+                if x.external_domain in domains]
+
+        if not self.has_related_info():
+            urls.append(clean_url(self.url))
+
+        return urls
 
     def has_related_info(self):
         has_info = False
@@ -143,6 +156,8 @@ class Domains(models.Model):
             pass
         return result
 
+    def _clean_url(self):
+        return clean_url(self.url)
     # externals which are NOT on BlackList or Locally_Ignored
     # fullscan = property(_fullscan)
     filtered_externals = property(_filtered)
@@ -151,6 +166,8 @@ class Domains(models.Model):
     filter_unique_externals = property(_filter_unique_externals)
     to_external_scan = property(_to_external_scan)
     to_info_scan = property(_to_info_scan)
+    to_info_scan_urls = property(_to_info_scan_urls)
+    _url = property(_clean_url)
 
     class Meta:
         get_latest_by = "updated_at"

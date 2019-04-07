@@ -21,12 +21,10 @@ class InfoSpider(CrawlSpider):
 
     def __init__(self, *args, **kwargs):
         self.started_by_domain = kwargs.get('started_by_domain')
-        self.allowed_domains = [self.started_by_domain]
-        to_info_scan = Domains.objects.get(domain=self.started_by_domain) \
-                              .to_info_scan
-        self.allowed_domains.extend(to_info_scan)
+        obj = Domains.objects.get(domain=self.started_by_domain)
+        self.allowed_domains = obj.to_info_scan
         # self.allowed_domains = ['cps-hub-nrw.de']
-        self.start_urls = ['http://' + x for x in self.allowed_domains]
+        self.start_urls = obj.to_info_scan_urls
         self.keywords = kwargs.get('keywords')
         self.domains = {}
 

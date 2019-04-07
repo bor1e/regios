@@ -46,8 +46,8 @@ class ItemPipeline(object):
             src.status = 'info_finished'
             src.infoscan = True
             src.save()
-        logger.debug('closing: {} with status of domain: '.format(spider.name,
-                                                                  src.status))
+        logger.debug('closing: {} with status of domain: {}'
+                     .format(spider.name, src.status))
         pass
 
     def save_crawl_stats(self, spider, reason):
