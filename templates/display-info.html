@@ -1,156 +1,154 @@
-        <div class="container">
-            <h1 class="title">Information<sup>*</sup> on Domain: {{ domain.domain }}</h1>
-            <h2 class="subtitle">Status:&nbsp;<span id="status">{{ domain.status }}</span>
-                <div class="content">
-                    <section class="help is-italic">* Information crawled from the <a href="{{ domain.cleaned_url }}">home</a> - and the imprint page.
-                    </section>
-                </div>
-            </h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Domain</th>
-                        <th>Suggested Name<sup>**</sup></th>
-                        <!--th>Title</th-->
-                        <th>Description</th>
-                        <th>Keywords</th>
-                        <th>ZIP</th>
-                        <!--th>Name</th-->
-                        <!--th>Miscellaneous</th-->
-                        <th>Referenced by</th>
-                        <th>Updated At</th>
-                        <th>Visit Imprint / Refresh<sup>***</sup>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td id="domain"><a href="{{ domain.cleaned_url }}">{{ domain.domain }}</a></td>
-                        <td>
-                            {% if domain.info.misc %}
-                            <b>{{ domain.info.misc }}</b>&nbsp;({{ domain.info.tip }})
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <!--td>
+<div class="container">
+    <h1 class="title">Displaying<sup>*</sup> details from <b><u>{{ domain.domain }}</u></b></h1>
+    <h2 class="subtitle">Status:&nbsp;<span id="status">{{ domain.status }}</span>
+    </h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Domain</th>
+                <th>Suggested Name<sup>**</sup></th>
+                <!--th>Title</th-->
+                <th>Description</th>
+                <th>Keywords</th>
+                <th>ZIP</th>
+                <!--th>Name</th-->
+                <!--th>Miscellaneous</th-->
+                <th>Referenced by</th>
+                <th>Updated At</th>
+                <th>Visit Imprint / Refresh<sup>***</sup>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="domain"><a href="{{ domain.cleaned_url }}" target="_blank">{{ domain.domain }}</a></td>
+                <td>
+                    {% if domain.info.misc %}
+                    <b>{{ domain.info.misc }}</b>&nbsp;({{ domain.info.tip }})
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <!--td>
                             {% if domain.info.title %}
                             {% if domain.info.tip and domain.info.tip == 'title' %}<b>{{ domain.info.title }}<sup>***</sup></b>{% else %}{{ domain.info.title }}{% endif %}
                             {% else %}
                             -
                             {% endif %}
                         </td-->
-                        <td>
-                            {% if domain.info.desc %}
-                            {{ domain.info.desc }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if domain.info.keywords %}
-                            {{ domain.info.keywords }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if domain.info.zip %}
-                            {{ domain.info.zip }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <!--td>
+                <td>
+                    {% if domain.info.desc %}
+                    {{ domain.info.desc }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if domain.info.keywords %}
+                    {{ domain.info.keywords }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if domain.info.zip %}
+                    {{ domain.info.zip }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <!--td>
                             {% if domain.info.name %}
                             {% if domain.info.tip and domain.info.tip == 'name' %}<b>{{ domain.info.name }}<sup>***</sup></b>{% else %}{{ domain.info.name }}{% endif %} {% else %}
                             -
                             {% endif %}
                         </td-->
-                        <!--td>
+                <!--td>
                             {% if domain.info.misc %}
                             <b>{{ domain.info.misc }}<sup>***</sup></b>&nbsp;({{ domain.info.tip }})
                             {% else %}
                             -
                             {% endif %}
                         </td-->
-                        <td>
-                            {% if domain.src_domain %}
-                            {{ domain.src_domain }}
-                            {% else %}
-                            manually added
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ domain.updated_at }}
-                        </td>
-                        <td>
-                            <div class="field is-grouped">
-                                <p class="control">
-                                    {% if domain.info.imprint %}
-                                    <a class="button is-link is-small" href="{{ domain.info.imprint }}">Visit Imprint
-                                    </a>
-                                    {% endif %}
-                                </p>
-                                <p class="control">
-                                    <a class="button is-warning is-small" href="{% url 'refresh' domain.domain %}">Refresh</a>
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="content">
-                <div class="columns">
-                    <div class="column is-half">
-                        <section class="help is-italic">
-                            <p class="content"><span style="padding-left:1em"></span>** from selected crawled items which could represent the name of the domain, this one is most <b>similar to the domain's name</b>. In brackets is the name of the item with the highest similarity.</p>
-                            <p class="content"><span style="padding-left:1em"></span>*** when refreshing, the web-crawlers (spiders) and the info entry for the {{ domain.domain }} <b>will be deleted</b>. If the referenced domains (externals) exist in the DB, they will stay, and their information won't be refreshed until manually visited and refreshed.</p>
-                            <p class="content"><span style="padding-left:1em"></span>**** most common problems with infoscan are: either the domain prohibits crawling by the robots.txt which <b>regios</b> is obeying, or the reference is old and the domains do no longer exist. This details can be edited in the admin section by updating the url of the external reference.</p>
-                        </section>
-                        <div class="content" style="margin-top:2em">
-                            <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
-                            <a class="button is-primary is-inverted" href="{% url 'display_filter' src_domain=domain.domain %}">See filtered domains ({{domain.filtered}})</a>
-                            <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">View in Graph</a>
-                        </div>
-                        <div id="remaining"></div>
-                    </div>
-                    {% if domain.externalscan %}
-                    <div class="column is-auto"></div>
-                    <div class="column is-one-third">
-                        <table class="table">
-                            <tbody>
-                                <tr>
-                                    <th>duration of crawling</th>
-                                    <td>{{ domain.duration }}</td>
-                                </tr>
-                                <tr>
-                                    <th>crawled local pages</th>
-                                    <td>{{ domain.locals.count }}</td>
-                                </tr>
-                                <tr>
-                                    <th>external references found</th>
-                                    <td>{{ domain.externals.count }}</td>
-                                </tr>
-                                <tr>
-                                    <th>unique references</th>
-                                    <td>{{ domain.unique_external_domains|length }}</td>
-                                </tr>
-                                <tr>
-                                    <th>references after filtering</th>
-                                    <td class="is-primary">{{ domain.filter_unique_externals|length }}</td>
-                                </tr>
-                                <tr>
-                                    <th>externals not in DB</th>
-                                    <td>{{ domain.to_external_scan|length }}</td>
-                                </tr>
-                                <tr>
-                                    <th>problems running infoscan<sup>****</sup></th>
-                                    <td class="is-warning">{{ domain.to_info_scan|length }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <td>
+                    {% if domain.src_domain %}
+                    {{ domain.src_domain }}
+                    {% else %}
+                    manually added
                     {% endif %}
+                </td>
+                <td>
+                    {{ domain.updated_at }}
+                </td>
+                <td>
+                    <div class="field is-grouped">
+                        <p class="control">
+                            {% if domain.info.imprint %}
+                            <a class="button is-link is-rounded is-small" href="{{ domain.info.imprint }}" target="_blank">Visit Imprint
+                            </a>
+                            {% endif %}
+                        </p>
+                        <p class="control">
+                            <a class="button is-warning is-rounded is-small" href="{% url 'refresh' domain.domain %}">Refresh</a>
+                        </p>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="content">
+        <div class="columns">
+            <div class="column is-half">
+                <section class="help is-italic">
+                    <p class="content"><span style="padding-left:1em"></span>* Information crawled from the <a href="{{ domain.cleaned_url }}">home</a> - and the imprint page.
+                    </p>
+                    <p class="content"><span style="padding-left:1em"></span>** from selected crawled items which could represent the name of the domain, this one is most <b>similar to the domain's name</b>. In brackets is the name of the item with the highest similarity.</p>
+                    <p class="content"><span style="padding-left:1em"></span>*** when refreshing, the web-crawlers (spiders) and the info entry for the {{ domain.domain }} <b>will be deleted</b>. If the referenced domains (externals) exist in the DB, they will stay, and their information won't be refreshed until manually visited and refreshed.</p>
+                    <p class="content"><span style="padding-left:1em"></span>**** most common problems with infoscan are: either the domain prohibits crawling by the robots.txt which <b>regios</b> is obeying, or the reference is old and the domains do no longer exist. This details can be edited in the admin section by updating the url of the external reference.</p>
+                </section>
+                <div class="content" style="margin-top:2em">
+                    <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
+                    <a class="button is-primary is-inverted" href="{% url 'display_filter' src_domain=domain.domain %}">filtered domains ({{domain.filtered}})</a>
+                    <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">View Graph</a>
                 </div>
+                <div id="remaining"></div>
             </div>
+            {% if domain.externalscan %}
+            <div class="column is-auto"></div>
+            <div class="column is-one-third">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>duration of crawling</th>
+                            <td>{{ domain.duration }}</td>
+                        </tr>
+                        <tr>
+                            <th>crawled local pages</th>
+                            <td>{{ domain.locals.count }}</td>
+                        </tr>
+                        <tr>
+                            <th>external references found</th>
+                            <td>{{ domain.externals.count }}</td>
+                        </tr>
+                        <tr>
+                            <th>unique references</th>
+                            <td>{{ domain.unique_external_domains|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>references after filtering</th>
+                            <td class="is-primary">{{ domain.filter_unique_externals|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>externals not in DB</th>
+                            <td>{{ domain.to_external_scan|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>problems running infoscan<sup>****</sup></th>
+                            <td class="is-warning">{{ domain.to_info_scan|length }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
         </div>
+    </div>
+</div>

@@ -122,6 +122,7 @@ class InfoSpider(CrawlSpider):
             item['imprint'] = urls_with_imprint_keyword[0]
             request = scrapy.Request(item['imprint'],
                                      callback=self.parse_impressum,
+                                     dont_filter=True,
                                      errback=self.errback_urls)
             request.meta['item'] = item
             return request

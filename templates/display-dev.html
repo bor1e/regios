@@ -7,7 +7,6 @@
     </div>
 </section>
 {% endblock %}
-
 {% block content%}
 <section class="section">
     <div class="container">
@@ -37,58 +36,81 @@
             <table id="externals" class="display">
                 <thead>
                     <tr>
-                        <th>Select</th>
-                        <th>External Domains</th>
-                        <th>External Urls</th>
-                        <th>ZIP</th>
-                        <th>Name</th>
-                        <th>Filter local/global</th>
+                        <th style="max-width: 20px;word-wrap: break-word;">Select</th>
+                        <th style="max-width: 50px;word-wrap: break-word;">External Domains</th>
+                        <th style="max-width: 50px;word-wrap: break-word;">Suggested Name<sup>**</sup></th>
+                        <th style="max-width: 50px;word-wrap: break-word;">Description</th>
+                        <th style="max-width: 50px;word-wrap: break-word;">Keywords</th>
+                        <th style="max-width: 20px;word-wrap: break-word;">ZIP</th>
+                        <th style="max-width: 50px;word-wrap: break-word;">Filter local / global</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for external in domain.filtered_externals %}
                     <tr>
-                        <td>
+                        <td style="max-width: 50px;word-wrap: break-word;">
                             <label class="checkbox">
                                 {% if external.fullscan %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" checked disabled />
                                 {% else %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" />
                                 {% endif %}
                             </label>
                         </td>
-                        <td id="external_domain">{{external.external_domain}}</td>
-                        <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
-                        <td id="zip">
-                            <div id="displayEditable">{{external.info.zip}}</div>
-                            <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
-                                    {% csrf_token %}
-                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
-                                    <input type="submit" hidden />
-                                </form>
-                            </div>
+                        <td style="max-width: 50px;word-wrap: break-word;" id="external_domain">{{external.external_domain}}<br />(<a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a>)
                         </td>
-                        <td id="name_id_{{ forloop.counter }}">
-                            <div id="displayEditable">{{external.info.name}}</div>
+                        <td style="max-width: 50px;word-wrap: break-word;" id="name_id_{{ forloop.counter }}" style="width='100%'">
+                            {% if external.info.misc %}
+                            <b>
+                                <div id="displayEditable">
+                                    {{ external.info.misc }}
+                                </div>
+                            </b>&nbsp;({{ external.info.tip }})
+                            {% else %}
+                            <div id="displayEditable">-</div>
+                            {% endif %}
                             <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
+                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.external_domain}}">
                                     {% csrf_token %}
-                                    <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
+                                    <textarea class="textarea" name="edit_name" style="width='100%'" id="edit" disabled />{{external.info.name}}</textarea>
                                     <div id="submitButton" hidden>
                                         <button class="button" type="submit">Save</button>
                                     </div>
                                 </form>
                             </div>
                         </td>
-                        <td>
+                        <td style="max-width: 50px;word-wrap: break-word;">
+                            {% if external.info.desc %}
+                            {{ external.info.desc }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 50px;word-wrap: break-word;">
+                            {% if external.info.keywords %}
+                            {{ external.info.keywords }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td id="zip" style="max-width: 50px;word-wrap: break-word;">
+                            <div id="displayEditable">{{external.info.zip}}</div>
+                            <div id="openEdit" hidden>
+                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.external_domain}}">
+                                    {% csrf_token %}
+                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" style="width='100%'"  disabled/>
+                                    <input type="submit" hidden />
+                                </form>
+                            </div>
+                        </td>
+                        <td style="max-width: 50px;word-wrap: break-word;">
                             <div class="field is-grouped">
-                                <div class="control">
-                                    <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
-                                    <div class="control">
-                                        <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
-                                    </div>
-                                </div>
+                                <p class="control">
+                                    <a class="button is-warning is-outlined is-small" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.external_domain %}">local</a>
+                                </p>
+                                <p class="control">
+                                    <a class="button is-danger is-outlined is-small" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">global</a>
+                                </p>
                             </div>
                         </td>
                     </tr>
