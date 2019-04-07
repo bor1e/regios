@@ -156,6 +156,18 @@ class Domains(models.Model):
             pass
         return result
 
+    def _duration(self):
+        if not self.fullscan:
+            return 0
+        externalspider = ExternalSpider.objects.get(domain=self)
+        infospider = InfoSpider.objects.get(domain=self)
+        duration = externalspider.duration + infospider.duration
+        seconds = duration.total_seconds()
+        duration_string = '{0:2}:{1:2}:{2:5.3f}'.format(int(seconds / 3600),
+                                                        int(seconds / 60),
+                                                        float(seconds % 60))
+        return duration_string
+
     def _clean_url(self):
         return clean_url(self.url)
     # externals which are NOT on BlackList or Locally_Ignored
@@ -167,7 +179,8 @@ class Domains(models.Model):
     to_external_scan = property(_to_external_scan)
     to_info_scan = property(_to_info_scan)
     to_info_scan_urls = property(_to_info_scan_urls)
-    _url = property(_clean_url)
+    cleaned_url = property(_clean_url)
+    duration = property(_duration)
 
     class Meta:
         get_latest_by = "updated_at"

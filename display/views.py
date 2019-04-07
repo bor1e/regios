@@ -100,7 +100,7 @@ def display(request, domain):
 
     if domain.fullscan:
         logger.debug('displaying {} '.format(domain))
-        return render(request, 'display.html', {'domain': domain})
+        return render(request, 'display-dev.html', {'domain': domain})
     else:
         logger.debug('progressing {} - status: '.format(domain, domain.status))
         return redirect('progress', domain=domain)

@@ -161,6 +161,7 @@ LOGGING = {
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Berlin'
+TIME_INPUT_FORMATS = ['%H:%M:%S']
 
 USE_I18N = True
 

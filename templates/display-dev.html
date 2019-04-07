@@ -1,0 +1,105 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-info">
+    {% include "./messages.html" %}
+    <div class="hero-body">
+        {% include "./display-info.html" %}
+    </div>
+</section>
+{% endblock %}
+
+{% block content%}
+<section class="section">
+    <div class="container">
+        <!-- USING FORMS IS DEPRECATED NEED TO BE CORRECTED ERROR-->
+        <form method="POST" action="{% url 'externals_selected' domain=domain.domain %}">
+            {% csrf_token %}
+            <div class="field is-grouped">
+                <div class="control">
+                    <button id="start" class="button is-primary" type="submit"><span id="groupCheckBox"></span>&nbsp;Selected - Start Scan</button>
+                </div>
+                <p class="control">
+                    <input class="input" id="zip_from" type="number" placeholder="Range from ZIP">
+                </p>
+                <p class="control">
+                    <input class="input" id="zip_to" type="number" placeholder="to ZIP">
+                </p>
+                <div class="control">
+                    <button id="select_range" class="button is-primary" type="button">Select range
+                    </button>
+                </div>
+                <div class="control">
+                    <div class="is-pulled-right">
+                        <a class="button is-info"><input type="checkbox" id="checkAll">&nbsp;Check All</a>
+                    </div>
+                </div>
+            </div>
+            <table id="externals" class="display">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>External Domains</th>
+                        <th>External Urls</th>
+                        <th>ZIP</th>
+                        <th>Name</th>
+                        <th>Filter local/global</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for external in domain.filtered_externals %}
+                    <tr>
+                        <td>
+                            <label class="checkbox">
+                                {% if external.fullscan %}
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" checked disabled />
+                                {% else %}
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.domain}}" />
+                                {% endif %}
+                            </label>
+                        </td>
+                        <td id="external_domain">{{external.external_domain}}</td>
+                        <td id="external_url"><a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a></td>
+                        <td id="zip">
+                            <div id="displayEditable">{{external.info.zip}}</div>
+                            <div id="openEdit" hidden>
+                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.domain}}">
+                                    {% csrf_token %}
+                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" disabled />
+                                    <input type="submit" hidden />
+                                </form>
+                            </div>
+                        </td>
+                        <td id="name_id_{{ forloop.counter }}">
+                            <div id="displayEditable">{{external.info.name}}</div>
+                            <div id="openEdit" hidden>
+                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.domain}}">
+                                    {% csrf_token %}
+                                    <textarea class="textarea" name="edit_name" id="edit" disabled />{{external.info.name}}</textarea>
+                                    <div id="submitButton" hidden>
+                                        <button class="button" type="submit">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <a class="button is-warning is-outlined" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.domain %}">local</a>
+                                    <div class="control">
+                                        <a class="button is-danger is-outlined" href="{% url 'filter' src_domain=domain.domain external_domain=external.domain %}">global</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </div>
+</section>
+{% endblock %}
+{% block javascript %}
+{% load static %}
+<script src="{% static '/js/regios-display.js' %}"></script>
+{% endblock %}

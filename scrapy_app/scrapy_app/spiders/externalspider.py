@@ -16,7 +16,7 @@ class ExternalSpider(CrawlSpider):
         self.allowed_domains = [self.started_by_domain]
         obj = Domains.objects.get(domain=self.started_by_domain)
         # self.start_urls = ['http://' + x for x in self.allowed_domains]
-        self.start_urls = [obj._url]
+        self.start_urls = [obj.cleaned_url]
         self.keywords = kwargs.get('keywords')
 
         ExternalSpider.rules = [
