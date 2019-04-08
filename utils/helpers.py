@@ -27,3 +27,15 @@ def clean_url(url):
     else:
         clean_url += domain + '/'
     return clean_url
+
+
+def clean_dict(data):
+    cleaned_data = {}
+    for k, v in data.items():
+        if not v:
+            continue
+        cleaned_data[k] = v
+        if v and not isinstance(v, int):
+            cleaned_data[k] = v.strip()
+
+    return cleaned_data

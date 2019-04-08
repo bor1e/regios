@@ -3,7 +3,7 @@ from start.models import Domains, Info, Externals, Locals, ExternalSpider, \
     InfoSpider
 from django.core.exceptions import ObjectDoesNotExist
 
-from utils.helpers import get_domain_from_url
+from utils.helpers import clean_dict  # get_domain_from_url
 
 import logging
 logger = logging.getLogger(__name__)
@@ -121,7 +121,9 @@ class ItemPipeline(object):
             info = Info.objects.create(domain=domain)
             logger.info('{} INFO CREATED'.format(domain.domain))
 
-        info.__dict__.update(**data)
+        cleaned_data = clean_dict(data)
+
+        info.__dict__.update(**cleaned_data)
         info.save()
 
         # if self.started_by_domain != crawled_domain:

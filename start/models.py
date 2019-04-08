@@ -54,26 +54,26 @@ class Domains(models.Model):
     def _fullscan(self):
         return self.infoscan and self.externalscan
 
-    def _filtered(self):
-        # logger.debug('external for {}'.format(self.domain))
+    def _filtered_externals(self):
         externals = Externals.objects.filter(domain=self)
-        # logger.debug(externals.values_list('url', flat=True))
         local_ignored = LocalIgnore.objects.filter(domain=self).\
             values_list('ignore', flat=True)
         on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
         ignore_external_pks = [external.pk for external in externals
                                if external.external_domain in local_ignored or
                                external.external_domain in on_BlackList]
-        # logger.debug('ignore_external_pks: {}'
-        #            .format(len(ignore_external_pks)))
 
         return externals.exclude(
             pk__in=ignore_external_pks
         )
 
+    def _total_filtered_externals(self):
+        externals = Externals.objects.filter(domain=self).count()
+        return externals - self._filtered_externals().count()
+
     # TODO DeprecationWarning
     def _to_scan(self):
-        externals = self._filtered()
+        externals = self._filtered_externals()
         # only because domain exists,
         # does not mean it has not to be scnanned, does it?
         existing = [i.pk for i in externals if i.external_domain
@@ -87,20 +87,38 @@ class Domains(models.Model):
         unique_domains = set(domains)
         return list(unique_domains)
 
-    def _filter_unique_externals(self):
+    def _filter_unique_externals_list(self):
         externals = self._unique_external_domains()
         local_ignored = LocalIgnore.objects.filter(domain=self).\
             values_list('ignore', flat=True)
         on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
         filtered_unique = [external for external in externals
-                           if external not in local_ignored or
-                           external not in on_BlackList]
+                           if external not in local_ignored and external
+                           not in on_BlackList]
         return filtered_unique
+
+    def _filter_unique_externals(self):
+        externals = Externals.objects.filter(domain=self)
+        local_ignored = LocalIgnore.objects.filter(domain=self).\
+            values_list('ignore', flat=True)
+        on_BlackList = BlackList.objects.all().values_list('ignore', flat=True)
+        filtered_externals = [e.external_domain for e in externals
+                              if e.external_domain not in local_ignored and
+                              e.external_domain not in on_BlackList]
+        unique_externals = set(filtered_externals)
+        selected_pks = list()
+        for i in externals:
+            if i.external_domain in unique_externals:
+                selected_pks.append(i.pk)
+                unique_externals.remove(i.external_domain)
+
+        # no worry about spiders, they are being run with a cut of url - '/'
+        return externals.filter(pk__in=selected_pks)
 
     def _to_external_scan(self):
         externals = self._filter_unique_externals()
-        not_scanned = [domain for domain in externals
-                       if domain not in
+        not_scanned = [e.external_domain for e in externals
+                       if e.external_domain not in
                        Domains.objects.filter(Q(externalscan=True) |
                                               Q(fullscan=True))
                        .values_list('domain', flat=True)]
@@ -115,8 +133,8 @@ class Domains(models.Model):
         #                                       Q(fullscan=True))
         #                .values_list('domain', flat=True)]
         db_domains = Domains.objects.all().values_list('domain', flat=True)
-        not_scanned = [domain for domain in externals
-                       if domain not in db_domains]
+        not_scanned = [e.external_domain for e in externals
+                       if e.external_domain not in db_domains]
         if not self.has_related_info():
             not_scanned.append(self.domain)
         return not_scanned
@@ -172,7 +190,8 @@ class Domains(models.Model):
         return clean_url(self.url)
     # externals which are NOT on BlackList or Locally_Ignored
     # fullscan = property(_fullscan)
-    filtered_externals = property(_filtered)
+    filtered_externals = property(_filtered_externals)
+    total_filtered_externals = property(_total_filtered_externals)
     to_scan = property(_to_scan)
     unique_external_domains = property(_unique_external_domains)
     filter_unique_externals = property(_filter_unique_externals)
@@ -227,9 +246,28 @@ class Externals(models.Model):
             return Domains.objects.get(domain=domain).info
         return
 
+    def _fullscan(self):
+        domain = get_domain_from_url(self.url)
+        if Domains.objects.filter(domain=domain).exists():
+            return Domains.objects.get(domain=domain).fullscan
+        return False
+
+    def _is_suspicious(self):
+        domain = Domains.objects.get(domain=self.domain)
+        my_domain = get_domain_from_url(self.url)
+        if my_domain in domain.to_info_scan:
+            return True
+
+        if self._info() and not self._info().misc:
+            return True
+
+        return False
+
     # TODO think
     external_domain = property(_get_domain)
     info = property(_info)
+    fullscan = property(_fullscan)
+    is_suspicious = property(_is_suspicious)
     # external_domain = models.TextField(max_length=200)
 
     def __str__(self):

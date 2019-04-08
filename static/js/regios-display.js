@@ -1,10 +1,26 @@
 $(document).ready(function() {
+
     var table = $('#externals').DataTable({
         "order": [
-            [0, 'desc']
+            [5, "desc"]
         ],
         "pageLength": 100,
+        buttons: [
+            'selectAll',
+            'selectNone'
+        ],
+        language: {
+            buttons: {
+                selectAll: "Select all items",
+                selectNone: "Select none"
+            }
+        }
     });
+
+    //$('#zip_asc').click();
+
+
+
 
     // connect the checkboxes.
     // via the data table
@@ -40,14 +56,41 @@ $(document).ready(function() {
     });
 
     // make fields by clicking on them editable
-    $('#externals tbody').on('click', 'tr td:nth-of-type(4), td:nth-of-type(5)', function() {
+    $('#externals tbody').on('click', 'tr td:nth-of-type(2), td:nth-of-type(3), td:nth-of-type(4), td:nth-of-type(5), td:nth-of-type(6)', function() {
+        console.log('this clicked: ');
+        console.log(this);
         $(this).find('#openEdit').removeAttr("hidden");
         $(this).find('#displayEditable').hide();
 
         $(this).find('#edit').removeAttr("disabled");
-        $(this).find('#submitButton').removeAttr("hidden");
-    });
+        $(this).parent().find('#submitButton').removeAttr("hidden");
 
+    });
+    $('.table tbody').on('click', 'tr td:nth-of-type(1), td:nth-of-type(2), td:nth-of-type(3), td:nth-of-type(4), td:nth-of-type(5)', function() {
+        console.log('this clicked: ');
+        console.log(this);
+        $(this).find('#openEdit').removeAttr("hidden");
+        $(this).find('#displayEditable').hide();
+
+        $(this).find('#edit').removeAttr("disabled");
+        $(this).parent().find('#submitButton').removeAttr("hidden");
+
+    });
+    document.onkeydown = function(evt) {
+        evt = evt || window.event;
+        var isEscape = false;
+        if ("key" in evt) {
+            isEscape = (evt.key === "Escape" || evt.key === "Esc");
+        } else {
+            isEscape = (evt.keyCode === 27);
+        }
+        if (isEscape) {
+            console.log('received escape');
+            location.reload();
+        }
+    };
+});
+/*
     var isFinished = $("#status").text() == 'finished';
     var domain = $("#domain").text();
     var infoscan = false;
@@ -66,8 +109,7 @@ $(document).ready(function() {
     var url = $("#url").val();
     var domain = $("#domain").text();
     return startScraping('botspider', domain, url, '#status', 'None');
-});
-
+*/
 function startScraping(spider, domain, url, display_id, job) {
     var start_spider = {
         domain: domain,

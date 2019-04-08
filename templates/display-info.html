@@ -20,79 +20,102 @@
         </thead>
         <tbody>
             <tr>
-                <td id="domain"><a href="{{ domain.cleaned_url }}" target="_blank">{{ domain.domain }}</a></td>
-                <td>
-                    {% if domain.info.misc %}
-                    <b>{{ domain.info.misc }}</b>&nbsp;({{ domain.info.tip }})
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <!--td>
+                <form method="POST" action="/edit/{{domain.domain}}/info/{{domain.domain}}">
+                    {% csrf_token %}
+                    <td id="domain"><a href="{{ domain.cleaned_url }}" target="_blank">{{ domain.domain }}</a></td>
+                    <td>
+                        {% if domain.info.misc %}
+                        <div id="displayEditable"><b>{{ domain.info.misc }}</b></div>&nbsp;({{ domain.info.tip }})
+                        {% else %}
+                        <div id="displayEditable">-</div>
+                        {% endif %}
+                        <div id="openEdit" class="editable" hidden>
+                            <textarea class="textarea" name="misc" style="width='100%'" id="edit" disabled />{{domain.info.misc}}</textarea>
+                        </div>
+                    </td>
+                    <!--td>
                             {% if domain.info.title %}
                             {% if domain.info.tip and domain.info.tip == 'title' %}<b>{{ domain.info.title }}<sup>***</sup></b>{% else %}{{ domain.info.title }}{% endif %}
                             {% else %}
                             -
                             {% endif %}
                         </td-->
-                <td>
-                    {% if domain.info.desc %}
-                    {{ domain.info.desc }}
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if domain.info.keywords %}
-                    {{ domain.info.keywords }}
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if domain.info.zip %}
-                    {{ domain.info.zip }}
-                    {% else %}
-                    -
-                    {% endif %}
-                </td>
-                <!--td>
+                    <td>
+                        {% if domain.info.desc %}
+                        <div id="displayEditable">
+                            {{ domain.info.desc }}
+                        </div> {% else %}
+                        <div id="displayEditable">-</div>
+                        {% endif %}
+                        <div id="openEdit" class="editable" hidden>
+                            <textarea class="textarea" name="desc" style="width='100%'" id="edit" disabled />{{domain.info.desc}}</textarea>
+                        </div>
+                    </td>
+                    <td>
+                        {% if domain.info.keywords %}
+                        <div id="displayEditable">
+                            {{ domain.info.keywords|truncatechars:150 }}
+                        </div>
+                        {% else %}
+                        <div id="displayEditable">-</div>
+                        {% endif %}
+                        <div id="openEdit" class="editable" hidden>
+                            <textarea class="textarea" name="keywords" style="width='100%'" id="edit" disabled />{{domain.info.keywords}}</textarea>
+                        </div>
+                    </td>
+                    <td>
+                        {% if domain.info.zip %}
+                        <div id="displayEditable">{{domain.info.zip}}</div>
+                        {% else %}
+                        <div id="displayEditable">-</div>
+                        {% endif %}
+                        <div id="openEdit" class="editable" hidden>
+                            <input name="zip" id="edit" class="input" size="5" type="number" value="{{domain.info.zip}}" style="width='100%'" disabled />
+                        </div>
+                    </td>
+                    <!--td>
                             {% if domain.info.name %}
                             {% if domain.info.tip and domain.info.tip == 'name' %}<b>{{ domain.info.name }}<sup>***</sup></b>{% else %}{{ domain.info.name }}{% endif %} {% else %}
                             -
                             {% endif %}
                         </td-->
-                <!--td>
+                    <!--td>
                             {% if domain.info.misc %}
                             <b>{{ domain.info.misc }}<sup>***</sup></b>&nbsp;({{ domain.info.tip }})
                             {% else %}
                             -
                             {% endif %}
                         </td-->
-                <td>
-                    {% if domain.src_domain %}
-                    {{ domain.src_domain }}
-                    {% else %}
-                    manually added
-                    {% endif %}
-                </td>
-                <td>
-                    {{ domain.updated_at }}
-                </td>
-                <td>
-                    <div class="field is-grouped">
-                        <p class="control">
-                            {% if domain.info.imprint %}
-                            <a class="button is-link is-rounded is-small" href="{{ domain.info.imprint }}" target="_blank">Visit Imprint
-                            </a>
-                            {% endif %}
-                        </p>
-                        <p class="control">
-                            <a class="button is-warning is-rounded is-small" href="{% url 'refresh' domain.domain %}">Refresh</a>
-                        </p>
-                    </div>
-                </td>
+                    <td>
+                        {% if domain.src_domain %}
+                        {{ domain.src_domain }}
+                        {% else %}
+                        manually added
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ domain.updated_at }}
+                    </td>
+                    <td>
+                        <div class="field is-grouped">
+                            <div id="submitButton" hidden>
+                                <p class="control">
+                                    <button class="button is-success is-rounded is-small" type="submit">Save</button>
+                                </p>
+                            </div>
+                            <p class="control">
+                                {% if domain.info.imprint %}
+                                <a class="button is-link is-rounded is-small" href="{{ domain.info.imprint }}" target="_blank">Visit Imprint
+                                </a>
+                                {% endif %}
+                            </p>
+                            <p class="control">
+                                <a class="button is-warning is-rounded is-small" href="{% url 'refresh' domain.domain %}">Refresh</a>
+                            </p>
+                        </div>
+                    </td>
             </tr>
+            </form>
         </tbody>
     </table>
     <div class="content">
@@ -107,7 +130,7 @@
                 </section>
                 <div class="content" style="margin-top:2em">
                     <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
-                    <a class="button is-primary is-inverted" href="{% url 'display_filter' src_domain=domain.domain %}">filtered domains ({{domain.filtered}})</a>
+                    <a class="button is-primary is-inverted" href="{% url 'display_filter' src_domain=domain.domain %}">filtered references ({{domain.total_filtered_externals}})</a>
                     <a class="button is-primary is-inverted" href="{% url 'show_graph' domain=domain.domain %}">View Graph</a>
                 </div>
                 <div id="remaining"></div>
@@ -134,8 +157,8 @@
                             <td>{{ domain.unique_external_domains|length }}</td>
                         </tr>
                         <tr>
-                            <th>references after filtering</th>
-                            <td class="is-primary">{{ domain.filter_unique_externals|length }}</td>
+                            <th>filtered unique references</th>
+                            <td class="is-primary">{{ domain.filter_unique_externals.count }}</td>
                         </tr>
                         <tr>
                             <th>externals not in DB</th>

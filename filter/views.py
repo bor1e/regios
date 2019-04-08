@@ -93,10 +93,13 @@ def remove_filter(request, ignore):
     return redirect('/filter/')
 
 
+# TODO add count, how often the domain was filtered
 def _get_data(filtered, obj):
     for i in obj:
         if i.ignore not in filtered:
-            filtered[i.ignore] = i.src_domain
+            filtered[i.ignore] = {'src': i.src_domain, 'count': 0}
+        else:
+            filtered[i.ignore]['count'] += 1
     return filtered
 
 

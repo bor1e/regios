@@ -36,83 +36,101 @@
             <table id="externals" class="display">
                 <thead>
                     <tr>
-                        <th style="max-width: 20px;word-wrap: break-word;">Select</th>
+                        <th style="max-width: 40px;word-wrap: break-word;">Select</th>
                         <th style="max-width: 50px;word-wrap: break-word;">External Domains</th>
                         <th style="max-width: 50px;word-wrap: break-word;">Suggested Name<sup>**</sup></th>
                         <th style="max-width: 50px;word-wrap: break-word;">Description</th>
                         <th style="max-width: 50px;word-wrap: break-word;">Keywords</th>
-                        <th style="max-width: 20px;word-wrap: break-word;">ZIP</th>
+                        <th style="max-width: 20px;word-wrap: break-word;" id="zip_asc">ZIP</th>
                         <th style="max-width: 50px;word-wrap: break-word;">Filter local / global</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for external in domain.filtered_externals %}
+                    {% for external in domain.filter_unique_externals %}
+                    {% if external.fullscan %}
+                    <tr class="has-background-success">
+                        {% elif external.is_suspicious %}
+                    <tr class="has-background-warning">
+                        {% else %}
                     <tr>
-                        <td style="max-width: 50px;word-wrap: break-word;">
+                        {% endif %}
+                        <td style="max-width: 30px;word-wrap: break-word;">
                             <label class="checkbox">
                                 {% if external.fullscan %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" checked disabled />
+                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" disabled />
                                 {% else %}
                                 <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" />
                                 {% endif %}
                             </label>
                         </td>
-                        <td style="max-width: 50px;word-wrap: break-word;" id="external_domain">{{external.external_domain}}<br />(<a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a>)
-                        </td>
-                        <td style="max-width: 50px;word-wrap: break-word;" id="name_id_{{ forloop.counter }}" style="width='100%'">
-                            {% if external.info.misc %}
-                            <b>
-                                <div id="displayEditable">
-                                    {{ external.info.misc }}
-                                </div>
-                            </b>&nbsp;({{ external.info.tip }})
-                            {% else %}
-                            <div id="displayEditable">-</div>
-                            {% endif %}
-                            <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/name/{{external.external_domain}}">
-                                    {% csrf_token %}
-                                    <textarea class="textarea" name="edit_name" style="width='100%'" id="edit" disabled />{{external.info.name}}</textarea>
-                                    <div id="submitButton" hidden>
-                                        <button class="button" type="submit">Save</button>
+                        <form method="POST" action="/edit/{{domain.domain}}/info/{{external.external_domain}}">
+                            {% csrf_token %}
+                            <td style="max-width: 150px;word-wrap: break-word;" id="external_domain">{{external.external_domain}}<br />(<a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a>)
+                            </td>
+                            <td style="max-width: 150px;word-wrap: break-word;" id="name_id_{{ forloop.counter }}" style="width='100%'">
+                                {% if external.info.misc %}
+                                <b>
+                                    <div id="displayEditable">
+                                        {{ external.info.misc }}
                                     </div>
-                                </form>
-                            </div>
-                        </td>
-                        <td style="max-width: 50px;word-wrap: break-word;">
-                            {% if external.info.desc %}
-                            {{ external.info.desc }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td style="max-width: 50px;word-wrap: break-word;">
-                            {% if external.info.keywords %}
-                            {{ external.info.keywords }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td id="zip" style="max-width: 50px;word-wrap: break-word;">
-                            <div id="displayEditable">{{external.info.zip}}</div>
-                            <div id="openEdit" hidden>
-                                <form method="POST" action="/edit/{{domain.domain}}/zip/{{external.external_domain}}">
-                                    {% csrf_token %}
-                                    <input name="edit_zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" style="width='100%'"  disabled/>
-                                    <input type="submit" hidden />
-                                </form>
-                            </div>
-                        </td>
-                        <td style="max-width: 50px;word-wrap: break-word;">
-                            <div class="field is-grouped">
-                                <p class="control">
-                                    <a class="button is-warning is-outlined is-small" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.external_domain %}">local</a>
-                                </p>
-                                <p class="control">
-                                    <a class="button is-danger is-outlined is-small" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">global</a>
-                                </p>
-                            </div>
-                        </td>
+                                </b>&nbsp;({{ external.info.tip }})
+                                {% else %}
+                                <div id="displayEditable">-</div>
+                                {% endif %}
+                                <div id="openEdit" class="editable" hidden>
+                                    <textarea class="textarea" name="misc" style="width='100%'" id="edit" disabled />{{external.info.misc}}</textarea>
+                                </div>
+                            </td>
+                            <td style="max-width: 150px;word-wrap: break-word;">
+                                {% if external.info.desc %}
+                                <div id="displayEditable">
+                                    {{ external.info.desc }}
+                                </div>
+                                {% else %}
+                                <div id="displayEditable">-</div>
+                                {% endif %}
+                                <div id="openEdit" class="editable" hidden>
+                                    <textarea class="textarea" name="desc" style="width='100%'" id="edit" disabled />{{external.info.desc}}</textarea>
+                                </div>
+                            </td>
+                            <td style="max-width: 150px;word-wrap: break-word;">
+                                {% if external.info.keywords %}
+                                <div id="displayEditable">
+                                    {{ external.info.keywords|truncatechars:150 }}
+                                </div>
+                                {% else %}
+                                <div id="displayEditable">-</div>
+                                {% endif %}
+                                <div id="openEdit" class="editable" hidden>
+                                    <textarea class="textarea" name="keywords" style="width='100%'" id="edit" disabled />{{external.info.keywords}}</textarea>
+                                </div>
+                            </td>
+                            <td id="zip" style="max-width: 60px;word-wrap: break-word;">
+                                {% if external.info.zip %}
+                                <div id="displayEditable">{{external.info.zip}}</div>
+                                {% else %}
+                                <div id="displayEditable">-</div>
+                                {% endif %}
+                                <div id="openEdit" class="editable" hidden>
+                                    <input name="zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" style="width='100%'" disabled />
+                                </div>
+                            </td>
+                            <td style="max-width: 100px;word-wrap: break-word;">
+                                <div class="field is-grouped">
+                                    <div id="submitButton" hidden>
+                                        <p class="control">
+                                            <button class="button is-success is-rounded is-small" type="submit">Save</button>
+                                        </p>
+                                    </div>
+                                    <p class="control">
+                                        <a class="button is-info is-outlined is-rounded is-small" href="{% url 'add_to_localfilter' domain=domain.domain local_ignore=external.external_domain %}">local</a>
+                                    </p>
+                                    <p class="control">
+                                        <a class="button is-danger is-outlined is-rounded is-small" href="{% url 'filter' src_domain=domain.domain external_domain=external.external_domain %}">global</a>
+                                    </p>
+                                </div>
+                            </td>
+                        </form>
                     </tr>
                     {% endfor %}
                 </tbody>

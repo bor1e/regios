@@ -69,16 +69,33 @@ def externals_selected(request, domain):
 
 def refresh(request, domain):
     if not Domains.objects.filter(domain=domain).exists():
-        response = redirect('start')
-        return response
-    d = Domains.objects.filter(domain=domain).first()
-    response = redirect('check')
-    response.set_cookie('url', d.url)
-    response.set_cookie('level', d.level)
-    response.set_cookie('src_domain', d.src_domain)
+        return redirect('start')
 
-    d.delete()
-    return response
+    d = Domains.objects.filter(domain=domain).first()
+    d.infoscan = False
+
+    d.externalscan = False
+    d.fullscan = False
+    if d.has_external_spider():
+        d.externalspider.delete()
+    if d.has_info_spider():
+        d.infospider.delete()
+    if d.has_related_info():
+        d.info.delete()
+    if d.externals.count() > 0:
+        d.externals.all().delete()
+    if d.locals.count() > 0:
+        d.locals.all().delete()
+    d.status = 'refreshing'
+    d.save()
+
+    return redirect('display', domain=d.domain)
+    # response = redirect('check')
+    # response.set_cookie('url', d.url)
+    # response.set_cookie('level', d.level)
+    # response.set_cookie('src_domain', d.src_domain)
+    # d.delete()
+    # return response
 
 
 @login_required

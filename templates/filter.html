@@ -49,7 +49,7 @@
             {% for ignored, src_domain in filtered.items %}
             <tr>
                 <td>{{ignored}}</td>
-                <td>{{src_domain}}</td>
+                <td>{{src_domain.src}}</td>
                 <td>
                      <form method="POST" action="{% url 'remove_filter' ignore=ignored %}">
                 {% csrf_token %}

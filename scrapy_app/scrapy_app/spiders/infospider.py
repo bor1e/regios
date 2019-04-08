@@ -1,7 +1,7 @@
 import scrapy
 from scrapy.spiders import CrawlSpider  # , Rule
 from scrapy.linkextractors import LinkExtractor
-from utils.helpers import get_domain_from_url
+from utils.helpers import get_domain_from_url, clean_dict
 from start.models import Domains
 from difflib import SequenceMatcher
 # from scrapy import signals
@@ -129,7 +129,7 @@ class InfoSpider(CrawlSpider):
         else:
             domain = item['domain']
             item['tip'] = self._recommend_name(item)
-            self.domains[domain] = self._clean(item)
+            self.domains[domain] = clean_dict(item)
             return self.domains[domain]
 
     def parse_impressum(self, response):
@@ -141,7 +141,7 @@ class InfoSpider(CrawlSpider):
         item['tip'] = self._recommend_name(item)
 
         domain = item['domain']
-        self.domains[domain] = self._clean(item)
+        self.domains[domain] = clean_dict(item)
         return self.domains[domain]
 
     def _clean(self, item):
@@ -296,7 +296,7 @@ class InfoSpider(CrawlSpider):
                 # self.logger.debug('alternative_name: %s'
                 #                  % altname)
                 break
-
+        zipcode = None if zipcode == 0 or not zipcode else zipcode
         altname = altname.strip()
         return zipcode, altname
 

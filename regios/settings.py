@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'api',
     'display',
     'filter',
-    'graph'
+    'graph',
 ]
 
 MIDDLEWARE = [
