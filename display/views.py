@@ -44,22 +44,28 @@ def check(request):
 
 
 @csrf_exempt
-def externals_selected(request, domain):
+def externals_selected(request, domain=None):
     selected = request.POST.getlist('selected')
-    logger.info('received {} selected list of domains from domain {}'
-                .format(selected, domain))
-    for domain in selected:
-        try:
-            obj = Domains.objects.get(domain=domain)
-        except ObjectDoesNotExist:
-            obj = Domains.objects.create(domain=domain, url='http://' + domain)
-        if not obj.has_external_spider():
-            job_id = _start_spider(obj.domain, [])
-            externalspider = ExternalSpider \
-                .objects.create(domain=obj, job_id=job_id,
-                                to_scan=len(obj.to_external_scan))
-            obj.status = 'external_started'
-            obj.save()
+    if domain:
+        logger.info('received {} selected list of domains from domain {}'
+                    .format(selected, domain))
+    if selected:
+        for domain in selected:
+            try:
+                obj = Domains.objects.get(domain=domain)
+            except ObjectDoesNotExist:
+                obj = Domains.objects.create(domain=domain,
+                                             url='http://' + domain)
+            if not obj.has_external_spider():
+                job_id = _start_spider(obj.domain, [])
+                externalspider = ExternalSpider \
+                    .objects.create(domain=obj, job_id=job_id,
+                                    to_scan=len(obj.to_external_scan))
+                obj.status = 'external_started'
+                obj.save()
+                msg = 'Domain: {} progressing ... NEW {}' \
+                    .format(obj.domain, externalspider)
+                logger.info(msg)
 
     being_crawled = [d.pk for d in Domains.objects.all() if d.is_being_crawled]
     logger.info('being_crawled {}  list of domains'
@@ -68,7 +74,6 @@ def externals_selected(request, domain):
     logger.info('currently crawling {} domains: {}'
                 .format(objs.count(), objs.values_list('domain', flat=True)))
 
-    # return redirect('display', domain=domain)
     return render(request, 'crawling.html', {'crawling': objs})
 
 
@@ -161,9 +166,9 @@ def progress(request, domain):
                         to_scan=len(obj.to_external_scan))
     obj.status = 'external_started'
     obj.save()
+
     msg = 'Domain: {} progressing ... NEW {}' \
         .format(domain, externalspider)
-
     logger.info(msg)
     return render(request, 'display-dev.html', {'domain': obj})
 

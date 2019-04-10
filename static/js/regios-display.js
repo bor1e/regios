@@ -104,7 +104,7 @@ $(document).ready(function() {
     });
 
     // make fields by clicking on them editable
-    $('#externals tbody').on('click', 'tr td:nth-of-type(2), td:nth-of-type(3), td:nth-of-type(4), td:nth-of-type(5), td:nth-of-type(6)', function() {
+    $('#externals tbody').on('click', 'tr td:nth-of-type(3), td:nth-of-type(4), td:nth-of-type(5), td:nth-of-type(6)', function() {
         console.log('this clicked: ');
         console.log(this);
         $(this).find('#openEdit').removeAttr("hidden");

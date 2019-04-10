@@ -155,10 +155,12 @@ def domain_spider_status(request):
         return JsonResponse({'error': msg})
     except AttributeError:
         logger.info('status job_id insisde except block {}'.format(job_id))
-        if obj.externalscan and not obj.infoscan:
-            spider = 'infospider'
-        elif obj.infoscan and not obj.externalscan:
-            spider = 'externalspider'
+        pass
+
+    if obj.externalscan and not obj.infoscan:
+        spider = 'infospider'
+    elif not obj.externalscan:
+        spider = 'externalspider'
 
     if not job_id:
         job_id = request.POST.get('job_id')

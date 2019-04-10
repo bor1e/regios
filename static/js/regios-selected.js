@@ -10,8 +10,9 @@
         }
     });
     var t;
-    function restart(){
-         t = setTimeout(location.reload(), 10000);
+
+    function restart() {
+        t = setTimeout(location.reload(), 10000);
     }
 
     $(document).ready(function() {
@@ -59,8 +60,9 @@
                                 } else {
                                     if (data.status == 'finished') {
                                         $(self).find('.spider_status').html('finished');
-                                        if (data.spider == 'externalspider')
+                                        if (spider == 'externalspider') {
                                             setTimeout(location.reload(), 10000);
+                                        }
                                         return;
                                     }
                                     var msg = ''
@@ -68,7 +70,7 @@
                                         msg = ' (remaining to scan ' + data.remaining_info + ')';
                                     }
                                     $(self).find('.spider_status').html('<div class="control is-loading">' +
-                                        '<input class="input" type="text" value="' + data.status  + msg  +
+                                        '<input class="input" type="text" value="' + data.status + msg +
                                         '" readonly></div>');
                                 }
                             }
