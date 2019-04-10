@@ -167,24 +167,3 @@ class ItemPipeline(object):
         elif 'alternative_name' in item:
             name = item['alternative_name']
         return name
-
-        '''
-        spider.start = data['start']
-        spider.finish = data['finish']
-        spider.duration = data['duration']
-        spider.reason = data['reason']
-        if 'robots_forbidden' in data:
-            spider.robots_forbidden = data['robots_forbidden']
-        spider.request_count = data['request_count']
-        if 'log_error_count' in data:
-            spider.log_error_count = data['log_error_count']
-        '''
-        '''
-        info.tip = data['tip'] if 'tip' in data else None
-        info.title = data['title'] if 'title' in data else None
-        info.desc = data['desc'] if 'desc' in data else None
-        info.keywords = data['keywords'] if 'keywords' in data else None
-        info.imprint = data['imprint'] if 'imprint' in data else None
-        info.zip = data['zip'] if 'zip' in data else None
-        info.misc = data['misc'] if 'misc' in data else None
-        '''

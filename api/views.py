@@ -148,13 +148,13 @@ def domain_spider_status(request):
             job_id = obj.externalspider.job_id
         elif spider.strip() == 'info' or spider.strip() == 'infospider':
             job_id = obj.infospider.job_id
-        logger.info('status job_id insisde try block {}'.format(job_id))
+        # logger.info('status job_id insisde try block {}'.format(job_id))
     except ObjectDoesNotExist:
         msg = 'Domain {} does not exist!'.format(domain)
         logger.info(msg)
         return JsonResponse({'error': msg})
     except AttributeError:
-        logger.info('status job_id insisde except block {}'.format(job_id))
+        # logger.info('status job_id insisde except block {}'.format(job_id))
         pass
 
     if obj.externalscan and not obj.infoscan:
@@ -164,9 +164,9 @@ def domain_spider_status(request):
 
     if not job_id:
         job_id = request.POST.get('job_id')
-        logger.info('final job_id insisde if statement {}'.format(job_id))
+        # logger.info('final job_id insisde if statement {}'.format(job_id))
 
-    logger.info('final job_id {}'.format(job_id))
+    # logger.info('final job_id {}'.format(job_id))
     status = scrapyd.job_status('default', job_id)
     if not status:
         status = 'not_found'

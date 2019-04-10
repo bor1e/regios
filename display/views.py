@@ -10,7 +10,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from scrapyd_api import ScrapydAPI
 
-import time
 import logging
 logger = logging.getLogger(__name__)
 

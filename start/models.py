@@ -205,6 +205,11 @@ class Domains(models.Model):
 
     def _clean_url(self):
         return clean_url(self.url)
+
+    def _is_suspicious(self):
+        if self.externalscan and self.externals.count() == 0:
+            return True
+        return False
     # externals which are NOT on BlackList or Locally_Ignored
     filtered_externals = property(_filtered_externals)
     total_filtered_externals = property(_total_filtered_externals)
@@ -217,6 +222,7 @@ class Domains(models.Model):
     cleaned_url = property(_clean_url)
     duration = property(_duration)
     is_being_crawled = property(_is_being_crawled)
+    is_suspicious = property(_is_suspicious)
 
     class Meta:
         get_latest_by = "updated_at"
