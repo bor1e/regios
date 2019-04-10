@@ -14,10 +14,6 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-# connect scrapyd service
-localhost = 'http://localhost:6800'
-scrapyd = ScrapydAPI(localhost)
-
 
 @login_required
 def check(request):
@@ -40,31 +36,40 @@ def check(request):
         messages.info(request, msg)
         return redirect('display', domain=obj.domain)
 
-    # this this parameters are set in the refresh function below!
-    if request.POST.get('level') and request.POST.get('level') != 0:
-        level = request.POST.get('level')
-        src_domain = request.POST.get('src_domain')
-        obj = Domains.objects.create(domain=domain_name, url=url,
-                                     level=level, src_domain=src_domain)
-        msg = 'Domain: {} was refreshed.'.format(obj.domain)
-        messages.info(request, msg)
-    else:
-        obj = Domains.objects.create(domain=domain_name, url=url)
-        msg = 'Domain: {} was created.'.format(obj.domain)
-        messages.info(request, msg)
+    obj = Domains.objects.create(domain=domain_name, url=url)
+    msg = 'Domain: {} was created.'.format(obj.domain)
+    messages.success(request, msg)
 
     return redirect('display', domain=obj.domain)
 
 
 @csrf_exempt
 def externals_selected(request, domain):
-    # domain = Domains.objects.get(domain=domain)
     selected = request.POST.getlist('selected')
-    logger.debug(request.POST)
-    logger.info('received {} selected list of domains'.format(selected))
-    now = time.time()
-    return render(request, 'external_selected.html', {'selected': selected,
-                                                      'timer': now})
+    logger.info('received {} selected list of domains from domain {}'
+                .format(selected, domain))
+    for domain in selected:
+        try:
+            obj = Domains.objects.get(domain=domain)
+        except ObjectDoesNotExist:
+            obj = Domains.objects.create(domain=domain, url='http://' + domain)
+        if not obj.has_external_spider():
+            job_id = _start_spider(obj.domain, [])
+            externalspider = ExternalSpider \
+                .objects.create(domain=obj, job_id=job_id,
+                                to_scan=len(obj.to_external_scan))
+            obj.status = 'external_started'
+            obj.save()
+
+    being_crawled = [d.pk for d in Domains.objects.all() if d.is_being_crawled]
+    logger.info('being_crawled {}  list of domains'
+                .format(being_crawled))
+    objs = Domains.objects.filter(pk__in=being_crawled)
+    logger.info('currently crawling {} domains: {}'
+                .format(objs.count(), objs.values_list('domain', flat=True)))
+
+    # return redirect('display', domain=domain)
+    return render(request, 'crawling.html', {'crawling': objs})
 
 
 def refresh(request, domain):
@@ -90,12 +95,6 @@ def refresh(request, domain):
     d.save()
 
     return redirect('display', domain=d.domain)
-    # response = redirect('check')
-    # response.set_cookie('url', d.url)
-    # response.set_cookie('level', d.level)
-    # response.set_cookie('src_domain', d.src_domain)
-    # d.delete()
-    # return response
 
 
 @login_required
@@ -103,7 +102,9 @@ def display(request, domain):
     # domain was given over manually
     if not Domains.objects.filter(domain__icontains=domain).exists():
         request.session['domain'] = domain
-        messages.error(request, 'Domain to display does not exist!')
+        msg = 'Domain {} does not exist in DB, nothing to display!' \
+              .format(domain)
+        messages.error(request, msg)
         return redirect('start')
 
     try:
@@ -117,16 +118,24 @@ def display(request, domain):
 
     if domain.fullscan:
         logger.debug('displaying {} '.format(domain))
+        if domain.status in ['canceled', 'refresh']:
+            msg = 'Please refresh {} since crawl could not be completed.' \
+                .format(domain.domain)
+            messages.warning(request, msg)
+
         return render(request, 'display-dev.html', {'domain': domain})
     else:
-        logger.debug('progressing {} - status: '.format(domain, domain.status))
+        logger.debug('progressing {} - status: {}'.format(domain,
+                                                          domain.status))
         return redirect('progress', domain=domain)
 
 
 def progress(request, domain):
     if not Domains.objects.filter(domain__icontains=domain).exists():
         request.session['domain'] = domain
-        messages.error(request, 'Domain to display does not exist!')
+        msg = 'Domain {} does not exist in DB, nothing to display!' \
+              .format(domain)
+        messages.error(request, msg)
         return redirect('start')
 
     try:
@@ -141,125 +150,29 @@ def progress(request, domain):
         return redirect('display', domain=replaced_domain)
 
     if obj.has_external_spider():
-        msg = 'Domain: {} progressing ... started externalspider {}' \
+        msg = 'Domain: {} progressing ... EXISTING externalspider {}' \
             .format(obj.domain, obj.externalspider)
         logger.info(msg)
-        return render(request, 'progress.html', {'domain': obj})
+        return render(request, 'display-dev.html', {'domain': obj})
 
+    job_id = _start_spider(obj.domain)
+    externalspider = ExternalSpider \
+        .objects.create(domain=obj, job_id=job_id,
+                        to_scan=len(obj.to_external_scan))
     obj.status = 'external_started'
     obj.save()
+    msg = 'Domain: {} progressing ... NEW {}' \
+        .format(domain, externalspider)
+
+    logger.info(msg)
+    return render(request, 'display-dev.html', {'domain': obj})
+
+
+def _start_spider(domain, keywords=None):
+    localhost = 'http://localhost:6800'
+    scrapyd = ScrapydAPI(localhost)
     job_id = scrapyd.schedule('default', 'externalspider',
                               started_by_domain=domain,
-                              keywords=[])
+                              keywords=keywords)
 
-    spider = ExternalSpider.objects.create(domain=obj,
-                                           job_id=job_id,
-                                           to_scan=len(obj.to_external_scan))
-    msg = 'Domain: {} progressing ... started externalspider {}' \
-        .format(domain, spider)
-    logger.info(msg)
-    return render(request, 'progress.html', {'domain': obj})
-
-
-    '''
-    @ deprecated 
-    if domain.has_related_info():
-        data = _get_data(domain)
-    else:
-        # placeholder if page reloaded in the meantime, because.
-        # till finished call
-        time.sleep(5)
-        if domain.has_related_info():
-            data = _get_data(domain)
-        else:
-            data = _get_placeholder_while_dataloading(domain)
-    '''
-    # data = _get_data(domain)
-
-
-def _get_data(domain):
-    duration = domain.duration.total_seconds() if domain.duration else 0
-
-    externals_filtered_domains_in_DB = set(e.external_domain
-                                           for e in domain.filtered_externals)
-    externals_scanned = Domains.objects.\
-        filter(domain__in=externals_filtered_domains_in_DB)
-
-    filtered = domain.externals.count() - domain.filtered_externals.count()
-    unique_externals = set(e.external_domain for e in domain.externals.all())
-
-    data = {
-        'domain': domain.domain,
-        'url': domain.url,
-        'duration': '{0}m {1:5.3f}s'.format(int(duration / 60),
-                                            float(duration % 60)),
-        'status': domain.status,
-        'name': domain.info.name,
-        'title': domain.info.title,
-        'zip': '{:05d}'.format(domain.info.zip),
-        'filtered': filtered,
-        'other': domain.info.other,
-        'locals': domain.locals,
-        'unique_externals': unique_externals,
-        'filtered_externals': externals_scanned,
-        'last_update': domain.updated_at
-    }
-    return data
-
-
-def _get_placeholder_while_dataloading(domain):
-    data = {
-        'domain': domain.domain,
-        'url': domain.url,
-        'duration': 0,
-        'status': domain.status,
-        'name': '??',
-        'title': '??',
-        'zip': 0,
-        'filtered': None,
-        'other': '??',
-        'locals': None,
-        'unique_externals': '??',
-        'filtered_externals': None,
-        'last_update': domain.updated_at
-    }
-    return data
-    '''
-    explaining the counter of filtered domains based on medical-valley-emn.de:
-    d = Domains.object.get(domain='www.medical-valley-emn.de')
-    d.externals.count()  # 92
-    unique = set(e.external_domain for e in domain.externals.all())  # 59
-    ==> only 59 unique external domains,
-    i.e. 33 domains are mentioned more often
-
-    multiple = {}
-    for e in domain.externals.all():
-        multiple[e.external_domain] = multiple.get(e.external_domain, 0) + 1
-
-    logger.debug(len(multiple) == 59)
-
-    doppelte = 0
-    for key, val in multiple.items():
-        if int(val) > 1:
-            logger.debug('[{}]: {}'.format(key, val))
-            doppelte += 1
-
-    doppelte ==> 33 !
-
-    filtered_multiple = {}
-    for e in domain.filtered_externals.all():
-        filtered_multiple[e.external_domain] = filtered_multiple
-                                               .get(e.external_domain, 0) + 1
-    anzahl, counter = 0, 0
-    for k,v in multiple.items():
-        if k not in filtered_multiple:
-            logger.debug('[{}]: {}'.format(k, v))
-            anzahl += 1
-            counter += v
-    logger.debug('counter: {}, anzahl der doppelten: {}'
-                 .format(counter, anzahl))
-    anzahl ==> 18 domains were filtered
-    counter ==> 31, this 18 domains were 31 times in the d.externals.all
-
-    externals_to_scan ==> unique - anzahl => 59 - 18 = 41 !
-    '''
+    return job_id

@@ -309,6 +309,9 @@ class InfoSpider(CrawlSpider):
         construct_title = list()
         # self.logger.info('title_keys %s', title_keys)
         for key in title_keys:
+            if key.lower() == 'startup' or key.lower() == 'startups':
+                construct_title.append(key)
+                continue
             cleaned_key = re.sub(ignore_words_pattern, '', key,
                                  flags=re.IGNORECASE)
             if not cleaned_key:

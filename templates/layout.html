@@ -8,7 +8,11 @@
     {% load static %}
     <link rel="stylesheet" href="{% static '/css/bulma.min.css' %}">
     <link rel="stylesheet" href="{% static '/css/datatables.min.css' %}">
-    <script src="{% static '/js/fontawesome-5.5.0.js' %}"></script> 
+    <script src="{% static '/js/fontawesome-5.5.0.js' %}"></script>
+    <style>
+        .dataTables_filter input { width: 150px; height: 100%;}
+        .dataTables_filter label { text-transform: uppercase; font-weight:bold; font-size:large; color:red;}
+    </style>
 </head>
 
 <body>
@@ -31,14 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-$.get("/api/scrapyd/", function( data ) {
-    console.log('Scrapy running properly');
-    if (data.data.status != 'ok')
-        alert('Problem with Scrapyd. Please check that everything is running properly.');
-})
-.fail(function() {
-    alert('Problem with Scrapyd. Please check that everything is running properly.');
-});
 $(function() {
     function getCookie(name) {
         var cookieValue = null;

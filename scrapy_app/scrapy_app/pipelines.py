@@ -40,14 +40,16 @@ class ItemPipeline(object):
 
             src.status = 'external_finished'
             src.externalscan = True
+            logger.info('domain: {} finished externalspider'
+                        .format(src.domain))
             src.save()
         if self.spider == 'infospider':
             src = Domains.objects.get(domain=self.started_by_domain)
             src.status = 'info_finished'
             src.infoscan = True
             src.save()
-        logger.debug('closing: {} with status of domain: {}'
-                     .format(spider.name, src.status))
+        logger.info('closing: {} with status of domain {}'
+                    .format(spider.name, src.status))
         pass
 
     def save_crawl_stats(self, spider, reason):
@@ -59,7 +61,8 @@ class ItemPipeline(object):
         data['reason'] = stats['finish_reason']
         if 'robotstxt/forbidden' in stats:
             data['robots_forbidden'] = stats['robotstxt/forbidden']
-        data['request_count'] = stats['downloader/request_count']
+        if 'downloader/request_count' in stats:
+            data['request_count'] = stats['downloader/request_count']
         if 'log_count/ERROR' in stats:
             data['log_error_count'] = stats['log_count/ERROR']
 
@@ -116,7 +119,7 @@ class ItemPipeline(object):
 
         try:
             info = Info.objects.get(domain=domain)
-            logger.info('{} info FOUND and NOT updated'.format(domain.domain))
+            logger.info('{} info FOUND and NOT created'.format(domain.domain))
         except ObjectDoesNotExist:
             info = Info.objects.create(domain=domain)
             logger.info('{} INFO CREATED'.format(domain.domain))

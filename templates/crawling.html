@@ -1,0 +1,59 @@
+{% extends "./layout.html" %}
+{% block head %}
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Crawling of <span id=remaining><span> domains</h1>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>status</th>
+                            <td id="total_status"></td>
+                        </tr>
+                        <tr>
+                            <th>finished jobs</th>
+                            <td id="finished_jobs"></td>
+                        </tr>
+                    </tbody>
+                </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block content%}
+<section class="section">
+    <div class="container">
+        <table id="crawling" class="display">
+            <thead>
+                <tr>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Spider-Status</th>
+                    <th class="is-pulled-right">Cancel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for domain in crawling %}
+                <tr class="{{domain.domain}}">
+                    <td id="domain"><a href="/display/{{domain.domain}}">{{domain.domain}}</a>
+                    </td>
+                    <td id="status">{{domain.status}}</td>
+                    <td class="spider_status">-</td>
+                    <td class="is-pulled-right">
+                        {% if not domain.externalscan %}
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob(this, '{{domain.domain}}')" value="{{domain.externalspider.job_id}}">Cancel ExternalScan</button>
+                        {% elif not domain.infoscan %}
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob(this, '{{domain.domain}}')" value="{{domain.infospider.job_id}}">Cancel InfoScan</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block javascript %}
+{% load static %}
+<script src="{% static '/js/regios-selected.js' %}"></script>
+{% endblock %}

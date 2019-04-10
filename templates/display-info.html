@@ -1,8 +1,12 @@
 <div class="container">
+    {% if domain.status == 'finished' or domain.status == 'canceled' %}
     <h1 class="title">Displaying<sup>*</sup> details from <b><u>{{ domain.domain }}</u></b></h1>
+    {% else %}
+    <h1 class="title"><a class="button is-warning is-loading">Crawling</a><sup>*</sup> details from <b><u>{{ domain.domain }}</u></b></h1>
+    {% endif %}
     <h2 class="subtitle">Status:&nbsp;<span id="status">{{ domain.status }}</span>
     </h2>
-    <table class="table">
+    <table class="table table is-fullwidth">
         <thead>
             <tr>
                 <th>Domain</th>
@@ -15,7 +19,11 @@
                 <!--th>Miscellaneous</th-->
                 <th>Referenced by</th>
                 <th>Updated At</th>
-                <th>Visit Imprint / Refresh<sup>***</sup>
+                {% if not domain.fullscan %}
+                <th>Cancel Job</th>
+                {% else %}
+                <th>Visit Imprint / Refresh<sup>***</sup></th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -26,20 +34,18 @@
                     <td>
                         {% if domain.info.misc %}
                         <div id="displayEditable"><b>{{ domain.info.misc }}</b></div>&nbsp;({{ domain.info.tip }})
+                        {% elif domain.info.title or domain.info.name  %}
+                        <div id="displayEditable">
+                         {% if domain.info.title %} title: {{ domain.info.title }}<br />{% endif %}
+                         {% if domain.info.name %} name: {{ domain.info.name }}{% endif %}
+                        </div>
                         {% else %}
                         <div id="displayEditable">-</div>
                         {% endif %}
                         <div id="openEdit" class="editable" hidden>
-                            <textarea class="textarea" name="misc" style="width='100%'" id="edit" disabled />{{domain.info.misc}}</textarea>
+                            <textarea class="textarea" name="misc" style="width='100%'" id="edit" disabled />{{ domain.info.misc }}</textarea>
                         </div>
                     </td>
-                    <!--td>
-                            {% if domain.info.title %}
-                            {% if domain.info.tip and domain.info.tip == 'title' %}<b>{{ domain.info.title }}<sup>***</sup></b>{% else %}{{ domain.info.title }}{% endif %}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td-->
                     <td>
                         {% if domain.info.desc %}
                         <div id="displayEditable">
@@ -97,6 +103,7 @@
                         {{ domain.updated_at }}
                     </td>
                     <td>
+                        {% if domain.fullscan %}
                         <div class="field is-grouped">
                             <div id="submitButton" hidden>
                                 <p class="control">
@@ -113,6 +120,14 @@
                                 <a class="button is-warning is-rounded is-small" href="{% url 'refresh' domain.domain %}">Refresh</a>
                             </p>
                         </div>
+                        {% endif %}
+                        {% if not domain.externalscan %}
+                        <button id="cancel_job" class="button is-danger is-rounded is-outlined" type="button" value="{{domain.externalspider.job_id}}" hidden>Cancel Externalspider</button>
+                        {% endif %}
+                        {% if domain.externalscan and not domain.infoscan %}
+                         <button id="cancel_job" class="button is-danger is-rounded is-outlined" type="button" value="{{domain.infospider.job_id}}" hidden>Cancel Infospider</button>
+                        <!--a class="button is-danger is-rounded is-outlined" href="{% url 'api:cancel_job' job_id=domain.infospider.job_id %}">Cancel Job</a-->
+                        {% endif %}
                     </td>
             </tr>
             </form>
@@ -126,7 +141,7 @@
                     </p>
                     <p class="content"><span style="padding-left:1em"></span>** from selected crawled items which could represent the name of the domain, this one is most <b>similar to the domain's name</b>. In brackets is the name of the item with the highest similarity.</p>
                     <p class="content"><span style="padding-left:1em"></span>*** when refreshing, the web-crawlers (spiders) and the info entry for the {{ domain.domain }} <b>will be deleted</b>. If the referenced domains (externals) exist in the DB, they will stay, and their information won't be refreshed until manually visited and refreshed.</p>
-                    <p class="content"><span style="padding-left:1em"></span>**** most common problems with infoscan are: either the domain prohibits crawling by the robots.txt which <b>regios</b> is obeying, or the reference is old and the domains do no longer exist. This details can be edited in the admin section by updating the url of the external reference.</p>
+                    <p class="content"><span style="padding-left:1em"></span>**** most common problems with domains and infoscan are: either the domain prohibits crawling by the robots.txt which <b>regios</b> is obeying, or the reference is old and the domains do no longer exist. This details can be edited in the admin section by updating the url of the external reference.</p>
                 </section>
                 <div class="content" style="margin-top:2em">
                     <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
@@ -142,7 +157,11 @@
                     <tbody>
                         <tr>
                             <th>duration of crawling</th>
+                            {% if domain.infoscan %}
                             <td>{{ domain.duration }}</td>
+                            {% else %}
+                            <td><a class="button is-warning is-loading">waiting for infoscan</a></td>
+                            {% endif %}
                         </tr>
                         <tr>
                             <th>crawled local pages</th>
@@ -153,11 +172,11 @@
                             <td>{{ domain.externals.count }}</td>
                         </tr>
                         <tr>
-                            <th>unique references</th>
+                            <th>unique externals</th>
                             <td>{{ domain.unique_external_domains|length }}</td>
                         </tr>
                         <tr>
-                            <th>filtered unique references</th>
+                            <th>filtered unique externals</th>
                             <td class="is-primary">{{ domain.filter_unique_externals.count }}</td>
                         </tr>
                         <tr>
@@ -165,8 +184,13 @@
                             <td>{{ domain.to_external_scan|length }}</td>
                         </tr>
                         <tr>
-                            <th>problems running infoscan<sup>****</sup></th>
+                            {% if domain.infoscan %}
+                            <th>suspicious domains<sup>****</sup></th>
                             <td class="is-warning">{{ domain.to_info_scan|length }}</td>
+                            {% else %}
+                            <th>remaining infoscan for<sup>****</sup></th>
+                            <td class="is-warning"><span id="remaining_infoscan"></span><button class="button is-loading is-pulled-right"></button></td>
+                            {% endif %}
                         </tr>
                     </tbody>
                 </table>

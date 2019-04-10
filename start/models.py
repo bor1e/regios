@@ -29,6 +29,9 @@ class Domains(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
+        logger.info('{} instance status: {}'.format(self.domain,
+                                                    self.status))
+        status = self.status
         if not self.fullscan:
             if self.infoscan and self.externalscan:
                 self.fullscan = True
@@ -41,18 +44,28 @@ class Domains(models.Model):
                                           job_id=job_id,
                                           to_scan=len(self._to_info_scan()))
                 self.status = 'info_started'
+        if self.has_external_spider() and \
+           self.externalspider.reason == 'shutdown':
+            self.status = 'canceled'
+        elif self.has_info_spider() and self.infospider.reason == 'shutdown':
+            self.status = 'canceled'
+        elif self.has_external_spider() and \
+                self.externalspider.reason and \
+                self.externalspider.reason != 'finished':
+            self.status = 'refresh'
+        elif self.has_info_spider() and \
+                self.infospider.reason and \
+                self.infospider.reason != 'finished':
+            self.status = 'refresh'
 
-        # if self.infoscan:
-        #     self.status = 'info_finished'
-        # elif self.externalscan:
-        #     self.status = 'external_finished'
+        if status != self.status:
+            logger.info('{} instance status changed: {}'.format(self.domain,
+                                                                self.status))
+
         super(Domains, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.domain
-
-    def _fullscan(self):
-        return self.infoscan and self.externalscan
 
     def _filtered_externals(self):
         externals = Externals.objects.filter(domain=self)
@@ -117,24 +130,24 @@ class Domains(models.Model):
 
     def _to_external_scan(self):
         externals = self._filter_unique_externals()
+        externalscanned = Domains.objects.filter(Q(externalscan=True) |
+                                                 Q(fullscan=True)) \
+            .values_list('domain', flat=True)
         not_scanned = [e.external_domain for e in externals
-                       if e.external_domain not in
-                       Domains.objects.filter(Q(externalscan=True) |
-                                              Q(fullscan=True))
-                       .values_list('domain', flat=True)]
+                       if e.external_domain not in externalscanned]
         return not_scanned
 
     def _to_info_scan(self):
         externals = self._filter_unique_externals()
-        # TODO create values list beforehand and not within!
-        # not_scanned = [domain for domain in externals
-        #                if domain not in
-        #                Domains.objects.filter(Q(infoscan=True) |
-        #                                       Q(fullscan=True))
-        #                .values_list('domain', flat=True)]
         db_domains = Domains.objects.all().values_list('domain', flat=True)
         not_scanned = [e.external_domain for e in externals
                        if e.external_domain not in db_domains]
+        external_list = [e.external_domain for e in externals]
+
+        for d in Domains.objects.all():
+            if d.domain in external_list and not d.has_related_info():
+                not_scanned.append(d.domain)
+
         if not self.has_related_info():
             not_scanned.append(self.domain)
         return not_scanned
@@ -174,6 +187,10 @@ class Domains(models.Model):
             pass
         return result
 
+    def _is_being_crawled(self):
+        being_crawled = ['external_started', 'info_started']
+        return (self.status in being_crawled)
+
     def _duration(self):
         if not self.fullscan:
             return 0
@@ -189,7 +206,6 @@ class Domains(models.Model):
     def _clean_url(self):
         return clean_url(self.url)
     # externals which are NOT on BlackList or Locally_Ignored
-    # fullscan = property(_fullscan)
     filtered_externals = property(_filtered_externals)
     total_filtered_externals = property(_total_filtered_externals)
     to_scan = property(_to_scan)
@@ -200,6 +216,7 @@ class Domains(models.Model):
     to_info_scan_urls = property(_to_info_scan_urls)
     cleaned_url = property(_clean_url)
     duration = property(_duration)
+    is_being_crawled = property(_is_being_crawled)
 
     class Meta:
         get_latest_by = "updated_at"
@@ -221,22 +238,34 @@ class Info(models.Model):
     name = models.TextField(max_length=200, null=True)
     misc = models.TextField(null=True)
 
+    def _is_suspicious(self):
+        if self.tip:
+            return False
+
+        result = True
+        if self.title:
+            result = False
+        if self.name:
+            result = False
+        if self.imprint:
+            result = False
+
+        return result
+
+    is_suspicious = property(_is_suspicious)
+
     def __str__(self):
         return self.domain.domain
 
 
 class Externals(models.Model):
     url = models.URLField()
-    # pot = models.BooleanField(default=False)
-    # related_name e.g. domain.externals.count()
-    # selected = models.BooleanField(null=True, default=False)
     domain = models.ForeignKey(
         Domains,
         on_delete=models.CASCADE,
         related_name='externals'
     )
 
-    # @property
     def _get_domain(self):
         return get_domain_from_url(self.url)
 
@@ -258,17 +287,31 @@ class Externals(models.Model):
         if my_domain in domain.to_info_scan:
             return True
 
-        if self._info() and not self._info().misc:
+        if self._info() and self._info().is_suspicious:
             return True
 
         return False
 
-    # TODO think
+    def _is_being_crawled(self):
+        domain = get_domain_from_url(self.url)
+        if not Domains.objects.filter(domain=domain).exists():
+            return False
+        obj = Domains.objects.get(domain=domain)
+        return obj.is_being_crawled
+
+    def _status(self):
+        domain = get_domain_from_url(self.url)
+        if not Domains.objects.filter(domain=domain).exists():
+            return 'not created yet'
+        obj = Domains.objects.get(domain=domain)
+        return obj.status
+
     external_domain = property(_get_domain)
     info = property(_info)
     fullscan = property(_fullscan)
     is_suspicious = property(_is_suspicious)
-    # external_domain = models.TextField(max_length=200)
+    is_being_crawled = property(_is_being_crawled)
+    status = property(_status)
 
     def __str__(self):
         return self.url
@@ -280,7 +323,6 @@ class Externals(models.Model):
 
 class Locals(models.Model):
     url = models.URLField()
-    # related_name e.g. domain.locals.count()
     domain = models.ForeignKey(
         Domains,
         on_delete=models.CASCADE,
@@ -333,7 +375,8 @@ class ExternalSpider(models.Model):
     log_error_count = models.SmallIntegerField(default=0, null=True)
 
     def __str__(self):
-        return'externalspider of ' + self.domain.domain
+        return'externalspider of ' + self.domain.domain + ' with job_id: ' + \
+            '' + self.job_id
 
 
 class InfoSpider(models.Model):
@@ -354,8 +397,8 @@ class InfoSpider(models.Model):
     request_count = models.SmallIntegerField(default=0, null=True)
     log_error_count = models.SmallIntegerField(default=0, null=True)
 
+    def save(self, *args, **kwargs):
+        super(InfoSpider, self).save(*args, **kwargs)
+
     def __str__(self):
         return'infospider of ' + self.domain.domain
-
-    # class Meta:
-    #     unique_together = (('unique_id', 'domain'),)

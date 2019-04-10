@@ -1,6 +1,6 @@
 {% extends "./layout.html" %}
 {% block head %}
-<section class="hero is-info">
+<section class="hero is-info is-fullheight">
     {% include "./messages.html" %}
     <div class="hero-body">
         {% include "./display-info.html" %}
@@ -8,6 +8,7 @@
 </section>
 {% endblock %}
 {% block content%}
+{% if domain.externalscan %}
 <section class="section">
     <div class="container">
         <!-- USING FORMS IS DEPRECATED NEED TO BE CORRECTED ERROR-->
@@ -47,26 +48,29 @@
                 </thead>
                 <tbody>
                     {% for external in domain.filter_unique_externals %}
-                    {% if external.fullscan %}
-                    <tr class="has-background-success">
-                        {% elif external.is_suspicious %}
-                    <tr class="has-background-warning">
+                    <tr>                            
+                        {% if external.status == 'canceled' or external.status == 'refresh' %}
+                        <td><a class="button is-warning is-rounded is-small" href="{% url 'refresh' external.external_domain %}">Refresh</a></td>
+                        {% elif external.fullscan %}
+                        <td class="has-background-success" style="max-width: 30px;word-wrap: break-word;">
                         {% else %}
-                    <tr>
-                        {% endif %}
                         <td style="max-width: 30px;word-wrap: break-word;">
+                            {% endif %}
                             <label class="checkbox">
                                 {% if external.fullscan %}
-                                <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" disabled />
+                                <!--input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" disabled /-->
+                                {% elif external.is_being_crawled %}
+                                <a class="button is-warning is-rounded is-small" href="{% url 'refresh' external.external_domain %}">Refresh</a>
+                                <button class="button is-loading">Crawling</button>
                                 {% else %}
                                 <input type="checkbox" name="selected" class="groupCheckBox" value="{{external.external_domain}}" />
                                 {% endif %}
                             </label>
                         </td>
+                        <td style="max-width: 150px;word-wrap: break-word;" id="external_domain"><a href="/display/{{external.external_domain}}" target="_blank">{{external.external_domain}}</a><br />(<a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a>)
+                        </td>
                         <form method="POST" action="/edit/{{domain.domain}}/info/{{external.external_domain}}">
                             {% csrf_token %}
-                            <td style="max-width: 150px;word-wrap: break-word;" id="external_domain">{{external.external_domain}}<br />(<a href="{{ external.url }}" target="_blank">{{external.url|truncatechars_html:50}}</a>)
-                            </td>
                             <td style="max-width: 150px;word-wrap: break-word;" id="name_id_{{ forloop.counter }}" style="width='100%'">
                                 {% if external.info.misc %}
                                 <b>
@@ -74,6 +78,11 @@
                                         {{ external.info.misc }}
                                     </div>
                                 </b>&nbsp;({{ external.info.tip }})
+                                {% elif external.info.title or external.info.name %}
+                                <div id="displayEditable">
+                                    {% if external.info.title %} title: {{ external.info.title }}<br />{% endif %}
+                                    {% if external.info.name %} name: {{ external.info.name }}{% endif %}
+                                </div>
                                 {% else %}
                                 <div id="displayEditable">-</div>
                                 {% endif %}
@@ -108,14 +117,21 @@
                             <td id="zip" style="max-width: 60px;word-wrap: break-word;">
                                 {% if external.info.zip %}
                                 <div id="displayEditable">{{external.info.zip}}</div>
-                                {% else %}
-                                <div id="displayEditable">-</div>
-                                {% endif %}
                                 <div id="openEdit" class="editable" hidden>
                                     <input name="zip" id="edit" class="input" size="5" type="number" value="{{external.info.zip}}" style="width='100%'" disabled />
                                 </div>
+                                {% else %}
+                                <div id="displayEditable">-</div>
+                                <div id="openEdit" class="editable" hidden>
+                                    <input name="zip" id="edit" class="input" size="5" type="number" value="0" style="width='100%'" disabled />
+                                </div>
+                                {% endif %}
                             </td>
+                            {% if external.is_suspicious %}
+                            <td style="max-width: 100px;word-wrap: break-word;" class="has-background-warning">
+                                {% else %}
                             <td style="max-width: 100px;word-wrap: break-word;">
+                                {% endif %}
                                 <div class="field is-grouped">
                                     <div id="submitButton" hidden>
                                         <p class="control">
@@ -138,6 +154,7 @@
         </form>
     </div>
 </section>
+{% endif %}
 {% endblock %}
 {% block javascript %}
 {% load static %}

@@ -3,13 +3,7 @@
 <section class="hero is-info">
     <div class="hero-body">
         <div class="container">
-            <h1 class="title">Crawling of <span id=externals_count>{{selected|length}}<span> domains selected</h1>
-            <h2 class="subtitle">
-                Status: <span id="statusExternalScan"></span><br>
-                Remaining Domains to crawl: <span id="remaining"></span><br>
-                Time elapsed since start: <span id="timeElapsed"></span>
-            </h2>
-            <input type="hidden" id="timer" value="{{timer}}">
+            <h1 class="title">Crawling of <span id=externals_count>{{crawling|length}}<span> domains</h1>
             <div class="content">
                 <a class="button is-primary is-inverted" href="/graph/FINDDOMAIN">Graph</a>
             </div>
@@ -20,27 +14,28 @@
 {% block content%}
 <section class="section">
     <div class="container">
-        <table id="externals" class="display">
+        <table id="crawling" class="display">
             <thead>
                 <tr>
                     <th>Domain</th>
                     <th>Status</th>
-                    <th>Duration</th>
-                    <th>Externals</th>
+                    <th>Spider-Status</th>
                     <th>Cancel</th>
                 </tr>
             </thead>
             <tbody>
-                {% for domain in selected %}
-                <tr class="{{domain}}">
-                    <td id="domain">{{domain}}
-                        <input type="hidden" id="job_id" value="-">
+                {% for domain in crawling %}
+                <tr class="{{domain.domain}}">
+                    <td id="domain"><a href="/display/{{domain.domain}}">{{domain.domain}}</a>
                     </td>
-                    <td id="status">-</td>
-                    <td id="duration">-</td>
-                    <td id="externals">-</td>
+                    <td id="status">{{domain.status}}</td>
+                    <td id="spider_status">-</td>
                     <td>
-                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob(this, '{{ domain }}')">Cancel Scan</button>
+                        {% if not domain.externalscan %}
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob(this, '{{domain.domain}}')" value="{{domain.externalspider.job_id}}">Cancel ExternalScan</button>
+                        {% elif not domain.infoscan %}
+                        <button class="button is-danger is-outlined" type="button" onclick="cancelJob(this, '{{domain.domain}}')" value="{{domain.infospider.job_id}}">Cancel InfoScan</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

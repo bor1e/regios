@@ -91,6 +91,9 @@ def cancel_job(request, job_id):
         state = scrapyd.cancel('default', job_id)
         return JsonResponse({'state': state})
 
+    msg = 'canceled {} of {}'.format(spider, domain)
+    logger.warning(msg)
+    messages.warning(request, msg)
     '''
     # domain must exist, since passed on via backend, no user entrypoint
     obj = Domains.objects.get(domain=domain)
@@ -113,104 +116,66 @@ def cancel_job(request, job_id):
 
 
 @csrf_exempt
-def scrapy_jobs_status(request):
-    now = time.time()
-    start = float(request.GET.get('timer'))
-    duration = now - start
-    elapsed = '{0}min {1:5.3f}sec'.format(int(duration / 60),
-                                          float(duration % 60)),
+def scrapy_jobs_status(request, func=False):
+    # now = time.time()
+    # start = float(request.GET.get('timer'))
+    # duration = now - start
+    # elapsed = '{0}min {1:5.3f}sec'.format(int(duration / 60),
+    #                                       float(duration % 60)),
     post_jobs = scrapyd.list_jobs('default')
     remaining = len(post_jobs['running']) + len(post_jobs['pending'])
+    finished = len(post_jobs['finished'])
     status = 'pending' if remaining > 0 else 'finished'
+    if func:
+        return {'remaining': remaining, 'status': status,
+                'finished': finished}
+    # return JsonResponse({'remaining': remaining, 'status': status,
+    #                      'elapsed': elapsed, 'finished': finished})
     return JsonResponse({'remaining': remaining, 'status': status,
-                         'elapsed': elapsed})
-
-
-@csrf_exempt
-def get(request):
-    task_id = request.GET.get('task_id', None)
-    domain = request.GET.get('domain', None)
-    logger.debug(u'%s' % domain)
-    domain = domain.strip()
-    if not task_id or not domain:
-        return JsonResponse({'error': 'Missing args'})
-    logger.debug('task_id: %s\ndomain: %s' % (task_id, domain))
-    crawling = Domains.objects.get(domain=domain)
-    logger.debug('domain to crawl: %s' % crawling)
-    status = scrapyd.job_status('default', task_id)
-    crawling.status = status
-    crawling.save()
-    if status == 'finished':
-        logger.debug('RECEIVED status finished')
-        try:
-            jobs = scrapyd.list_jobs('default')
-            for i in jobs['finished']:
-                if i['id'] == task_id:
-                    logger.debug('found job %s', i['id'])
-                    start = datetime.strptime(
-                        i['start_time'], '%Y-%m-%d %H:%M:%S.%f')
-                    end = datetime.strptime(
-                        i['end_time'], '%Y-%m-%d %H:%M:%S.%f')
-                    duration = end - start
-                    crawling.duration = duration
-                    crawling.save()
-                    duration = str(timedelta(seconds=duration.seconds))
-
-            # log_placeholder = localhost + '/logs/default/crawler/{}.log'
-            info_name = '---'
-            if hasattr(crawling, 'info'):
-                info_name = crawling.info.name
-            duration = crawling.duration.total_seconds()
-            stats = {
-                'name': info_name,
-                'locals': crawling.locals.count(),
-                'externals': crawling.externals.count(),
-                'status': crawling.status,
-                'domain': crawling.domain,
-                'duration': '{0}:{1:5.3f}'.format(int(duration / 60),
-                                                  float(duration % 60)),
-                # 'logs': log_placeholder.format(task_id),
-            }
-            return JsonResponse({'data': stats})
-            # return render(request, 'home/status.html', stats)
-        except Exception as e:
-            # ! TODO error handling
-            return JsonResponse({'error': str(e)})
-    else:
-        logger.info("STATUS : %s", status)
-        if not status:
-            status = 'not found/canceled'
-        return JsonResponse({'status': status})
-
-    # !TODO error handling
-    return HttpResponse('ERROR')
+                         'finished': finished})
 
 
 # this is called while waiting for finish of spider external / info
+@csrf_exempt
 def domain_spider_status(request):
-    domain = request.POST.dict()['domain'].strip()
-    spider = request.POST.dict()['spider'].strip()
-
+    domain = request.POST.get('domain', None)
+    spider = request.POST.get('spider', None)
+    logger.info('POST status: {}'.format(request.POST))
     try:
-        obj = Domains.objects.get(domain=domain)
+        obj = Domains.objects.get(domain=domain.strip())
         job_id = None
-        if spider == 'external':
+        if spider.strip() == 'externalspider' or spider.strip() == 'external':
             job_id = obj.externalspider.job_id
-        elif spider == 'info':
+        elif spider.strip() == 'info' or spider.strip() == 'infospider':
             job_id = obj.infospider.job_id
+        logger.info('status job_id insisde try block {}'.format(job_id))
     except ObjectDoesNotExist:
-        msg = 'Domain {} | Spider {} does not exist!'.format(domain, spider)
+        msg = 'Domain {} does not exist!'.format(domain)
         logger.info(msg)
         return JsonResponse({'error': msg})
+    except AttributeError:
+        logger.info('status job_id insisde except block {}'.format(job_id))
+        if obj.externalscan and not obj.infoscan:
+            spider = 'infospider'
+        elif obj.infoscan and not obj.externalscan:
+            spider = 'externalspider'
 
+    if not job_id:
+        job_id = request.POST.get('job_id')
+        logger.info('final job_id insisde if statement {}'.format(job_id))
+
+    logger.info('final job_id {}'.format(job_id))
     status = scrapyd.job_status('default', job_id)
     if not status:
         status = 'not_found'
     logger.info('domain: {}, spider: {}, status: {}'.format(obj.domain,
                                                             spider, status))
+    data = scrapy_jobs_status(request, True)
     return JsonResponse({'domain': obj.domain,
                          'spider': spider,
-                         'status': status
+                         'status': status,
+                         'remaining_info': len(obj.to_info_scan),
+                         'stats': data,
                          })
 
 

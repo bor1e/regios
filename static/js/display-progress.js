@@ -74,7 +74,10 @@ $(document).ready(function() {
             startTimer();
             getStatusOfSpiderForDomain('external');
             break;
-        case 'external_finished':
+        case 'refreshing':
+            startTimer();
+            getStatusOfSpiderForDomain('external');
+            break;
             // $.post("/api/start_info_crawl/", { domain: domain })
             //     .done(function(data) {
             //         if (data.status == 'info_started') {
