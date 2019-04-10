@@ -53,7 +53,7 @@ def index(request, domain=None):
 
 def init_graph(request, domain=None):
     remaining = None
-    parallel_edges = False
+    # parallel_edges = False
     if domain:
         logger.debug('recieved domain: %s' % domain)
 
@@ -96,7 +96,9 @@ def init_graph(request, domain=None):
                 'size': domains_counter[d.domain] \
                 if domains_counter[d.domain]\
                 else 5,
-                'label': d.domain
+                'label': d.domain,
+                'color': 'black' if d.is_suspicious or d.info.is_suspicious
+                else None,
             }
             nodes.append(node)
         for e in d.externals.all():
@@ -105,10 +107,10 @@ def init_graph(request, domain=None):
                 continue
             # can be seperated if we want a bidrictional graph
             # creating a structure in the dicts:
-            if node['id'] < e.external_domain or parallel_edges:
-                edge_id = node['id'] + '_' + e.external_domain
-            else:
-                edge_id = e.external_domain + '_' + node['id']
+            # if node['id'] < e.external_domain or parallel_edges:
+            #     edge_id = node['id'] + '_' + e.external_domain
+            # else:
+            #     edge_id = e.external_domain + '_' + node['id']
             # TODO for parallel_edges inside graph
             edge_id = node['id'] + '_' + e.external_domain
 
@@ -125,6 +127,8 @@ def init_graph(request, domain=None):
                     'count': 1,
                 }
                 edges.append(edge)
+
+                # the target node becomes with each reference bigger
                 for node in nodes:
                     if node['id'] == target_domain:
                         node['size'] += 2
@@ -136,10 +140,37 @@ def init_graph(request, domain=None):
                         edge['size'] += 1
                         edge['count'] += 1
                         break
-
+    limit = request.GET.get('limit', None)
+    if limit:
+        nodes, edges = _filter_nodes_edges(limit, nodes, edges)
+        #logger.debug('new: len(nodes): {}. len(edges): {}. with limit: {}'.format(len(n), len(e), limit))
     data = {'nodes': nodes, 'edges': edges}
+    # logger.debug('old: len(nodes):{}. len(edges):{}'.format(len(nodes), len(edges)))
     # logger.debug('data: %s' % data)
     return JsonResponse({'data': data})
+
+
+def _filter_nodes_edges(limit, nodes, edges):
+    selected_nodes = list()
+    selected_edges = list()
+    n_ids = list()
+    for n in nodes:
+        counter = 0
+        for e in edges:
+            e_id = e['id'].split('_')[0]
+            if e_id == n['id']:
+                counter += 1
+        if counter >= int(limit):
+            selected_nodes.append(n)
+            n_ids.append(n['id'])
+    for n in selected_nodes:
+        for e in edges:
+            e_id = e['id'].split('_')[0]
+            target_id = e['id'].split('_')[1]
+            if e_id == n['id'] and target_id in n_ids:
+                selected_edges.append(e)
+
+    return selected_nodes, selected_edges
 
 
 ''' DEPRECATED see init_graph for corrections

@@ -18,68 +18,68 @@
 </head>
 
 <body>
-        <section class="hero is-info">
-            <div class="hero-body">
-                <nav class="level">
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Graph for</p>
-                            <p class="title">{{ stats.domain }}</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Domains displayed</p>
-                            <p class="title" id="displaying">{{ stats.displaying|length }}</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Not displaying from original domain</p>
-                            <p class="title">{{ stats.rest }}</p>
-                        </div>
-                    </div>
-                </nav>
-                <div class="hero-foot">
-                    <div class="container">
-                        <nav class="tabs is-boxed is-fullwidth">
-                            <ul>
-                                <li><span class="title">Legend:</span>&nbsp;</li>
-                                <li>
-                                    <span class="tag" style="background-color:#ec5148;color:white">Default Node</span>
-                                </li>
-                                <li>
-                                    <span class="tag is-success">Source Node</span>
-                                </li>
-                                <li>
-                                    <span class="tag is-warning">Additional Nodes</span>
-                                </li>
-                                <li>
-                                    <span class="tag is-dark">Simple Edges</span>
-                                </li>
-                                <li>
-                                    <span class="tag is-primary">References > 3</span>
-                                </li>
-                                <li>
-                                    <span class="tag is-link">References > 6</span>
-                                </li>
-                                <li>
-                                    <p class="help">Display <b>Nodes</b> which have at least<br />the following number of <b>Edges</b>:</p>
-                                    <input id="sliderWithValue" class="slider has-output is-fullwidth" min="1" max="10" value="1" step="1" type="range">
-                                    <output for="sliderWithValue">1</output>
-                                    <!--<p class="help">rotate by angle:</p>
-                                    <input id="angle" class="slider has-output is-fullwidth" min="0" max="90" value="0" step="5" type="range" onchange="rotate()">
-                                    <output for="angle">0</output>&deg;-->
-                                </li>
-                                <li>
-                                    <button class="button is-success" type="button" onclick="displayArrows()">Display</button>
-                                </li>
-                            </ul>
-                        </nav>
+    <section class="hero is-info">
+        <div class="hero-body">
+            <nav class="level">
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">Graph for</p>
+                        <p class="title">{{ stats.domain }}</p>
                     </div>
                 </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">Domains displayed</p>
+                        <p class="title" id="displaying">{{ stats.displaying|length }}</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <!--div>
+                        <p class="heading">Not displaying from original domain</p>
+                        <p class="title">{{ stats.rest }}</p>
+                    </div-->
+                </div>
+            </nav>
+            <div class="hero-foot">
+                <div class="container">
+                    <nav class="tabs is-boxed is-fullwidth">
+                        <ul>
+                            <li><span class="title">Legend:</span>&nbsp;</li>
+                            <li>
+                                <span class="tag" style="background-color:#ec5148;color:white">Default Node</span>
+                            </li>
+                            <li>
+                                <span class="tag is-success">Source Node</span>
+                            </li>
+                            <li>
+                                <span class="tag is-warning">Additional Nodes</span>
+                            </li>
+                            <li>
+                                <span class="tag is-dark">Suspicious Nodes</span>
+                            </li>
+                            <li>
+                                <span class="tag is-primary">References > 3</span>
+                            </li>
+                            <li>
+                                <span class="tag is-link">References > 6</span>
+                            </li>
+                            <li>
+                                <p class="help">Display <b>Nodes</b> which have at least<br />the following number of <b>Edges</b>:</p>
+                                <input id="sliderWithValue" class="slider has-output is-fullwidth" min="0" max="10" value="1" step="1" type="range">
+                                <output for="sliderWithValue">1</output>
+                                <!--<p class="help">rotate by angle:</p>
+                                    <input id="angle" class="slider has-output is-fullwidth" min="0" max="90" value="0" step="5" type="range" onchange="rotate()">
+                                    <output for="angle">0</output>&deg;-->
+                            </li>
+                            <li>
+                                <button class="button is-success" type="button" onclick="displayArrows()">Display</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
-        </section>
+        </div>
+    </section>
     <div class="container is-fluid has-background-grey-lighter">
         <div id="sigmajs">
         </div>
@@ -196,7 +196,7 @@ if (common_prefixes.includes(compare_domain_array[0])) {
     compare_domain = compare_domain_array.join('.')
 }
 var source_node, add_node, high_ref, very_high_ref;
-source_node ='#25D060'; //'#5dcdb3';
+source_node = '#25D060'; //'#5dcdb3';
 add_node = '#fadc6e';
 high_ref = '#02D1B2'; //'#64cc6d';
 very_high_ref = '#3f75d5';
@@ -204,7 +204,7 @@ very_high_ref = '#3f75d5';
 // console.log('compare_domain: ' + compare_domain);
 function addElems(nodes, edges) {
     var i, len = nodes.length;
-    // console.log('adding nodes');
+    console.log('adding nodes');
     for (i = 0; i < len; i++) {
         g.nodes.push({
             id: nodes[i].id,
@@ -213,10 +213,11 @@ function addElems(nodes, edges) {
             y: Math.random(),
             // size: nodes[i].size * 1.5,
             size: nodes[i].size * 1,
-            color: (nodes[i].id != compare_domain) ? '#ec5148' : source_node
+            color: (nodes[i].color) ? nodes[i].color : ((nodes[i].id != compare_domain) ? '#ec5148' : source_node)
         });
     }
-    var i, len = edges.length, edge_id, exists;
+    var i, len = edges.length,
+        edge_id, exists;
     // console.log('adding nodes');
     for (i = 0; i < len; i++) {
         edge_id = edges[i].id.split('_')
@@ -240,6 +241,7 @@ function addElems(nodes, edges) {
         });
         //  nodes[i].color = nodes[i].center ? '#333' : '#666';
     }
+        $('#displaying').html(g.nodes.length);
 }
 
 $.get('init/' + domain, {}, function(data) {
@@ -301,38 +303,40 @@ s.bind('overEdge', function(e) {
 function displayArrows() {
     var output = document.getElementsByTagName('output');
     var min_ref = output[0].value;
+    g = {
+    nodes: [],
+    edges: []
+};    
+console.log('cleared graph!');
+    $.get('init/' + domain, {limit: min_ref}, function(data) {
+        console.log('received nodes: ' + data.data.nodes.length);
+        addElems(data.data.nodes, data.data.edges);
+    }).done(function() {
+        refreshGraph(g);
+        $('#displaying').html(g.nodes.length);
+            console.log('g.nodes.length');
+        console.log(g.nodes.length);
+    });
+    /*
     var nodes = g.nodes;
     var i, j, len = nodes.length;
     var edgeSize = 0;
     var toKeep = []
-    
+
     for (i = 0; i < len; i++) {
         if (s.graph.getIncomingEdgesCount(nodes[i].id) >= min_ref) {
             console.log('here we go: ' + nodes[i].id + ' has incoming: ' + s.graph.getIncomingEdgesCount(nodes[i].id));
             toKeep.push(nodes[i].id);
         }
     }
-    /*
-    for (i = 0; i < len; i++) {
-        edgeSize = s.graph.countEdgeSizeOfNode(nodes[i].id);
-        if (edgeSize >= min_ref) {
-            console.log('here we go: ' + nodes[i].id + ' has edgeSize: ' + edgeSize);
-            toKeep.push(nodes[i].id);
-        }
-    }*/
-    // s.graph.nodes().forEach(function(n) {
-    //     n.originalColor = n.color;
-    // });
-    // s.graph.edges().forEach(function(e) {
-    //     e.originalColor = e.color;
-    // });
-    // s.refresh();
+
     s.graph.nodes().forEach(function(n) {
         if (toKeep.includes(n.id)) {
             // console.log(n.id);
             n.color = n.originalColor;
-        } else
+        } else {
             n.color = '#eee';
+        }
     });
 
     s.graph.edges().forEach(function(e) {
@@ -342,6 +346,7 @@ function displayArrows() {
             e.color = '#eee';
     });
     s.refresh();
+    */
 }
 var wasStageClicked = true;
 s.bind('clickNode', function(e) {
@@ -371,8 +376,10 @@ s.bind('clickNode', function(e) {
         if (toKeep[n.id])
             n.color = n.originalColor;
         //n.color = (n.color != source_node) ? ((n.color == add_node) ? add_node : n.originalColor) : source_node;
-        else
+        else {
             n.color = '#eee';
+
+        }
     });
 
     s.graph.edges().forEach(function(e) {
@@ -424,7 +431,8 @@ s.bind('doubleClickNode', function(e) {
             }
         }
 
-        var edges = data.data.edges, edge_id, exists;
+        var edges = data.data.edges,
+            edge_id, exists;
         var i, len = edges.length;
         for (i = 0; i < len; i++) {
             if (s.graph.existsEdgeId(edges[i].id)) {
@@ -525,11 +533,14 @@ s.bind('rightClickNode', function(e) {
     }
 });
 var currentAngle = 0;
+
 function rotate() {
-    console.log('currentAngle: '+currentAngle);
+    console.log('currentAngle: ' + currentAngle);
     console.log(this);
     var i, len = g.nodes.length;
-    var x_tmp = 0, y_tmp = 0, size = 0;
+    var x_tmp = 0,
+        y_tmp = 0,
+        size = 0;
     for (i = 0; i < len; i++) {
         if (g.nodes[i].size > size) {
             size = g.nodes[i].size;
@@ -541,7 +552,7 @@ function rotate() {
     var angle = parseInt(output[1].value);
     var diffAngle = angle - currentAngle;
     currentAngle = diffAngle;
-    console.log('currentAngle changed: '+currentAngle);
+    console.log('currentAngle changed: ' + currentAngle);
     //setTimeout(function() {
     console.log('changing camera by degree: ' + diffAngle)
     s.cameras[0].goTo({ x: x_tmp, y: y_tmp, angle: diffAngle, ratio: 1 });
