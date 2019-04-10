@@ -4,33 +4,33 @@
     <div class="hero-body">
         <div class="container has-text-centered">
             <h1 class="title">
-            Regios
-        </h1>
+                Regios
+            </h1>
             <h2 class="subtitle">
-            Filter
-        </h2>
+                Filter
+            </h2>
             <form method="POST" action="{% url 'manual_filter' %}">
                 {% csrf_token %}
-                <div class="field is-grouped is-grouped-centered">
-                    <div class="control">
-                        <div class="field-label is-normal">
-                            <label class="label">Add Filter for Domain</label>
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Add Filter:</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="field is-grouped">
+                                <div class="control is-expanded">
+                                    <input class="input" name="ignore" placeholder="ignore-me.com" required>
+                                </div>
+                                <div id="continue" class="control">
+                                    <button id="start" class="button is-info" type="submit">Submit</button>
+                                </div>
+                            </div>
+                            <p class="help is-danger is-pulled-left">
+                                This field is required
+                            </p>
                         </div>
                     </div>
-                    <div class="control">
-                        <input class="input" name="ignore" required>
-                        <p class="help">eine Domain zum filtern eingeben</p>
-                    </div>
-                    <div id="continue" class="control">
-                        <button id="start" class="button is-primary" type="submit">Start</button>
-                    </div>
-                </div>
             </form>
-            {% if domain %}
-            <div class="content">
-                <a href="/display/{{domain}}" class="button is-info is-inverted">back to Display {{domain}}</a>
-            </div>
-            {% endif %}
         </div>
     </div>
 </section>
@@ -51,11 +51,10 @@
                 <td>{{ignored}}</td>
                 <td>{{src_domain.src}}</td>
                 <td>
-                     <form method="POST" action="{% url 'remove_filter' ignore=ignored %}">
-                {% csrf_token %}
-                 <button id="start" class="button is-danger is-outlined" type="submit">Remove from filter</button>
-                 </form>
-
+                    <form method="POST" action="{% url 'remove_filter' ignore=ignored %}">
+                        {% csrf_token %}
+                        <button id="start" class="button is-danger is-outlined" type="submit">Remove from filter</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
