@@ -210,6 +210,24 @@ class Domains(models.Model):
         if self.externalscan and self.externals.count() == 0:
             return True
         return False
+
+    def self_refresh(self):
+        self.fullscan = False
+        self.externalscan = False
+        self.infoscan = False
+        if self.has_external_spider():
+            self.externalspider.delete()
+        if self.has_info_spider():
+            self.infospider.delete()
+        if self.has_related_info():
+            self.info.delete()
+        if self.externals.count() > 0:
+            self.externals.all().delete()
+        if self.locals.count() > 0:
+            self.locals.all().delete()
+        self.status = 'refreshing'
+        logger.debug('{} is being refreshed.'.format(self.domain))
+
     # externals which are NOT on BlackList or Locally_Ignored
     filtered_externals = property(_filtered_externals)
     total_filtered_externals = property(_total_filtered_externals)

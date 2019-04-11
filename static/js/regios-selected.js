@@ -48,7 +48,7 @@
                 // var job_id = $(this).find("#job_id").val();
                 var spider = data.spider;
                 var payload = { job_id: job_id, domain: domain, spider: spider };
-                var interval = 1500;
+                var interval = 5000;
                 console.log(payload);
                 (function doUpdate() {
                     $.post("/api/domain_spider_status/", payload, function(data) {
@@ -61,8 +61,12 @@
                                     if (data.status == 'finished') {
                                         $(self).find('.spider_status').html('finished');
                                         if (spider == 'externalspider') {
-                                            setTimeout(location.reload(), 10000);
+                                            // setTimeout(location.reload(), 10000);
+                                            console.log('externalspider finished')
                                         }
+                                        else 
+                                            console.log('infospider finished')
+
                                         return;
                                     }
                                     var msg = ''
@@ -90,7 +94,7 @@
                                 clearTimeout();
                                 return;
                             } else {
-                                console.log(domain + ' not finished... ');
+                                //console.log(domain + ' not finished... ');
                                 setTimeout(doUpdate, interval);
                             }
                         });
