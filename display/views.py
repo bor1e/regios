@@ -45,8 +45,10 @@ def check(request):
 @csrf_exempt
 def externals_selected(request, domain=None):
     selected = request.POST.getlist('selected')
-    #pks = [2041, 2057, 2059, 2231, 2252, 2253, 2272, 2274, 2277, 2280, 2281, 2285, 2292, 2293, 2294, 2296, 2299, 2330, 2553, 2757, 3095, 3125, 3130, 3141, 3150, 3152, 3164, 3170, 3171, 3173, 3178, 3180, 3181, 3183, 3190, 3204, 3209, 3222, 3243, 3265, 3281, 3287, 3304, 3308, 3316, 3321, 3326, 3348, 3368, 3375, 3398, 3425, 3440, 3509, 3519, 3522, 3531, 3537, 3557, 3582, 3598, 3758, 3788]
-    #selected = [d.domain for d in Domains.objects.filter(pk__in=pks)]
+    # pks = [4607, 4612]
+    # selected = [d.domain for d in Domains.objects.filter(pk__in=pks)]
+    # localhost = 'http://localhost:6800'
+    # scrapyd = ScrapydAPI(localhost)
     if domain:
         logger.info('received {} selected list of domains from domain {}'
                     .format(selected, domain))
@@ -57,6 +59,12 @@ def externals_selected(request, domain=None):
             except ObjectDoesNotExist:
                 obj = Domains.objects.create(domain=domain,
                                              url='http://' + domain)
+
+            # pre_jobs = scrapyd.list_jobs('default')
+            # running = len(pre_jobs['pending']) + \
+            #     len(pre_jobs['running'])
+            # if running > 4:
+            #     continue
             if not obj.has_external_spider():
                 job_id = _start_spider(obj.domain, [])
                 externalspider = ExternalSpider \
@@ -83,7 +91,7 @@ def refresh(request, domain):
         return redirect('start')
 
     d = Domains.objects.filter(domain=domain).first()
-    #d.self_refresh()
+    # d.self_refresh()
     d.infoscan = False
     d.externalscan = False
     d.fullscan = False

@@ -6,14 +6,15 @@ start = 90000
 end = 92000
 
 
-def pks_of_domains_within_ziprange_and_keys(zip_start, zip_end, keys):
+def pks_of_domains_within_ziprange_and_keys(zip_start, zip_end, keys=None):
     plz = [d.pk for d in D.objects.all()
            if d.has_related_info() and d.info.zip and
            d.info.zip > zip_start and d.info.zip < zip_end and
            not d.info.is_suspicious]
     fs = [d.pk for d in D.objects.filter(pk__in=plz)
           if not d.is_suspicious]
-
+    if not keys:
+        return fs
     pattern = r'(' + '|'.join(keys) + ')'
     # test_domains = ['bayern-design.de', 'tanzzentrale.de']
     ds = list()

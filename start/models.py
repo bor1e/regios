@@ -163,6 +163,11 @@ class Domains(models.Model):
 
         return urls
 
+    def _times_refenced(self):
+        times = [e.domain.domain for e in Externals.objects.all()
+                 if e.external_domain == self.domain]
+        return len(set(times))
+
     def has_related_info(self):
         has_info = False
         try:
@@ -241,6 +246,7 @@ class Domains(models.Model):
     duration = property(_duration)
     is_being_crawled = property(_is_being_crawled)
     is_suspicious = property(_is_suspicious)
+    times_referenced = property(_times_refenced)
 
     class Meta:
         get_latest_by = "updated_at"
