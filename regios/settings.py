@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'display',
     'filter',
     'graph',
+    'network',
 ]
 
 MIDDLEWARE = [

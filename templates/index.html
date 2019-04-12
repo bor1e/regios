@@ -1,6 +1,6 @@
 {% extends "./layout.html" %}
 {% block head %}
-<section class="hero is-success is-medium">
+<section class="hero is-success is-fullheight">
     {% include "./messages.html" %}
     <div class="hero-body">
         <div class="container has-text-centered">
@@ -8,18 +8,16 @@
                 Regios
             </h1>
             <p class="subtitle">
-                Discover Networks | Analyse Actors
+                Analyse Actors | Discover Networks
             </p>
             <br />
-        </div>
-        <div class="container">
             <div class="columns is-centered">
                 <div class="column is-three-quarters">
                     <form method="POST" action="{% url 'check' %}">
                         {% csrf_token %}
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">URL:</label>
+                                <label class="label">Actor:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
@@ -33,15 +31,70 @@
                                             <!--input type="hidden" name="next" value="/" /-->
                                         </div>
                                         <div id="continue" class="control">
-                                            <button id="start" class="button is-info" type="submit">Start</button>
+                                            <button id="start" class="button is-info" type="submit">Analyse Actor</button>
                                         </div>
                                     </div>
-                                    <p class="help is-danger">
+                                    <!--p class="help is-danger is-pulled-left">
                                         This field is required
+                                    </p-->
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="content"></div>
+            <div class="columns is-centered">
+                <div class="column is-three-quarters">
+                    <form method="POST" action="{% url 'add_network' %}">
+                        {% csrf_token %}
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Network:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="field is-grouped">
+                                        <div class="control">
+                                            <input class="input" name="name" placeholder="Name" required>
+                                        </div>
+                                        <div class="control is-expanded">
+                                            <input class="input" name="url" type="url" placeholder="http://www.focal-actor.com" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label"></label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="field is-grouped">
+                                        <div class="control is-expanded">
+                                            <input class="input" name="keywords" placeholder="medical, pharma, health, gesund ...">
+                                        </div>
+                                        <div id="continue" class="control">
+                                            <button id="start" class="button is-info" type="submit">Create Network</button>
+                                        </div>
+                                    </div>
+                                    <p class="help is-pulled-left">
+                                        keywords shoud be comma seperated
                                     </p>
                                 </div>
                             </div>
                         </div>
+                        <!--div class="field is-horizontal">
+                            <div class="field-label"></div>
+                            <div class="field-body">
+                                <div class="field is-expanded">
+                                    <p class="control is-expanded">
+                                        <textarea class="input" name="desc"></textarea>
+                                    </p>
+                                </div>
+                            </div>
+                        </div-->
                     </form>
                 </div>
             </div>

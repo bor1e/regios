@@ -1,0 +1,19 @@
+<section class="hero is-info is-fullheight">
+    {% include "./messages.html" %}
+    <div class="hero-body">
+        {{network.name}}
+        <!-- TODO
+            add editbale name / descripton / keywords
+            add possibility add domains
+        -->
+        <ol>
+            {% for d in network.domains.all %}
+            <li>{{d.domain}}</li>
+            {% endfor %}
+        </ol>
+        <!-- TODO
+            first table:
+            display domains which related => True
+        -->
+    </div>
+</section>

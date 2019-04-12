@@ -1,0 +1,12 @@
+{% extends "./layout.html" %}
+{% block head %}
+    {% include "./network-info.html" %}
+{% endblock %}
+{% block content%}
+        {% include "./network-related.html" %}
+        {% include "./network-connected.html" %}
+{% endblock %}
+{% block javascript %}
+{% load static %}
+<!--script src="{% static '/js/regios-network.js' %}"></script-->
+{% endblock %}
