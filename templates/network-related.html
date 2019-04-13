@@ -1,0 +1,9 @@
+        <ol>
+            {% for d in network.domains.all %}
+            <li>{{d.domain}}</li>
+            {% endfor %}
+        </ol>
+        <!-- TODO
+            first table:
+            display domains which related => True
+        -->

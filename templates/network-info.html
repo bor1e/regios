@@ -1,19 +1,42 @@
 <section class="hero is-info is-fullheight">
     {% include "./messages.html" %}
     <div class="hero-body">
-        {{network.name}}
-        <!-- TODO
+        <div class="container has-text-centered">
+            <h1 class="title">
+                {{network.name}}
+            </h1>
+            <p class="subtitle">
+                Analyse Actors | Select relevant Actors
+            </p>
+            <!-- TODO
             add editbale name / descripton / keywords
             add possibility add domains
-        -->
-        <ol>
-            {% for d in network.domains.all %}
-            <li>{{d.domain}}</li>
-            {% endfor %}
-        </ol>
-        <!-- TODO
-            first table:
-            display domains which related => True
-        -->
+            -->
+            <br />
+            <div class="columns is-centered">
+                <div class="column is-three-quarters">
+                    <form method="POST" action="{% url 'add_domain' network_name=network.name %}">
+                        {% csrf_token %}
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label">Actor:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="field is-grouped">
+                                        <div class="control is-expanded">
+                                            <input class="input" name="url" type="url" placeholder="http://www.focal-actor.com" required>
+                                        </div>
+                                        <div id="continue" class="control">
+                                            <button id="start" class="button is-info" type="submit">Add Actor</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </section>

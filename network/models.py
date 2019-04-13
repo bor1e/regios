@@ -4,8 +4,9 @@ from start.models import Domains
 
 # Create your models here.
 class Network(models.Model):
-    domains = models.ManyToManyField(Domains,
-                                     through='Relation')
+    # domains = models.ManyToManyField(Domains,
+    #                                  through='Relation')
+    domains = models.ManyToManyField(Domains)
     name = models.CharField(max_length=100, unique=True)
     keywords = models.TextField(null=True)
     description = models.TextField(null=True)
