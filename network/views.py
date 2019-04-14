@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
-from .models import Network, Relation
-from start.models import Domains, ExternalSpider
+from .models import Network  # , Relation
+from start.models import Domains, ExternalSpider, Externals
 from utils.helpers import get_domain_from_url
 from scrapyd_api import ScrapydAPI
+from django.http import JsonResponse
 
 import logging
 logger = logging.getLogger(__name__)
@@ -66,16 +67,16 @@ def add(request):
     # https://docs.djangoproject.com/en/dev/topics/db/models/#extra-fields-on-many-to-many-relationships
 
     # getting / setting relationship between network and url
-    rel, created = Relation.objects.get_or_create(domain=obj_domain,
-                                                  network=obj_network,
-                                                  related=True)
-    if created:
-        msg = 'Domain {} is now related to Network {}'.format(obj_domain,
-                                                              obj_network)
-        messages.success(request, msg)
+    # rel, created = Relation.objects.get_or_create(domain=obj_domain,
+    #                                               network=obj_network,
+    #                                               related=True)
+    # if created:
+    #     msg = 'Domain {} is now related to Network {}'.format(obj_domain,
+    #                                                           obj_network)
+    #     messages.success(request, msg)
 
     # TODO redirect network/network_name
-    return redirect('network', network_name=nw.name)
+    return redirect('network', network_name=obj_network.name)
 
 
 def add_domain_to_network(request, network_name):
@@ -114,6 +115,28 @@ def add_domain_to_network(request, network_name):
     return redirect('network', network_name=nw.name)
 
 
+def change_domain_relation(request, network_name):
+    domain = request.POST.get('domain', None)
+    value = request.POST.get('value', None)
+    if not domain or not value:
+        return JsonResponse({'error': 'argumens missing!'})
+    if not Domains.objects.filter(domain=domain).exists():
+        return JsonResponse({'error': 'domain not found!'})
+
+    d_obj = Domains.objects.get(domain=domain)
+    if not Network.objects.filter(name=network_name).exists():
+        return JsonResponse({'error': 'network not found!'})
+
+    network = Network.objects.get(name=network_name)
+    if value == 'add':
+        network.domains.add(d_obj)
+    else:
+        network.domains.remove(d_obj)
+    network.save()
+
+    return JsonResponse({'status': 'success'})
+
+
 def network(request, network_name):
     if not Network.objects.filter(name=network_name).exists():
         msg = 'Network: {} not found!'.format(network_name)
@@ -121,4 +144,41 @@ def network(request, network_name):
         return redirect('start')
 
     nw = Network.objects.filter(name=network_name).first()
-    return render(request, 'network.html', {'network': nw})
+    external_domains = list()
+    for d in nw.domains.all():
+        for e in d.filter_unique_externals:
+            external_domains.append(e.external_domain)
+        # TODO
+        # loop over 23000 * len(d) => d > 40 == million loop
+        # => need to save referenced by domains somewhere
+        for e in Externals.objects.all():
+            if e.external_domain == d.domain:
+                external_domains.append(e.domain.domain)
+
+    unique_domains = list(set(external_domains))
+    suggested_domains = Domains.objects.filter(domain__in=unique_domains)
+
+    return render(request, 'network.html', {'network': nw,
+                                            'suggested': suggested_domains})
+
+
+def update_network(request, network_name):
+    keywords = request.POST.get('keywords', None)
+    description = request.POST.get('description', None)
+    if not (keywords or description):
+        logger.info('update fields not found for {} network in {}'
+                    .format(network_name, request.POST))
+        return redirect('network', network_name=network_name)
+
+    if not Network.objects.filter(name=network_name).exists():
+        msg = 'Network: {} not found!'.format(network_name)
+        messages.warning(request, msg)
+        return redirect('start')
+    logger.debug('received kw: {} and {} desc'.format(keywords, description))
+    nw = Network.objects.filter(name=network_name).first()
+    if keywords:
+        nw.keywords = keywords
+    if description:
+        nw.description = description
+    nw.save()
+    return redirect('network', network_name=network_name)

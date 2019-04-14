@@ -1,9 +1,82 @@
-        <ol>
-            {% for d in network.domains.all %}
-            <li>{{d.domain}}</li>
-            {% endfor %}
-        </ol>
-        <!-- TODO
-            first table:
-            display domains which related => True
-        -->
+<section class="hero is-primary">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title has-text-centered">Related Actors</h1>
+        </div>
+    </div>
+</section>
+<section class="section">
+    <div class="container">
+        <table id="related" class="display">
+            <thead>
+                <tr>
+                    <th style="max-width: 40px;word-wrap: break-word;">Related</th>
+                    <th style="max-width: 50px;word-wrap: break-word;">Domains</th>
+                    <th style="max-width: 50px;word-wrap: break-word;">Suggested Name<sup>2)</sup></th>
+                    <th style="max-width: 50px;word-wrap: break-word;">Description</th>
+                    <th style="max-width: 50px;word-wrap: break-word;">Keywords</th>
+                    <th style="max-width: 20px;word-wrap: break-word;" id="zip_asc">ZIP</th>
+                    <th style="max-width: 50px;word-wrap: break-word;">Status<sup>3)</sup></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in network.domains.all %}
+                <tr>
+                    <td id="{{d.domain}}" class="related">
+                        <div class="control">
+                            <label class="radio">
+                                <input type="radio" name="{{d.domain}}" value="add" checked>
+                                Yes </label>
+                            <label class="radio">
+                                <input type="radio" name="{{d.domain}}" value="remove">
+                                No
+                            </label>
+                        </div>
+                    </td>
+                    <td style="max-width: 150px;word-wrap: break-word;" id="domain"><a href="/display/{{d.domain}}" target="_blank">{{d.domain}}</a><br />(<a href="{{ d.url }}" target="_blank">{{d.url|truncatechars_html:50}}</a>)
+                    </td>
+                    <td style="max-width: 150px;word-wrap: break-word;" style="width='100%'">
+                        {% if d.info.misc %}
+                        <b>
+                            {{ d.info.misc }}
+                        </b>&nbsp;({{ d.info.tip }})
+
+                        {% elif d.info.title or d.info.name %}
+                            {% if d.info.title %} title: {{ d.info.title }}<br /> {% endif %}
+                            {% if d.info.name %} name: {{ d.info.name }} {% endif %}
+
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td style="max-width: 150px;word-wrap: break-word;">
+                        {% if d.info.desc %}
+                        {{ d.info.desc }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td style="max-width: 150px;word-wrap: break-word;">
+                        {% if d.info.keywords %}
+                        {{ d.info.keywords|truncatechars:150 }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td id="zip" style="max-width: 60px;word-wrap: break-word;">
+                        {% if d.info.zip %}
+                        {{d.info.zip}}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    
+                    <td style="max-width: 10px;word-wrap: break-word;" {% if d.is_suspicious %} class="has-background-warning" {% endif %}> {{d.status}} {% if d.status == 'finished' %} <br />(externals: {{ d.filter_unique_externals.count }}) {% endif %}
+                    </td>
+                    </form>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

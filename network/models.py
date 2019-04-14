@@ -18,6 +18,7 @@ class Network(models.Model):
         ordering = ('name',)
 
 
+'''
 class Relation(models.Model):
     domain = models.ForeignKey(Domains,
                                on_delete=models.CASCADE)
@@ -31,3 +32,4 @@ class Relation(models.Model):
     class Meta:
         unique_together = (('network', 'domain'),)
         ordering = ('network',)
+'''

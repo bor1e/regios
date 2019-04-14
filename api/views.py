@@ -1,6 +1,6 @@
 # from django.shortcuts import render, redirect, reverse
 from start.models import Domains, ExternalSpider, InfoSpider  # , BlackList
-from django.http import HttpResponse, JsonResponse  # , HttpResponseRedirect
+from django.http import JsonResponse  # , HttpResponseRedirect, HttpResponse,
 # from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist

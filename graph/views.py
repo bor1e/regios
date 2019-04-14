@@ -1,7 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+
 from django.http import JsonResponse
 from filter.models import BlackList
 from start.models import Domains, Externals
+from network.models import Network
 from django.core.exceptions import ObjectDoesNotExist
 import logging
 
@@ -49,6 +51,99 @@ def index(request, domain=None):
         'rest': domain.externals.count() - len(displaying),  # .count()
     }
     return render(request, 'graph.html', {'stats': stats})
+
+
+def network_index(request, network_name):
+    queryset = Network.objects.filter(name=network_name)
+    network = get_object_or_404(queryset, name=network_name)
+    return render(request, 'network_graph.html', {'network': network})
+
+
+# TODO set color for manually added nodes => no src_domain or domain 'manually'
+
+
+def network_init(request, network_name):
+    queryset = Network.objects.filter(name=network_name)
+    network = get_object_or_404(queryset, name=network_name)
+
+    remaining = network.domains.all()
+
+    domains_counter = initialize_domains(remaining)
+
+    nodes = list()
+    edges = list()
+
+    logger.debug('initialized domains_counter: %s' % domains_counter)
+    edges_counter = list()
+    # check = set(key for key, item in domains_counter.items())
+    check = set()
+    for d in remaining:
+        # d_domain_cleaned = _remove_prefix(d.domain)
+        if d.domain not in check:
+            check.add(d.domain)
+            color = ''
+            if d.is_suspicious or d.info.is_suspicious:
+                color = 'black'
+            elif d.src_domain == 'manual' or not d.src_domain:
+                color = '#25D060'
+            node = {
+                'id': d.domain,
+                # size depends on externals sites pointing to that one.
+                # 'size': domains_counter[d_domain_cleaned] * 10 \
+                'size': domains_counter[d.domain] \
+                if domains_counter[d.domain]\
+                else 5,
+                'label': d.domain,
+                'color': color if color
+                else None,
+            }
+            nodes.append(node)
+        for e in d.externals.all():
+            if e.external_domain not in remaining.values_list('domain',
+                                                              flat=True):
+                continue
+            # can be seperated if we want a bidrictional graph
+            # creating a structure in the dicts:
+            # if node['id'] < e.external_domain or parallel_edges:
+            #     edge_id = node['id'] + '_' + e.external_domain
+            # else:
+            #     edge_id = e.external_domain + '_' + node['id']
+            # TODO for parallel_edges inside graph
+            edge_id = node['id'] + '_' + e.external_domain
+
+            if edge_id not in edges_counter:
+                edges_counter.append(edge_id)
+                target_domain = Domains.objects.get(domain=e.external_domain)\
+                                               .domain
+                edge = {
+                    # TODO to be unique if we want to have different directions
+                    'id': edge_id,  # + '_' + j
+                    'source': node['id'],
+                    'target': target_domain,
+                    'size': 1,
+                    'count': 1,
+                }
+                edges.append(edge)
+
+                # the target node becomes with each reference bigger
+                for node in nodes:
+                    if node['id'] == target_domain:
+                        node['size'] += 2
+            else:
+                # i.e. there exists already a connection between those domains
+                for edge in edges:
+                    if edge['id'] == edge_id:
+                        # TODO: THINK!
+                        edge['size'] += 1
+                        edge['count'] += 1
+                        break
+    limit = request.GET.get('limit', None)
+    if limit:
+        nodes, edges = _filter_nodes_edges(limit, nodes, edges)
+    data = {'nodes': nodes, 'edges': edges}
+    # logger.debug('data: %s' % data)
+    return JsonResponse({'data': data})
+    pass
 
 
 def init_graph(request, domain=None):

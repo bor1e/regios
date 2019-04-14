@@ -1,25 +1,20 @@
-<section class="hero is-info is-fullheight">
+<section class="hero is-info is-medium">
     {% include "./messages.html" %}
     <div class="hero-body">
         <div class="container has-text-centered">
-            <h1 class="title">
+            <h1 class="title" id="network">
                 {{network.name}}
             </h1>
             <p class="subtitle">
-                Analyse Actors | Select relevant Actors
+                Add & Analyse Actors | Select Relevant Actors
             </p>
-            <!-- TODO
-            add editbale name / descripton / keywords
-            add possibility add domains
-            -->
-            <br />
             <div class="columns is-centered">
-                <div class="column is-three-quarters">
+                <div class="column is-two-thirds">
                     <form method="POST" action="{% url 'add_domain' network_name=network.name %}">
                         {% csrf_token %}
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label">Actor:</label>
+                                <label class="label">Add Actor:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
@@ -28,9 +23,68 @@
                                             <input class="input" name="url" type="url" placeholder="http://www.focal-actor.com" required>
                                         </div>
                                         <div id="continue" class="control">
-                                            <button id="start" class="button is-info" type="submit">Add Actor</button>
+                                            <button id="start" class="button is-primary" type="submit">Add</button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-foot">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-half">
+                    <div class="content">
+                        <button id="infoscan" class="button is-primary is-inverted"><a href="/">Home</a></button>
+                        <a class="button is-primary is-inverted" href="{% url 'graph_network' network_name=network.name %}">View Graph</a>
+                        <a class="button is-primary is-inverted" href="#related">Related</a>
+                        <a class="button is-primary is-inverted" href="#suggested">Suggested</a>
+                    </div>
+                    <section class="help is-italic">
+                        <p><span style="padding-left:1em"></span>1) Use the Description field to describe, what was the criteria for actors to land in this network (e.g. zip, website, background knowldge..). If you used specific search keys for selecting networks, please insert them also in the keywords textarea.
+                        </p>
+                        <p><span style="padding-left:1em"></span>2) suggested Actors result from a) the externals of the added domains to the network, b) the domains which themselves are referencing the added domains.</p>
+                        <p><span style="padding-left:1em"></span>3) if the status is not finished and you are interested in the actor, please visit its page to start the external scan, or just add them above in the *add actor*-section</p>
+                    </section>
+                </div>
+                <div class="column is-auto">
+                    <form method="POST" action="{% url 'update_network' network_name=network.name %}">
+                        {% csrf_token %}
+                        <div class="field is-horizontal">
+                            <div class="field-body">
+                                <div class="field">
+                                    <div class="field is-grouped">
+                                        <div class="field-label is-normal">
+                                            <label class="label">Keywords:</label>
+                                        </div>
+                                        <div class="control is-expanded">
+                                            {% if network.keywords %}
+                                            <textarea class="input" name="keywords">{{network.keywords}}</textarea>
+                                            {% else %}
+                                            <textarea class="input" name="keywords" placeholder="keywords which you used to decide whether an actor fits"></textarea>
+                                            {% endif %}
+                                        </div>
+                                        <div class="field-label is-normal">
+                                            <label class="label">Description<sup>1)</sup>:</label>
+                                        </div>
+                                        <div class="control is-expanded">
+                                            {% if network.description%}
+                                            <textarea class="input" name="description">{{network.description}}</textarea>
+                                            {% else %}
+                                            <textarea class="input" name="description" placeholder="describe your network"></textarea>
+                                            {% endif %}
+                                        </div>
+                                        <div id="continue" class="control">
+                                            <button id="start" class="button is-primary" type="submit">Update</button>
+                                        </div>
+                                    </div>
+                                    <p class="help is-pulled-left">
+                                        keywords should be comma seperated
+                                    </p>
                                 </div>
                             </div>
                         </div>

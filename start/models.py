@@ -19,7 +19,7 @@ class Domains(models.Model):
     url = models.URLField()
     # parent, child, grandchild ...
     level = models.SmallIntegerField(default=0)
-    src_domain = models.TextField(max_length=200, null=True)
+    src_domain = models.TextField(max_length=200, null=True, default='manual')
     # crawl info
     fullscan = models.BooleanField(null=True, default=False)
     status = models.CharField(default='created', max_length=10)

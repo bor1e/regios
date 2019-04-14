@@ -8,6 +8,11 @@ urlpatterns = [
     path('<domain>', views.index, name='show_graph'),
     path('init/', views.init_graph, name='init_full_graph'),
     path('init/<domain>', views.init_graph, name='init_graph'),
-    # path('api/', views.api, name='api'),
+
+
+    path('network/<network_name>', views.network_index, name='graph_network'),
+    path('network/init/<network_name>', views.network_init,
+         name='graph_init_network'),
+
     path('test/', views.test, name='test-sigmajs'),
 ]
