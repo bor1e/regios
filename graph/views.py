@@ -92,7 +92,7 @@ def network_init(request, network_name):
                 # 'size': domains_counter[d_domain_cleaned] * 10 \
                 'size': domains_counter[d.domain] \
                 if domains_counter[d.domain]\
-                else 5,
+                else 3,
                 'label': d.domain,
                 'color': color if color
                 else None,

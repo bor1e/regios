@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from start.models import Domains
+from network.models import Network
 from django.contrib.auth.decorators import login_required
 from utils.helpers import clean_dict
 from django.contrib import messages
@@ -14,8 +15,10 @@ def index(request):
 
     url = request.COOKIES.get('url', None)
     ds = Domains.objects.all().filter(fullscan=True)
+    nw = Network.objects.all()
 
-    return render(request, 'index.html', {'url': url, 'domains': ds})
+    return render(request, 'index.html', {'url': url, 'domains': ds,
+                                          'networks': nw})
 
 
 def edit_info(request, domain, external):

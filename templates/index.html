@@ -1,15 +1,23 @@
 {% extends "./layout.html" %}
 {% block head %}
+{% load static %}
 <section class="hero is-success is-fullheight">
     {% include "./messages.html" %}
     <div class="hero-body">
         <div class="container has-text-centered">
-            <h1 class="title">
+                        <h1 class="title">
                 Regios
             </h1>
-            <p class="subtitle">
+                        <p class="subtitle">
                 Analyse Actors | Discover Networks
             </p>
+            <div class="colums is-centered">
+                <div class="column is-half is-offset-one-quarter">
+                    <figure class="image is-2by1">
+                        <img class="is-rounded" src="{% static "/regios.png" %}">
+                    </figure>
+                </div>
+            </div>
             <br />
             <div class="columns is-centered">
                 <div class="column is-three-quarters">
@@ -58,11 +66,11 @@
                                         <div class="control">
                                             <input class="input" name="name" placeholder="Name" required>
                                         </div>
-                                               
                                         <div class="control is-expanded">
                                             <input class="input" name="url" type="url" placeholder="http://www.focal-actor.com" required>
                                         </div>
-                                    </div><p class="help is-pulled-left">
+                                    </div>
+                                    <p class="help is-pulled-left">
                                         don't use special characters in the name-field
                                     </p>
                                 </div>
@@ -103,16 +111,76 @@
             </div>
         </div>
     </div>
+    <div class="hero-foot">
+        <div class="container">
+            <div class="columns">
+                <div class="column is-half">
+                    <div class="content">
+                        <a class="button is-primary is-inverted" href="#network">Networks</a>
+                        <a class="button is-primary is-inverted" href="#actors">Actors</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </section>
 {% endblock %}
 {% block content %}
+<section class="hero is-primary" id="network">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title has-text-centered">Networks</h1>
+        </div>
+    </div>
+</section>
 <div class="container">
     <table id="domains" class="display">
         <thead>
             <tr>
+                <th>Network</th>
+                <th>Domains</th>
+                <th>Description</th>
+                <th>Keywords</th>
+                <th>Options</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in networks %}
+            <tr>
+                <td style="max-width: 150px;word-wrap: break-word;">{{n.name}}</td>
+                <td style="max-width: 150px;word-wrap: break-word;">{{n.domains.count}}</td>
+                <td style="max-width: 150px;word-wrap: break-word;">{{n.description}}</td>
+                <td style="max-width: 150px;word-wrap: break-word;">{{n.keywords}}</td>
+                <td>
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <a class="button is-primary is-outlined" href="{% url 'network' network_name=n.name %}">Details</a>
+                        </div>
+                        <div class="control">
+                            <a class="button is-success is-outlined" href="{% url 'graph_network' network_name=n.name %}">Graph</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<section class="hero is-primary" id="actors">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title has-text-centered">Actors</h1>
+        </div>
+    </div>
+</section>
+<div class="container is-fullhd">
+    <table id="domains" class="display">
+        <thead>
+            <tr>
                 <th>Domains in DB</th>
+                <th>Source</th>
                 <th>Level</th>
-                <th>Name</th>
+                <th>Suggested Name</th>
                 <th>Duration</th>
                 <th>External</th>
                 <th>Options</th>
@@ -122,16 +190,20 @@
             {% for d in domains %}
             <tr>
                 <td>{{d.domain}}</td>
+                <td>{{d.src_domain}}</td>
                 <td>{{d.level}}</td>
-                <td>{{d.info.name}}</td>
+                <td>{{d.info.misc}}</td>
                 <td>{{d.duration}}</td>
                 <td>{{d.externals.count}}</td>
                 <td>
                     <div class="field is-grouped">
                         <div class="control">
-                            <a class="button is-primary is-outlined" href="{% url 'display' domain=d.domain%}">Details</a></div>
+                            <a class="button is-primary is-outlined" href="{% url 'display' domain=d.domain%}">Details</a>
+                        </div>
                         <div class="control">
-                            <a class="button is-success is-outlined" href="{% url 'show_graph' domain=d.domain%}">Graph</a></div>
+                            <a class="button is-success is-outlined" href="{% url 'show_graph' domain=d.domain%}">Graph</a>
+                        </div>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -142,6 +214,12 @@
 {% block javascript %}
 <script>
 $(document).ready(function() {
+    $('#networks').DataTable({
+        "order": [
+            [1, 'asc']
+        ],
+        "pageLength": 10,
+    });
     $('#domains').DataTable({
         "order": [
             [0, 'asc']

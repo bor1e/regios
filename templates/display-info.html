@@ -54,7 +54,7 @@
                             <textarea class="textarea" name="desc" style="width='100%'" id="edit" disabled />{{domain.info.desc}}</textarea>
                         </div>
                     </td>
-                    <td>
+                    <td style="max-width: 150px;word-wrap: break-word;">
                         {% if domain.info.keywords %}
                         <div id="displayEditable">
                             {{ domain.info.keywords|truncatechars:150 }}
