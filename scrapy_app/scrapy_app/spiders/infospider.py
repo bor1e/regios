@@ -110,7 +110,7 @@ class InfoSpider(CrawlSpider):
         if len(urls_with_imprint_keyword) > 1:
             for key in imprint_keywords:
                 for url in urls_with_imprint_keyword:
-                    if key in url:
+                    if key in url.lower():
                         item['imprint'] = url
                         request = scrapy.Request(item['imprint'],
                                                  callback=self.parse_impressum,
