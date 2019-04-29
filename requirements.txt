@@ -18,9 +18,9 @@ idna==2.7
 incremental==17.5.0
 kiwisolver==1.0.1
 lxml==4.2.5
-matplotlib==3.0.2
+#matplotlib==3.0.2
 MechanicalSoup==0.10.0
-numpy==1.16.1
+#numpy==1.16.1
 parsel==1.5.1
 pyasn1==0.4.4
 pyasn1-modules==0.2.2
@@ -41,7 +41,7 @@ scrapyd==1.2.0
 service-identity==17.0.0
 six==1.11.0
 Twisted==18.9.0
-urllib3==1.24
+urllib3>=1.24.2
 uWSGI==2.0.17
 w3lib==1.19.0
 zope.interface==4.6.0
