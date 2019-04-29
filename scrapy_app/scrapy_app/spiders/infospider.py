@@ -41,6 +41,7 @@ class InfoSpider(CrawlSpider):
         pass
 
     def errback_urls(self, failure):
+        # https://stackoverflow.com/questions/13724730/how-to-get-the-scrapy-failure-urls
         # log all failures
         # self.logger.error(repr(failure))
         if failure.check(DNSLookupError):
@@ -309,7 +310,7 @@ class InfoSpider(CrawlSpider):
         construct_title = list()
         # self.logger.info('title_keys %s', title_keys)
         for key in title_keys:
-            if key.lower() == 'startup' or key.lower() == 'startups':
+            if 'startup' in key.lower():
                 construct_title.append(key)
                 continue
             cleaned_key = re.sub(ignore_words_pattern, '', key,
@@ -318,6 +319,7 @@ class InfoSpider(CrawlSpider):
                 continue
             construct_title.append(cleaned_key)
         clean_title = ' '.join(construct_title)
+        # TODO remove :
         return clean_title
 
     def to_pandas(self):

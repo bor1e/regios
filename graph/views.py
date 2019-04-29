@@ -82,7 +82,7 @@ def network_init(request, network_name):
         if d.domain not in check:
             check.add(d.domain)
             color = ''
-            if d.is_suspicious or d.info.is_suspicious:
+            if d.is_suspicious or d.has_related_info() and d.info.is_suspicious:
                 color = 'black'
             elif d.src_domain == 'manual' or not d.src_domain:
                 color = '#25D060'
@@ -92,7 +92,7 @@ def network_init(request, network_name):
                 # 'size': domains_counter[d_domain_cleaned] * 10 \
                 'size': domains_counter[d.domain] \
                 if domains_counter[d.domain]\
-                else 3,
+                else 1,
                 'label': d.domain,
                 'color': color if color
                 else None,
@@ -192,7 +192,8 @@ def init_graph(request, domain=None):
                 if domains_counter[d.domain]\
                 else 5,
                 'label': d.domain,
-                'color': 'black' if d.is_suspicious or d.info.is_suspicious
+                'color': 'black' if d.is_suspicious or d.has_related_info() and d.info.is_suspicious
+
                 else None,
             }
             nodes.append(node)
@@ -329,6 +330,7 @@ def initialize_domains(domains):
     for e in Externals.objects.all():
         if e.external_domain in domains_size:
             domains_size[e.external_domain] += 1
+    # domains_size discribes how often the domain was referenced
 
     '''
     # in this case the counter of domains linked to is only based on the
