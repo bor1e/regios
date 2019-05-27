@@ -58,7 +58,7 @@ class InfoSpider(CrawlSpider):
             # these exceptions come from HttpError spider middleware
             # you can get the non-200 response
             response = failure.value.response
-            self.logger.error('HttpError on %s', response.url)
+            self.logger.info('HttpError on %s', response.url)
 
     def start_requests(self):
         for url in self.start_urls:

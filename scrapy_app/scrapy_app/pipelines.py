@@ -65,7 +65,13 @@ class ItemPipeline(object):
             data['request_count'] = stats['downloader/request_count']
         if 'log_count/ERROR' in stats:
             data['log_error_count'] = stats['log_count/ERROR']
-
+        # TODO:
+        '''
+         'downloader/response_status_count/301': 5,
+         'downloader/exception_type_count/twisted.internet.error.DNSLookupError': 42,
+         'downloader/exception_type_count/twisted.internet.error.TimeoutError': 13,
+         'downloader/exception_type_count/twisted.web._newclient.ResponseNeverReceived': 3,
+        '''
         src = Domains.objects.get(domain=self.started_by_domain)
         spider = None
         if self.spider == 'infospider':
