@@ -9,7 +9,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@login_required
 def index(request):
     # check out: https://docs.djangoproject.com/en/2.1/ref/contrib/messages/
 
