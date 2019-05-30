@@ -22,7 +22,7 @@ class Domains(models.Model):
     src_domain = models.TextField(max_length=200, null=True, default='manual')
     # crawl info
     fullscan = models.BooleanField(null=True, default=False)
-    status = models.CharField(default='created', max_length=10)
+    status = models.TextField(default='created', max_length=10)
     infoscan = models.BooleanField(null=True, default=False)
     externalscan = models.BooleanField(null=True, default=False)
     created_at = models.DateTimeField(auto_now_add=True)
