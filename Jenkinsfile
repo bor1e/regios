@@ -8,6 +8,7 @@ pipeline {
                     sh 'pip --version'
             }
         }
+        // Test
         stage('say helo') {
             steps {
                 parallel(
