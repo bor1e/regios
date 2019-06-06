@@ -8,6 +8,12 @@ pipeline {
                     sh 'pip --version'
             }
         }
+        stage('say helo') {
+            steps {
+                    sh 'echo "hello"'
+            }
+        }
+
     }
     post {
         failure {
