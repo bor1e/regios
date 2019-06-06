@@ -9,7 +9,7 @@ pipeline {
             }
         }
         // Test
-        stage('say helo') {
+        stage('say helo parallel') {
             steps {
                 parallel(
                     one: {
@@ -27,7 +27,7 @@ pipeline {
         }
     }
     post {
-        failure {
+        success {
             mail to: 'elyhude.de@gmail.com',
                  subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
                  body: "Something is wrong with ${env.BUILD_URL}"
