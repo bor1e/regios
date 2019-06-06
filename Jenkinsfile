@@ -42,18 +42,19 @@ node {
     // Since this is a multi-branch project the 'checkout scm' command is used. If you're working with a standard 
     // pipeline project then you can replace this with the regular 'git url:' pipeline command.
     // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
-    stage ("Get Latest Code") {
-        git branch: 'master',
-            credentialsId: 'f840f96d-c74a-4de0-a852-1e4af1417c3a',
-            url: 'ssh://git@github.org:bor1e/regios.git'
+    stages {
+        stage ("Get Latest Code") {
+            git branch: 'master',
+                credentialsId: 'f840f96d-c74a-4de0-a852-1e4af1417c3a',
+                url: 'ssh://git@github.org:bor1e/regios.git'
         }    
-    }
-    stage('build') {
-        steps {
-                sh 'python --version'
-                sh 'pip --version'
+        
+        stage('build') {
+            steps {
+                    sh 'python --version'
+                    sh 'pip --version'
+            }
         }
-    }
 
     /*
     // If you're using pip for your dependency management, you should create a requirements file to store a list of all depedencies.
@@ -102,4 +103,5 @@ node {
         }
     }
     */
+    }
 }
