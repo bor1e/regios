@@ -10,10 +10,20 @@ pipeline {
         }
         stage('say helo') {
             steps {
-                    sh 'echo "hello-1"'
+                parallel(
+                    one: {
+                        echo "I'm on the first branch!"
+                    },
+                    two: {
+                        echo "I'm on the second branch!"
+                    },
+                    three: {
+                       echo "I'm on the third branch!"
+                       echo "But you probably guessed that already."
+                    }
+                )
             }
         }
-
     }
     post {
         failure {
