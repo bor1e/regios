@@ -6,12 +6,6 @@ pipeline {
     // pipeline project then you can replace this with the regular 'git url:' pipeline command.
     // The 'checkout scm' command will automatically pull down the code from the appropriate branch that triggered this build.
     stages {
-        stage('Get Latest Code') {
-            git branch: 'master',
-                credentialsId: 'f840f96d-c74a-4de0-a852-1e4af1417c3a',
-                url: 'ssh://git@github.org:bor1e/regios.git'
-        }    
-        
         stage('build') {
             steps {
                     sh 'python --version'
