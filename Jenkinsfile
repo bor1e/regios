@@ -27,6 +27,7 @@ pipeline {
         }
     }
     post {
+        // Go jenkins, send me a mail!
         success {
             mail to: 'elyahu.de@gmail.com',
                  subject: "Failed Pipeline: ${currentBuild.fullDisplayName}",
